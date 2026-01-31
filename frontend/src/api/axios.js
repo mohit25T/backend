@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "https://b.apexipworld.com/api",
+  baseURL: "https://b.apexitworld.com/api",
   headers: {
     "Content-Type": "application/json"
   }
