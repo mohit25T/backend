@@ -1,4 +1,4 @@
-import User from "../models/User.js";
+/*import User from "../models/User.js";
 import Society from "../models/Society.js";
 import VisitorLog from "../models/VisitorLog.js";
 
@@ -28,4 +28,4 @@ export const getAdminDashboard = async (req, res) => {
     visitors
   });
 };
-
+*/
