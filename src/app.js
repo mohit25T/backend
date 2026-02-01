@@ -4,7 +4,7 @@ import authRoutes from "./routes/auth.routes.js";
 import societyRoutes from "./routes/society.routes.js";
 import inviteRoutes from "./routes/invite.routes.js";
 import analyticsRoutes from "./routes/analytics.routes.js";
-import adminDashboardRoutes from "./routes/adminDashboard.routes.js";
+//import adminDashboardRoutes from "./routes/adminDashboard.routes.js";
 import userRoutes from "./routes/user.routes.js";
 import blockRoutes from "./routes/block.routes.js"
 import searchRoutes from "./routes/search.routes.js";
@@ -32,7 +32,7 @@ app.use("/api/societies", societyRoutes);
 app.use("/api/invites", inviteRoutes);
 app.use("/api/visitors", visitorRoutes);
 app.use("/api/analytics", analyticsRoutes);
-app.use("/api/admin", adminDashboardRoutes);
+//app.use("/api/admin", adminDashboardRoutes);
 app.use("/api/block", blockRoutes);
 app.use("/api/search", searchRoutes);
 app.use("/api/export", exportRoutes);
