@@ -1,7 +1,7 @@
 import express from "express";
 import { updateAdminDetails,getAllSocietyVisitors } from "../controllers/admin.controller.js";
 import { requireAuth } from "../middlewares/auth.middleware.js";
-import { requireSuperAdmin } from "../middlewares/role.middleware.js";
+import { requireSuperAdmin,requireAdmin } from "../middlewares/role.middleware.js";
 
 const router = express.Router();
 
