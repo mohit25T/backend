@@ -1,4 +1,4 @@
-import express from "express";
+/*import express from "express";
 import { getAdminDashboard } from "../controllers/adminDashboard.controller.js";
 import { requireAuth } from "../middlewares/auth.middleware.js";
 
@@ -13,3 +13,4 @@ router.get(
 
 
 export default router;
+*/
