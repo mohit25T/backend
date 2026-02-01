@@ -8,7 +8,7 @@ import userRoutes from "./routes/user.routes.js";
 import blockRoutes from "./routes/block.routes.js"
 import searchRoutes from "./routes/search.routes.js";
 import exportRoutes from "./routes/export.routes.js";
-import adminROutes from "./routes/admin.routes.js"
+import adminRoutes from "./routes/admin.routes.js"
 import adminReplacementRoutes from "./routes/adminReplacement.routes.js";
 import auditLogRoutes from "./routes/auditLog.routes.js";
 import visitorRoutes from "./routes/visitor.routes.js"
