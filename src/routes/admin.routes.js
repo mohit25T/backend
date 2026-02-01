@@ -5,7 +5,7 @@ import { requireSuperAdmin,requireAdmin } from "../middlewares/role.middleware.j
 
 const router = express.Router();
 
-router.put(
+router.patch(
   "/:id",
   requireAuth,
   requireSuperAdmin,
