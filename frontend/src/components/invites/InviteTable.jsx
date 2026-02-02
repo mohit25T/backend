@@ -9,6 +9,7 @@ const InviteTable = ({ invites, onResend, onCancel }) => {
           <tr>
             <th className="p-4">Mobile</th>
             <th className="p-4">Email</th> {/* ✅ ADDED */}
+            <th className="p-4">Role</th>
             <th className="p-4">Society</th>
             <th className="p-4">Status</th>
             <th className="p-4">Expires</th>
@@ -31,7 +32,7 @@ const InviteTable = ({ invites, onResend, onCancel }) => {
               <td className="p-4 text-sm text-gray-600">
                 {inv.email || "-"} {/* ✅ ADDED */}
               </td>
-
+              <td className="p-4 font-medium">{inv.role}</td>
               <td className="p-4">
                 {inv.societyId?.name || "-"}
               </td>
