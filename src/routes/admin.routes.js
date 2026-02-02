@@ -5,13 +5,11 @@ import { requireSuperAdmin,requireAdmin } from "../middlewares/role.middleware.j
 
 const router = express.Router();
 
-router.patch(
-    console.log("🔥 admin.routes.js FILE LOADED"),
-  "/adminId",
-  requireAuth,
-  requireSuperAdmin,
-  updateAdminDetails
-);
+router.patch("/:adminId", (req, res) => {
+  console.log("🔥 PATCH ADMIN ROUTE HIT", req.params.adminId);
+  return res.json({ ok: true });
+});
+
 
 router.get("/Society", requireAuth, requireAdmin, getAllSocietyVisitors)
 
