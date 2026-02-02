@@ -7,7 +7,6 @@ import Invites from "../pages/Invites";
 // import Analytics from "../pages/Analytics";
 import AuditLogs from "../pages/AuditLogs";
 import ProtectedRoute from "./ProtectRoute";
-import AddSociety from "../pages/AddSociety";
 import AddAdmin from "../pages/AddAdmin";
 import UsersByRole from "../pages/UsersByRole";
 import GlobalSearch from "../pages/GlobalSearch";
