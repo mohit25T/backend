@@ -220,13 +220,7 @@ export const verifyUserLogin = async (req, res) => {
       return res.status(401).json({ message: "Invalid OTP" });
     }
 
-    // Existing user
-    if (user) {
-      if (user.status === "BLOCKED") {
-        return res.status(403).json({ message: "Account is blocked" });
-      }
-
-      const token = signToken({
+     const token = signToken({
         userId: user._id,
         roles: user.roles,
         societyId: user.societyId
