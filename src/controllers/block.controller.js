@@ -3,44 +3,59 @@ import Society from "../models/Society.js";
 import { auditLogger } from "../utils/auditLogger.js"; // ✅ ADDED
 
 /* -------- ADMIN -------- */
-export const toggleAdminStatus = async (req, res) => {
-  const { adminId } = req.params;
+export const toggleUserStatus = async (req, res) => {
+  try {
+    const { adminId } = req.params;
 
-  const admin = await User.findOne({
-    _id: adminId,
-    roles: "ADMIN"
-  });
+    const user = await User.findById(adminId);
 
-  if (!admin) {
-    return res.status(404).json({ message: "Admin not found" });
+    if (!user) {
+      return res.status(404).json({
+        message: "User not found"
+      });
+    }
+
+    // ❌ Protect super admin
+    if (user.roles.includes("SUPER_ADMIN")) {
+      return res.status(403).json({
+        message: "Super admin cannot be blocked"
+      });
+    }
+
+    const oldStatus = user.status;
+
+    user.status =
+      user.status === "ACTIVE" ? "BLOCKED" : "ACTIVE";
+
+    await user.save();
+
+    // ✅ AUDIT LOG
+    await auditLogger({
+      req,
+      action:
+        user.status === "BLOCKED"
+          ? "BLOCK_USER"
+          : "UNBLOCK_USER",
+      targetType: "USER",
+      targetId: user._id,
+      societyId: user.societyId,
+      description: `User ${user.name} (${user.roles.join(
+        ", "
+      )}) status changed from ${oldStatus} to ${user.status}`
+    });
+
+    res.json({
+      message: `User ${user.status.toLowerCase()} successfully`,
+      status: user.status
+    });
+  } catch (err) {
+    console.error("TOGGLE USER STATUS ERROR:", err);
+    res.status(500).json({
+      message: "Failed to update user status"
+    });
   }
-
-  const oldStatus = admin.status;
-
-  admin.status =
-    admin.status === "ACTIVE" ? "BLOCKED" : "ACTIVE";
-  console.log(admin);
-  await admin.save();
-
-
-  // ✅ AUDIT LOG
-  await auditLogger({
-    req,
-    action:
-      admin.status === "BLOCKED"
-        ? "BLOCK_ADMIN"
-        : "UNBLOCK_ADMIN",
-    targetType: "USER",
-    targetId: admin._id,
-    societyId: admin.societyId,
-    description: `Admin ${admin.name} status changed from ${oldStatus} to ${admin.status}`
-  });
-
-  res.json({
-    message: `Admin ${admin.status.toLowerCase()} successfully`,
-    status: admin.status
-  });
 };
+
 
 /* -------- SOCIETY -------- */
 export const toggleSocietyStatus = async (req, res) => {
