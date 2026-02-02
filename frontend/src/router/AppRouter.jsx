@@ -83,15 +83,6 @@ const AppRouter = () => {
         />
 
         <Route
-          path="/societies/add"
-          element={
-            <ProtectedRoute>
-              <AddSociety />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
           path="/admins/add"
           element={
             <ProtectedRoute>
