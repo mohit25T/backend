@@ -67,35 +67,46 @@ export const sendOtp = async (req, res) => {
 
 export const sendOtpUser = async (req, res) => {
   try {
-    const { mobile } = req.body;
+ const { mobile } = req.body;
 
-    if (!mobile) {
-      return res.status(400).json({
-        message: "Mobile number required"
-      });
-    }
+if (!mobile) {
+  return res.status(400).json({ message: "Mobile number required" });
+}
 
-    const user = await User.findOne({ mobile });
+// ❌ HARD BLOCK — no OTP no matter what
+const blockedUser = await User.findOne({
+  mobile,
+  status: "BLOCKED"
+});
 
-    // ❌ block super admin here
-    if (user?.roles.includes("SUPER_ADMIN")) {
-      return res.status(403).json({
-        message: "Super admin login not allowed in mobile app"
-      });
-    }
+if (blockedUser) {
+  return res.status(403).json({
+    message: "User is blocked"
+  });
+}
 
-    const invite = await Invite.findOne({
-      mobile,
-      role: { $in: ["ADMIN", "RESIDENT", "GUARD"] },
-      status: "PENDING",
-      expiresAt: { $gt: new Date() }
-    });
+const user = await User.findOne({ mobile });
 
-    if (!user && !invite) {
-      return res.status(403).json({
-        message: "You are not invited to any society"
-      });
-    }
+// ❌ block super admin
+if (user?.roles.includes("SUPER_ADMIN")) {
+  return res.status(403).json({
+    message: "Super admin login not allowed in mobile app"
+  });
+}
+
+const invite = await Invite.findOne({
+  mobile,
+  role: { $in: ["ADMIN", "RESIDENT", "GUARD"] },
+  status: "PENDING",
+  expiresAt: { $gt: new Date() }
+});
+
+if (!user && !invite) {
+  return res.status(403).json({
+    message: "You are not invited to any society"
+  });
+}
+
 
     const email = user?.email || invite?.email;
     if (!email) {
