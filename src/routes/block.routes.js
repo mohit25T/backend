@@ -13,7 +13,7 @@ router.patch(
     requireAuth,
     requireSuperAdmin,
     requireAdmin,
-‎toggleUserStatus‎
+    ‎toggleUserStatus‎
 );
 
 router.patch(
