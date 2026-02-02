@@ -220,7 +220,8 @@ export const verifyUserLogin = async (req, res) => {
       return res.status(401).json({ message: "Invalid OTP" });
     }
 
-     const token = signToken({
+     if (user) {
+      const token = signToken({
         userId: user._id,
         roles: user.roles,
         societyId: user.societyId
