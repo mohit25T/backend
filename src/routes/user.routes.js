@@ -8,6 +8,5 @@ const router = express.Router();
 router.get("/", requireAuth, requireSuperAdmin, getUsersByRole);
 router.get("/profile", requireAuth, getMyProfile);
 router.get("/resident-visitor-history", requireAuth, requireResident, getResidentVisitorHistory);
-router.get("/by-society",console.log("dchdud")
-           getUsersBySociety,requireAuth);
+router.get("/by-society",console.log("dchdud"),requireAuth,getUsersBySociety);
 export default router;
