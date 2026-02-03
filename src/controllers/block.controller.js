@@ -3,7 +3,7 @@ import Society from "../models/Society.js";
 import { auditLogger } from "../utils/auditLogger.js"; // ✅ ADDED
 
 /* -------- ADMIN -------- */
-export const toggleUserStatus = async (req, res) => {
+export const toggleUserstatus = async (req, res) => {
   try {
     const { adminId } = req.params;
 
