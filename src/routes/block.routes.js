@@ -1,6 +1,6 @@
 import express from "express";
 import {
-    toggleUserStatus,
+    toggleUserstatus,
     toggleSocietyStatus
 } from "../controllers/block.controller.js";
 import { requireAuth } from "../middlewares/auth.middleware.js";
@@ -13,7 +13,7 @@ router.patch(
     requireAuth,
     requireSuperAdmin,
     requireAdmin,
-    ‎toggleUserStatus‎
+    ‎toggleUserstatus‎
 );
 
 router.patch(
