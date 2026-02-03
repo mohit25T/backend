@@ -111,8 +111,9 @@ export const getResidentVisitorHistory = async (req, res) => {
 
 export const getUsersBySociety = async (req, res) => {
   try {
-    const { societyId, role, search } = req.query;
-
+    
+  const societyId = req.user.societyId;
+    const { role } = req.query;
     if (!societyId) {
       return res.status(400).json({
         message: "societyId is required"
@@ -125,14 +126,6 @@ export const getUsersBySociety = async (req, res) => {
 
     if (role) {
       filter.roles = { $in: [role] };
-    }
-
-    if (search) {
-      filter.$or = [
-        { name: { $regex: search, $options: "i" } },
-        { email: { $regex: search, $options: "i" } },
-        { mobile: { $regex: search, $options: "i" } }
-      ];
     }
 
     const users = await User.find(filter)
