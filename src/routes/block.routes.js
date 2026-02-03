@@ -9,7 +9,7 @@ import { requireSuperAdmin } from "../middlewares/role.middleware.js";
 const router = express.Router();
 
 router.patch(
-    "/admin/:adminId",
+    "/user/:userId",
     requireAuth,
    blockUnblockUser
 );
