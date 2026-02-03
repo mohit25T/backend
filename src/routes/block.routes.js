@@ -1,6 +1,6 @@
 import express from "express";
 import {
-    toggleAdminStatus,
+    blockUnblockUser,
     toggleSocietyStatus
 } from "../controllers/block.controller.js";
 import { requireAuth } from "../middlewares/auth.middleware.js";
@@ -11,8 +11,7 @@ const router = express.Router();
 router.patch(
     "/admin/:adminId",
     requireAuth,
-    requireSuperAdmin,
-    toggleAdminStatus
+   blockUnblockUser
 );
 
 router.patch(
