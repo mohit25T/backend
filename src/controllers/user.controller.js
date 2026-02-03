@@ -108,3 +108,43 @@ export const getResidentVisitorHistory = async (req, res) => {
     });
   }
 };
+
+export const getUsersBySociety = async (req, res) => {
+  try {
+    const { societyId, role, search } = req.query;
+
+    if (!societyId) {
+      return res.status(400).json({
+        message: "societyId is required"
+      });
+    }
+
+    const filter = {
+      societyId
+    };
+
+    if (role) {
+      filter.roles = { $in: [role] };
+    }
+
+    if (search) {
+      filter.$or = [
+        { name: { $regex: search, $options: "i" } },
+        { email: { $regex: search, $options: "i" } },
+        { mobile: { $regex: search, $options: "i" } }
+      ];
+    }
+
+    const users = await User.find(filter)
+      .populate("societyId", "name city _id")
+      .select("name email mobile roles status societyId createdAt")
+      .sort({ createdAt: -1 });
+
+    return res.json(users);
+  } catch (error) {
+    console.error("GET USERS BY SOCIETY ERROR:", error);
+    return res.status(500).json({
+      message: "Failed to fetch users"
+    });
+  }
+};
