@@ -12,7 +12,9 @@ import adminRoutes from "./routes/admin.routes.js"
 import adminReplacementRoutes from "./routes/adminReplacement.routes.js";
 import auditLogRoutes from "./routes/auditLog.routes.js";
 import visitorRoutes from "./routes/visitor.routes.js"
-import updateUserRoutes from "./routes/superAdmin.routes.js"
+import updateUserRoutes from "./routes/superAdmin.routes.js";
+import notificationRoutes from "./routes/notificationRoutes.js";
+
 const app = express();
 
 app.use((req, res, next) => {
@@ -35,7 +37,7 @@ app.use("/api/block", blockRoutes);
 app.use("/api/search", searchRoutes);
 app.use("/api/export", exportRoutes);
 app.use("/api/audit-logs", auditLogRoutes);
-app.use("/api/user", updateUserRoutes)
-
+app.use("/api/user", updateUserRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 export default app;
