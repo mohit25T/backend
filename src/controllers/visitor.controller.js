@@ -1,5 +1,6 @@
 import VisitorLog from "../models/VisitorLog.js";
 import User from "../models/User.js";
+import { sendPushNotification } from "../services/notificationService.js";
 
 /**
  * ===============================
@@ -21,13 +22,13 @@ export const createVisitorEntry = async (req, res) => {
 
     const societyId = req.user.societyId;
     const guardId = req.user.userId;
-    console.log("guardId:", guardId)
-    // 🔎 Find resident of flat
+
     const resident = await User.findOne({
       societyId,
       flatNo,
       roles: { $in: ["RESIDENT"] }
     });
+
     if (!resident) {
       return res.status(404).json({
         message: "Resident not found for this flat"
@@ -48,6 +49,16 @@ export const createVisitorEntry = async (req, res) => {
       residentId: resident._id,
       status: "PENDING"
     });
+
+    // 🔔 Visitor Arrived → Resident
+    if (resident.fcmToken) {
+      await sendPushNotification(
+        resident.fcmToken,
+        "Visitor Arrived 🚪",
+        `${personName} is waiting at the gate for Flat ${flatNo}`,
+        { type: "VISITOR_ARRIVED", visitorId: visitor._id.toString() }
+      );
+    }
 
     res.status(201).json({
       message: "Visitor entry created successfully",
@@ -76,12 +87,11 @@ export const approveVisitor = async (req, res) => {
       return res.status(404).json({ message: "Visitor not found" });
 
     if (visitor.status !== "PENDING") {
-      return res
-        .status(400)
-        .json({ message: "Visitor already processed" });
+      return res.status(400).json({
+        message: "Visitor already processed"
+      });
     }
 
-    // Only that flat resident can approve
     if (visitor.residentId.toString() !== req.user.userId.toString()) {
       return res.status(403).json({ message: "Unauthorized" });
     }
@@ -117,9 +127,9 @@ export const rejectVisitor = async (req, res) => {
       return res.status(404).json({ message: "Visitor not found" });
 
     if (visitor.status !== "PENDING") {
-      return res
-        .status(400)
-        .json({ message: "Visitor already processed" });
+      return res.status(400).json({
+        message: "Visitor already processed"
+      });
     }
 
     if (visitor.residentId.toString() !== req.user.userId.toString()) {
@@ -151,7 +161,7 @@ export const markVisitorEntered = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const visitor = await VisitorLog.findById(id);
+    const visitor = await VisitorLog.findById(id).populate("residentId");
 
     if (!visitor)
       return res.status(404).json({ message: "Visitor not found" });
@@ -166,6 +176,16 @@ export const markVisitorEntered = async (req, res) => {
     visitor.checkInAt = new Date();
 
     await visitor.save();
+
+    // 🔔 Visitor Entered → Resident
+    if (visitor.residentId?.fcmToken) {
+      await sendPushNotification(
+        visitor.residentId.fcmToken,
+        "Visitor Entered ✅",
+        `${visitor.personName} has entered the society`,
+        { type: "VISITOR_ENTERED", visitorId: visitor._id.toString() }
+      );
+    }
 
     res.json({
       message: "Visitor entered successfully",
@@ -187,7 +207,7 @@ export const markVisitorExited = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const visitor = await VisitorLog.findById(id);
+    const visitor = await VisitorLog.findById(id).populate("residentId");
 
     if (!visitor)
       return res.status(404).json({ message: "Visitor not found" });
@@ -202,6 +222,16 @@ export const markVisitorExited = async (req, res) => {
     visitor.checkOutAt = new Date();
 
     await visitor.save();
+
+    // 🔔 Visitor Exited → Resident
+    if (visitor.residentId?.fcmToken) {
+      await sendPushNotification(
+        visitor.residentId.fcmToken,
+        "Visitor Exited 🚶",
+        `${visitor.personName} has exited the society`,
+        { type: "VISITOR_EXITED", visitorId: visitor._id.toString() }
+      );
+    }
 
     res.json({
       message: "Visitor exited successfully",
@@ -225,7 +255,6 @@ export const getVisitors = async (req, res) => {
     const societyId = req.user.societyId;
 
     const filter = { societyId };
-
     if (status) filter.status = status;
 
     const visitors = await VisitorLog.find(filter)
@@ -241,6 +270,11 @@ export const getVisitors = async (req, res) => {
 
 
 
+/**
+ * ===============================
+ * 7️⃣ Get society flats
+ * ===============================
+ */
 export const getSocietyFlats = async (req, res) => {
   try {
     const societyId = req.user.societyId;
@@ -248,19 +282,19 @@ export const getSocietyFlats = async (req, res) => {
     const residents = await User.find(
       {
         societyId,
-        roles: { $in: ["RESIDENT"] },
+        roles: { $in: ["RESIDENT"] }
       },
       {
         flatNo: 1,
-        name: 1,
+        name: 1
       }
     ).sort({ flatNo: 1 });
 
     const flats = residents
-      .filter((r) => r.flatNo) // very important
+      .filter((r) => r.flatNo)
       .map((r) => ({
         flatNo: r.flatNo,
-        residentName: r.name,
+        residentName: r.name
       }));
 
     res.json(flats);
@@ -272,9 +306,13 @@ export const getSocietyFlats = async (req, res) => {
 
 
 
+/**
+ * =================================
+ * 8️⃣ Resident creates pre-approved guest
+ * =================================
+ */
 export const createPreApprovedGuest = async (req, res) => {
   try {
-    console.log(req, "kkkmlkmkl")
     const { guestName, guestMobile } = req.body;
 
     if (!guestName || !guestMobile) {
@@ -284,23 +322,19 @@ export const createPreApprovedGuest = async (req, res) => {
     }
 
     const resident = await User.findById(req.user.userId);
-    console.log(resident)
-    // 🔐 generate OTP
+
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    console.log("Pre-approved otp=>", otp)
+
     const visitor = await VisitorLog.create({
       societyId: resident.societyId,
       residentId: resident._id,
       flatNo: resident.flatNo,
-
       personName: guestName,
       personMobile: guestMobile,
       entryType: "GUEST",
-
       otp,
       otpStatus: "ACTIVE",
       otpExpiresAt: new Date(Date.now() + 12 * 60 * 60 * 1000),
-
       createdByResident: resident._id,
       status: "APPROVED"
     });
@@ -310,15 +344,18 @@ export const createPreApprovedGuest = async (req, res) => {
       otp,
       visitorId: visitor._id
     });
-
-  } catch (err) {
-    console.error(err);
+  } catch (error) {
     res.status(500).json({ message: "Server error" });
   }
 };
 
 
 
+/**
+ * ===============================
+ * 9️⃣ Verify guest OTP
+ * ===============================
+ */
 export const verifyGuestOtp = async (req, res) => {
   try {
     const { otp } = req.body;
@@ -327,7 +364,7 @@ export const verifyGuestOtp = async (req, res) => {
       otp,
       otpStatus: "ACTIVE",
       status: "APPROVED"
-    }).populate("residentId", "name flatNo");
+    }).populate("residentId");
 
     if (!visitor) {
       return res.status(400).json({
@@ -338,10 +375,19 @@ export const verifyGuestOtp = async (req, res) => {
     if (visitor.otpExpiresAt < new Date()) {
       visitor.otpStatus = "EXPIRED";
       await visitor.save();
-
       return res.status(400).json({
         message: "OTP expired"
       });
+    }
+
+    // 🔔 OTP verified → Resident
+    if (visitor.residentId?.fcmToken) {
+      await sendPushNotification(
+        visitor.residentId.fcmToken,
+        "Guest Arrived 🚪",
+        `${visitor.personName} has verified OTP at the gate`,
+        { type: "OTP_VERIFIED", visitorId: visitor._id.toString() }
+      );
     }
 
     res.json({
@@ -349,32 +395,35 @@ export const verifyGuestOtp = async (req, res) => {
       visitor: {
         id: visitor._id,
         guestName: visitor.personName,
-        guestMobile: visitor.personMobile,
         flatNo: visitor.flatNo,
         residentName: visitor.residentId.name
       }
     });
-
-  } catch (err) {
+  } catch (error) {
     res.status(500).json({ message: "Server error" });
   }
 };
 
 
 
+/**
+ * ===============================
+ * 🔟 Guard allows OTP guest entry
+ * ===============================
+ */
 export const allowOtpGuestEntry = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const visitor = await VisitorLog.findById(id);
+    const visitor = await VisitorLog.findById(id).populate("residentId");
 
     if (!visitor) {
       return res.status(404).json({ message: "Guest not found" });
     }
 
-    if (visitor.status !== "PRE_APPROVED") {
+    if (visitor.otpStatus !== "ACTIVE" || visitor.status !== "APPROVED") {
       return res.status(400).json({
-        message: "Guest already processed"
+        message: "Guest OTP not verified or already entered"
       });
     }
 
@@ -384,12 +433,20 @@ export const allowOtpGuestEntry = async (req, res) => {
 
     await visitor.save();
 
+    // 🔔 OTP Guest Entered → Resident
+    if (visitor.residentId?.fcmToken) {
+      await sendPushNotification(
+        visitor.residentId.fcmToken,
+        "Guest Entered 🚪",
+        `${visitor.personName} has entered the society`,
+        { type: "OTP_GUEST_ENTERED", visitorId: visitor._id.toString() }
+      );
+    }
+
     res.json({
       message: "Guest entered successfully"
     });
-
-  } catch (err) {
+  } catch (error) {
     res.status(500).json({ message: "Server error" });
   }
 };
-
