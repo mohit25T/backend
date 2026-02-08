@@ -5,13 +5,15 @@ import { signToken } from "../utils/jwt.js";
 import { saveOtp, verifyOtp } from "../utils/otpStore.js";
 import { generateOtp } from "../utils/generateOtp.js";
 import { auditLogger } from "../utils/auditLogger.js";
-import { sendOtpEmail } from "../utils/sendOtpEmail.js"; // ✅ NEW
+import { sendOtpEmail } from "../utils/sendOtpEmail.js";
 
 /**
+ * =====================================================
  * SEND OTP
  * Allowed only for:
  * 1. Super Admin
  * 2. Valid Admin Invite
+ * =====================================================
  */
 export const sendOtp = async (req, res) => {
   try {
@@ -21,11 +23,13 @@ export const sendOtp = async (req, res) => {
       return res.status(400).json({ message: "Mobile number required" });
     }
 
+    // Check if Super Admin exists
     const superAdmin = await User.findOne({
       mobile,
       roles: "SUPER_ADMIN"
     });
 
+    // Or valid admin invite exists
     const adminInvite = await Invite.findOne({
       mobile,
       role: "ADMIN",
@@ -38,6 +42,7 @@ export const sendOtp = async (req, res) => {
       });
     }
 
+    // Get email from user or invite
     const email = superAdmin?.email || adminInvite?.email;
     if (!email) {
       return res.status(400).json({
@@ -45,18 +50,12 @@ export const sendOtp = async (req, res) => {
       });
     }
 
+    // Generate and store OTP
     const otp = generateOtp();
+    saveOtp({ mobile, email, otp });
 
-    saveOtp({
-      mobile,
-      email,
-      otp
-    });
-
-    // ✅ SEND OTP TO EMAIL
+    // Send OTP to email
     await sendOtpEmail(email, otp);
-
-    console.log(`OTP sent to ${email} (mobile: ${mobile})`);
 
     res.json({ message: "OTP sent successfully to email" });
   } catch (err) {
@@ -65,42 +64,39 @@ export const sendOtp = async (req, res) => {
   }
 };
 
+/**
+ * =====================================================
+ * SEND OTP FOR MOBILE USERS
+ * (ADMIN / RESIDENT / GUARD)
+ * =====================================================
+ */
 export const sendOtpUser = async (req, res) => {
   try {
-     const { mobile } = req.body;
-    
+    const { mobile } = req.body;
+
     if (!mobile) {
-      return res.status(400).json({ message: "Mobile number required" });
-    }
-    
-    // ❌ HARD BLOCK — no OTP no matter what
-    const blockedUser = await User.findOne({
-      mobile,
-      status: "BLOCKED"
-    });
-    
-    if (blockedUser) {
-      return res.status(403).json({
-        message: "User is blocked"
+      return res.status(400).json({
+        message: "Mobile number required"
       });
     }
-    
+
     const user = await User.findOne({ mobile });
-    
-    // ❌ block super admin
+
+    // ❌ Block Super Admin from mobile app
     if (user?.roles.includes("SUPER_ADMIN")) {
       return res.status(403).json({
         message: "Super admin login not allowed in mobile app"
       });
     }
-    
+
+    // Check for valid invite
     const invite = await Invite.findOne({
       mobile,
       role: { $in: ["ADMIN", "RESIDENT", "GUARD"] },
       status: "PENDING",
       expiresAt: { $gt: new Date() }
     });
-    
+
     if (!user && !invite) {
       return res.status(403).json({
         message: "You are not invited to any society"
@@ -114,18 +110,12 @@ export const sendOtpUser = async (req, res) => {
       });
     }
 
+    // Generate & store OTP
     const otp = generateOtp();
+    saveOtp({ mobile, email, otp });
 
-    saveOtp({
-      mobile,
-      email,
-      otp
-    });
-
-    // ✅ SEND OTP TO EMAIL
+    // Send OTP to email
     await sendOtpEmail(email, otp);
-
-    console.log(`USER OTP sent to ${email} (mobile: ${mobile})`);
 
     res.json({
       message: "OTP sent successfully to email",
@@ -140,7 +130,9 @@ export const sendOtpUser = async (req, res) => {
 };
 
 /**
+ * =====================================================
  * VERIFY OTP — SUPER ADMIN LOGIN
+ * =====================================================
  */
 export const verifyOtpLogin = async (req, res) => {
   try {
@@ -161,6 +153,7 @@ export const verifyOtpLogin = async (req, res) => {
       });
     }
 
+    // Verify OTP
     const isValid = verifyOtp({
       mobile,
       email: user.email,
@@ -171,6 +164,7 @@ export const verifyOtpLogin = async (req, res) => {
       return res.status(401).json({ message: "Invalid OTP" });
     }
 
+    // Generate JWT token
     const token = signToken({
       userId: user._id,
       role: "SUPER_ADMIN"
@@ -184,12 +178,15 @@ export const verifyOtpLogin = async (req, res) => {
 };
 
 /**
+ * =====================================================
  * VERIFY OTP — ADMIN / RESIDENT / GUARD
- * 🔐 AUDIT LOG ENABLED
+ * 🔔 FCM TOKEN IS HANDLED HERE
+ * =====================================================
  */
 export const verifyUserLogin = async (req, res) => {
   try {
-    const { mobile, otp } = req.body;
+    // 🔔 fcmToken comes from mobile app
+    const { mobile, otp, fcmToken } = req.body;
 
     let user = await User.findOne({ mobile });
     let invite = null;
@@ -210,17 +207,26 @@ export const verifyUserLogin = async (req, res) => {
       });
     }
 
-    const isValid = verifyOtp({
-      mobile,
-      email,
-      otp
-    });
-
+    // Verify OTP
+    const isValid = verifyOtp({ mobile, email, otp });
     if (!isValid) {
       return res.status(401).json({ message: "Invalid OTP" });
     }
 
-     if (user) {
+    /**
+     * =====================
+     * EXISTING USER LOGIN
+     * =====================
+     */
+    if (user) {
+      // 🔔 Save / update FCM token
+      // This ensures notifications go ONLY to this device
+      if (fcmToken) {
+        user.fcmToken = fcmToken;
+        user.fcmUpdatedAt = new Date();
+        await user.save();
+      }
+
       const token = signToken({
         userId: user._id,
         roles: user.roles,
@@ -234,7 +240,11 @@ export const verifyUserLogin = async (req, res) => {
       });
     }
 
-    // Create user from invite
+    /**
+     * =====================
+     * CREATE USER FROM INVITE
+     * =====================
+     */
     if (!invite) {
       return res.status(403).json({
         message: "You are not invited to any society"
@@ -246,6 +256,7 @@ export const verifyUserLogin = async (req, res) => {
       roles.push("RESIDENT");
     }
 
+    // Create new user and store FCM token
     user = await User.create({
       name: invite.name,
       mobile,
@@ -254,7 +265,11 @@ export const verifyUserLogin = async (req, res) => {
       flatNo: invite.flatNo,
       societyId: invite.societyId,
       invitedBy: invite.invitedBy,
-      status: "ACTIVE"
+      status: "ACTIVE",
+
+      // 🔔 FCM stored on first login
+      fcmToken: fcmToken || null,
+      fcmUpdatedAt: fcmToken ? new Date() : null
     });
 
     invite.status = "USED";
@@ -287,7 +302,11 @@ export const verifyUserLogin = async (req, res) => {
   }
 };
 
-
+/**
+ * =====================================================
+ * REQUEST EMAIL CHANGE
+ * =====================================================
+ */
 export const requestEmailChange = async (req, res) => {
   try {
     const userId = req.user.userId;
@@ -302,23 +321,19 @@ export const requestEmailChange = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // ❌ same email
     if (user.email === newEmail.toLowerCase()) {
       return res.status(400).json({ message: "New email must be different" });
     }
 
-    // ❌ email already in use
     const emailExists = await User.findOne({ email: newEmail.toLowerCase() });
     if (emailExists) {
       return res.status(409).json({ message: "Email already in use" });
     }
 
-    // 🔁 remove old request if exists
     await EmailChangeRequest.deleteOne({ userId });
 
     const otp = generateOtp();
-
-    const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 min
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
 
     await EmailChangeRequest.create({
       userId,
@@ -328,7 +343,6 @@ export const requestEmailChange = async (req, res) => {
       expiresAt
     });
 
-    // 🔐 SEND OTP TO OLD EMAIL
     await sendOtpEmail(user.email, otp);
 
     res.json({
@@ -341,7 +355,11 @@ export const requestEmailChange = async (req, res) => {
   }
 };
 
-
+/**
+ * =====================================================
+ * VERIFY EMAIL CHANGE
+ * =====================================================
+ */
 export const verifyEmailChange = async (req, res) => {
   try {
     const userId = req.user.userId;
@@ -366,7 +384,6 @@ export const verifyEmailChange = async (req, res) => {
       return res.status(401).json({ message: "Invalid OTP" });
     }
 
-    // ✅ UPDATE EMAIL
     const user = await User.findById(userId);
     user.email = request.newEmail;
     await user.save();
@@ -377,10 +394,8 @@ export const verifyEmailChange = async (req, res) => {
       req,
       action: "CHANGE_EMAIL",
       targetType: "USER",
-      targetId: userId,
-      // description: "Admin email changed after OTP verification"
+      targetId: userId
     });
-
 
     res.json({
       message: "Email updated successfully"
@@ -392,7 +407,11 @@ export const verifyEmailChange = async (req, res) => {
   }
 };
 
-
+/**
+ * =====================================================
+ * GET CURRENT USER PROFILE
+ * =====================================================
+ */
 export const getMe = async (req, res) => {
   try {
     const user = await User.findById(req.user.userId)
