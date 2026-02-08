@@ -1,11 +1,15 @@
 import VisitorLog from "../models/VisitorLog.js";
 import User from "../models/User.js";
-import { sendPushNotification } from "../services/notificationService.js";
+import {
+  sendPushNotification,
+  sendPushNotificationToMany
+} from "../services/notificationService.js";
 
 /**
  * ===============================
  * 1️⃣ Guard creates visitor entry
  * ===============================
+ * 🔔 Notify RESIDENT (all devices)
  */
 export const createVisitorEntry = async (req, res) => {
   try {
@@ -50,15 +54,13 @@ export const createVisitorEntry = async (req, res) => {
       status: "PENDING"
     });
 
-    // 🔔 Visitor Arrived → Resident
-    if (resident.fcmToken) {
-      await sendPushNotification(
-        resident.fcmToken,
-        "Visitor Arrived 🚪",
-        `${personName} is waiting at the gate for Flat ${flatNo}`,
-        { type: "VISITOR_ARRIVED", visitorId: visitor._id.toString() }
-      );
-    }
+    // 🔔 Visitor Arrived → Resident (ALL DEVICES)
+    await sendPushNotificationToMany(
+      resident.fcmTokens || [resident.fcmToken],
+      "Visitor Arrived 🚪",
+      `${personName} is waiting at the gate for Flat ${flatNo}`,
+      { type: "VISITOR_ARRIVED", visitorId: visitor._id.toString() }
+    );
 
     res.status(201).json({
       message: "Visitor entry created successfully",
@@ -70,12 +72,11 @@ export const createVisitorEntry = async (req, res) => {
   }
 };
 
-
-
 /**
  * =================================
  * 2️⃣ Resident approves visitor
  * =================================
+ * 🔔 Notify GUARD
  */
 export const approveVisitor = async (req, res) => {
   try {
@@ -98,8 +99,18 @@ export const approveVisitor = async (req, res) => {
 
     visitor.status = "APPROVED";
     visitor.approvedBy = req.user.userId;
-
     await visitor.save();
+
+    // 🔔 Notify Guard (ALL DEVICES)
+    const guard = await User.findById(visitor.guardId);
+    if (guard) {
+      await sendPushNotificationToMany(
+        guard.fcmTokens || [guard.fcmToken],
+        "Visitor Approved ✅",
+        `Visitor approved for Flat ${visitor.flatNo}`,
+        { type: "VISITOR_APPROVED", visitorId: visitor._id.toString() }
+      );
+    }
 
     res.json({
       message: "Visitor approved",
@@ -110,12 +121,11 @@ export const approveVisitor = async (req, res) => {
   }
 };
 
-
-
 /**
  * =================================
  * 3️⃣ Resident rejects visitor
  * =================================
+ * 🔔 Notify GUARD
  */
 export const rejectVisitor = async (req, res) => {
   try {
@@ -138,8 +148,18 @@ export const rejectVisitor = async (req, res) => {
 
     visitor.status = "REJECTED";
     visitor.approvedBy = req.user.userId;
-
     await visitor.save();
+
+    // 🔔 Notify Guard
+    const guard = await User.findById(visitor.guardId);
+    if (guard) {
+      await sendPushNotificationToMany(
+        guard.fcmTokens || [guard.fcmToken],
+        "Visitor Rejected ❌",
+        `Visitor rejected for Flat ${visitor.flatNo}`,
+        { type: "VISITOR_REJECTED", visitorId: visitor._id.toString() }
+      );
+    }
 
     res.json({
       message: "Visitor rejected",
@@ -150,12 +170,11 @@ export const rejectVisitor = async (req, res) => {
   }
 };
 
-
-
 /**
  * ===============================
  * 4️⃣ Guard allows entry
  * ===============================
+ * 🔔 Notify RESIDENT + GUARD
  */
 export const markVisitorEntered = async (req, res) => {
   try {
@@ -174,18 +193,20 @@ export const markVisitorEntered = async (req, res) => {
 
     visitor.status = "ENTERED";
     visitor.checkInAt = new Date();
-
     await visitor.save();
 
-    // 🔔 Visitor Entered → Resident
-    if (visitor.residentId?.fcmToken) {
-      await sendPushNotification(
-        visitor.residentId.fcmToken,
-        "Visitor Entered ✅",
-        `${visitor.personName} has entered the society`,
-        { type: "VISITOR_ENTERED", visitorId: visitor._id.toString() }
-      );
-    }
+    const guard = await User.findById(visitor.guardId);
+
+    // 🔔 Resident + Guard
+    await sendPushNotificationToMany(
+      [
+        ...(visitor.residentId?.fcmTokens || []),
+        ...(guard?.fcmTokens || [])
+      ],
+      "Visitor Entered ✅",
+      `${visitor.personName} has entered the society`,
+      { type: "VISITOR_ENTERED", visitorId: visitor._id.toString() }
+    );
 
     res.json({
       message: "Visitor entered successfully",
@@ -196,12 +217,11 @@ export const markVisitorEntered = async (req, res) => {
   }
 };
 
-
-
 /**
  * ===============================
  * 5️⃣ Guard marks exit
  * ===============================
+ * 🔔 Notify RESIDENT + GUARD
  */
 export const markVisitorExited = async (req, res) => {
   try {
@@ -220,18 +240,19 @@ export const markVisitorExited = async (req, res) => {
 
     visitor.status = "EXITED";
     visitor.checkOutAt = new Date();
-
     await visitor.save();
 
-    // 🔔 Visitor Exited → Resident
-    if (visitor.residentId?.fcmToken) {
-      await sendPushNotification(
-        visitor.residentId.fcmToken,
-        "Visitor Exited 🚶",
-        `${visitor.personName} has exited the society`,
-        { type: "VISITOR_EXITED", visitorId: visitor._id.toString() }
-      );
-    }
+    const guard = await User.findById(visitor.guardId);
+
+    await sendPushNotificationToMany(
+      [
+        ...(visitor.residentId?.fcmTokens || []),
+        ...(guard?.fcmTokens || [])
+      ],
+      "Visitor Exited 🚶",
+      `${visitor.personName} has exited the society`,
+      { type: "VISITOR_EXITED", visitorId: visitor._id.toString() }
+    );
 
     res.json({
       message: "Visitor exited successfully",
@@ -242,11 +263,9 @@ export const markVisitorExited = async (req, res) => {
   }
 };
 
-
-
 /**
  * ===============================
- * 6️⃣ Get visitors (common)
+ * 6️⃣ Get visitors (UNCHANGED)
  * ===============================
  */
 export const getVisitors = async (req, res) => {
@@ -268,11 +287,9 @@ export const getVisitors = async (req, res) => {
   }
 };
 
-
-
 /**
  * ===============================
- * 7️⃣ Get society flats
+ * 7️⃣ Get society flats (UNCHANGED)
  * ===============================
  */
 export const getSocietyFlats = async (req, res) => {
@@ -303,7 +320,6 @@ export const getSocietyFlats = async (req, res) => {
     res.status(500).json({ message: "Failed to fetch flats" });
   }
 };
-
 
 
 /**
