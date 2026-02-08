@@ -23,38 +23,33 @@ export const sendOtp = async (req, res) => {
       return res.status(400).json({ message: "Mobile number required" });
     }
 
-    // Check if Super Admin exists
     const superAdmin = await User.findOne({
       mobile,
-      roles: "SUPER_ADMIN"
+      roles: "SUPER_ADMIN",
     });
 
-    // Or valid admin invite exists
     const adminInvite = await Invite.findOne({
       mobile,
       role: "ADMIN",
-      expiresAt: { $gt: new Date() }
+      expiresAt: { $gt: new Date() },
     });
 
     if (!superAdmin && !adminInvite) {
       return res.status(403).json({
-        message: "Not allowed to request OTP"
+        message: "Not allowed to request OTP",
       });
     }
 
-    // Get email from user or invite
     const email = superAdmin?.email || adminInvite?.email;
     if (!email) {
       return res.status(400).json({
-        message: "Email not found for OTP"
+        message: "Email not found for OTP",
       });
     }
 
-    // Generate and store OTP
     const otp = generateOtp();
     saveOtp({ mobile, email, otp });
 
-    // Send OTP to email
     await sendOtpEmail(email, otp);
 
     res.json({ message: "OTP sent successfully to email" });
@@ -75,9 +70,7 @@ export const sendOtpUser = async (req, res) => {
     const { mobile } = req.body;
 
     if (!mobile) {
-      return res.status(400).json({
-        message: "Mobile number required"
-      });
+      return res.status(400).json({ message: "Mobile number required" });
     }
 
     const user = await User.findOne({ mobile });
@@ -85,47 +78,42 @@ export const sendOtpUser = async (req, res) => {
     // ❌ Block Super Admin from mobile app
     if (user?.roles.includes("SUPER_ADMIN")) {
       return res.status(403).json({
-        message: "Super admin login not allowed in mobile app"
+        message: "Super admin login not allowed in mobile app",
       });
     }
 
-    // Check for valid invite
     const invite = await Invite.findOne({
       mobile,
       role: { $in: ["ADMIN", "RESIDENT", "GUARD"] },
       status: "PENDING",
-      expiresAt: { $gt: new Date() }
+      expiresAt: { $gt: new Date() },
     });
 
     if (!user && !invite) {
       return res.status(403).json({
-        message: "You are not invited to any society"
+        message: "You are not invited to any society",
       });
     }
 
     const email = user?.email || invite?.email;
     if (!email) {
       return res.status(400).json({
-        message: "Email not found for OTP"
+        message: "Email not found for OTP",
       });
     }
 
-    // Generate & store OTP
     const otp = generateOtp();
     saveOtp({ mobile, email, otp });
 
-    // Send OTP to email
     await sendOtpEmail(email, otp);
 
     res.json({
       message: "OTP sent successfully to email",
-      role: invite?.role || user.roles[0]
+      role: invite?.role || user.roles[0],
     });
   } catch (err) {
     console.error("SEND USER OTP ERROR:", err);
-    res.status(500).json({
-      message: "Failed to send OTP"
-    });
+    res.status(500).json({ message: "Failed to send OTP" });
   }
 };
 
@@ -140,7 +128,7 @@ export const verifyOtpLogin = async (req, res) => {
 
     const user = await User.findOne({
       mobile,
-      roles: "SUPER_ADMIN"
+      roles: "SUPER_ADMIN",
     });
 
     if (!user) {
@@ -148,26 +136,22 @@ export const verifyOtpLogin = async (req, res) => {
     }
 
     if (user.status === "BLOCKED") {
-      return res.status(403).json({
-        message: "Account is blocked"
-      });
+      return res.status(403).json({ message: "Account is blocked" });
     }
 
-    // Verify OTP
     const isValid = verifyOtp({
       mobile,
       email: user.email,
-      otp
+      otp,
     });
 
     if (!isValid) {
       return res.status(401).json({ message: "Invalid OTP" });
     }
 
-    // Generate JWT token
     const token = signToken({
       userId: user._id,
-      role: "SUPER_ADMIN"
+      role: "SUPER_ADMIN",
     });
 
     res.json({ token });
@@ -180,12 +164,12 @@ export const verifyOtpLogin = async (req, res) => {
 /**
  * =====================================================
  * VERIFY OTP — ADMIN / RESIDENT / GUARD
- * 🔔 FCM TOKEN IS HANDLED HERE
+ * 🔔 FCM TOKEN HANDLED HERE
  * =====================================================
  */
 export const verifyUserLogin = async (req, res) => {
   try {
-    // 🔔 fcmToken comes from mobile app
+    // 🔔 FCM token sent from mobile app
     const { mobile, otp, fcmToken } = req.body;
 
     let user = await User.findOne({ mobile });
@@ -196,18 +180,17 @@ export const verifyUserLogin = async (req, res) => {
         mobile,
         role: { $in: ["ADMIN", "RESIDENT", "GUARD"] },
         status: "PENDING",
-        expiresAt: { $gt: new Date() }
+        expiresAt: { $gt: new Date() },
       });
     }
 
     const email = user?.email || invite?.email;
     if (!email) {
       return res.status(400).json({
-        message: "Email not found for OTP verification"
+        message: "Email not found for OTP verification",
       });
     }
 
-    // Verify OTP
     const isValid = verifyOtp({ mobile, email, otp });
     if (!isValid) {
       return res.status(401).json({ message: "Invalid OTP" });
@@ -220,7 +203,6 @@ export const verifyUserLogin = async (req, res) => {
      */
     if (user) {
       // 🔔 Save / update FCM token
-      // This ensures notifications go ONLY to this device
       if (fcmToken) {
         user.fcmToken = fcmToken;
         user.fcmUpdatedAt = new Date();
@@ -230,13 +212,13 @@ export const verifyUserLogin = async (req, res) => {
       const token = signToken({
         userId: user._id,
         roles: user.roles,
-        societyId: user.societyId
+        societyId: user.societyId,
       });
 
       return res.json({
         token,
         roles: user.roles,
-        societyId: user.societyId
+        societyId: user.societyId,
       });
     }
 
@@ -247,7 +229,7 @@ export const verifyUserLogin = async (req, res) => {
      */
     if (!invite) {
       return res.status(403).json({
-        message: "You are not invited to any society"
+        message: "You are not invited to any society",
       });
     }
 
@@ -256,7 +238,6 @@ export const verifyUserLogin = async (req, res) => {
       roles.push("RESIDENT");
     }
 
-    // Create new user and store FCM token
     user = await User.create({
       name: invite.name,
       mobile,
@@ -267,9 +248,9 @@ export const verifyUserLogin = async (req, res) => {
       invitedBy: invite.invitedBy,
       status: "ACTIVE",
 
-      // 🔔 FCM stored on first login
+      // 🔔 Save FCM token on first login
       fcmToken: fcmToken || null,
-      fcmUpdatedAt: fcmToken ? new Date() : null
+      fcmUpdatedAt: fcmToken ? new Date() : null,
     });
 
     invite.status = "USED";
@@ -281,21 +262,20 @@ export const verifyUserLogin = async (req, res) => {
       targetType: "USER",
       targetId: user._id,
       societyId: user.societyId,
-      description: `${invite.role} verified via OTP: ${user.name} (${user.mobile})`
+      description: `${invite.role} verified via OTP: ${user.name} (${user.mobile})`,
     });
 
     const token = signToken({
       userId: user._id,
       roles: user.roles,
-      societyId: user.societyId
+      societyId: user.societyId,
     });
 
-    return res.json({
+    res.json({
       token,
       roles: user.roles,
-      societyId: user.societyId
+      societyId: user.societyId,
     });
-
   } catch (err) {
     console.error("VERIFY USER LOGIN ERROR:", err);
     res.status(500).json({ message: "Login failed" });
@@ -325,7 +305,9 @@ export const requestEmailChange = async (req, res) => {
       return res.status(400).json({ message: "New email must be different" });
     }
 
-    const emailExists = await User.findOne({ email: newEmail.toLowerCase() });
+    const emailExists = await User.findOne({
+      email: newEmail.toLowerCase(),
+    });
     if (emailExists) {
       return res.status(409).json({ message: "Email already in use" });
     }
@@ -340,15 +322,14 @@ export const requestEmailChange = async (req, res) => {
       oldEmail: user.email,
       newEmail,
       otp,
-      expiresAt
+      expiresAt,
     });
 
     await sendOtpEmail(user.email, otp);
 
     res.json({
-      message: "OTP sent to your current email for verification"
+      message: "OTP sent to your current email for verification",
     });
-
   } catch (err) {
     console.error("REQUEST EMAIL CHANGE ERROR:", err);
     res.status(500).json({ message: "Failed to request email change" });
@@ -372,7 +353,9 @@ export const verifyEmailChange = async (req, res) => {
     const request = await EmailChangeRequest.findOne({ userId });
 
     if (!request) {
-      return res.status(404).json({ message: "No email change request found" });
+      return res.status(404).json({
+        message: "No email change request found",
+      });
     }
 
     if (Date.now() > request.expiresAt) {
@@ -394,13 +377,10 @@ export const verifyEmailChange = async (req, res) => {
       req,
       action: "CHANGE_EMAIL",
       targetType: "USER",
-      targetId: userId
+      targetId: userId,
     });
 
-    res.json({
-      message: "Email updated successfully"
-    });
-
+    res.json({ message: "Email updated successfully" });
   } catch (err) {
     console.error("VERIFY EMAIL CHANGE ERROR:", err);
     res.status(500).json({ message: "Failed to verify email change" });
@@ -414,8 +394,9 @@ export const verifyEmailChange = async (req, res) => {
  */
 export const getMe = async (req, res) => {
   try {
-    const user = await User.findById(req.user.userId)
-      .select("name email mobile roles");
+    const user = await User.findById(req.user.userId).select(
+      "name email mobile roles"
+    );
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
