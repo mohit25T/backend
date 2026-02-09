@@ -8,7 +8,7 @@ export const requireAuth = async (req, res, next) => {
   if (!token) {
     return res.status(401).json({ message: "No token" });
   }
-  console.log(token)
+  
   try {
     // 1️⃣ Verify JWT
     const decoded = verifyToken(token);
