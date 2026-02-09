@@ -288,18 +288,43 @@ export const markVisitorExited = async (req, res) => {
 export const getVisitors = async (req, res) => {
   try {
     const { status } = req.query;
-    const societyId = req.user.societyId;
+    const { societyId, roles, userId } = req.user;
 
+    // ===============================
+    // 1️⃣ Base filter (society-wide)
+    // ===============================
     const filter = { societyId };
-    if (status) filter.status = status;
 
+    // ===============================
+    // 2️⃣ Status filter (optional)
+    // ===============================
+    if (status) {
+      filter.status = status;
+    }
+
+    // ===============================
+    // 3️⃣ Role-based restriction
+    // ===============================
+    // 👉 If ONLY resident (not admin / guard)
+    if (
+      roles.length === 1 &&
+      roles.includes("RESIDENT")
+    ) {
+      filter.residentId = userId;
+    }
+
+    // ===============================
+    // 4️⃣ Fetch visitors
+    // ===============================
     const visitors = await VisitorLog.find(filter)
       .populate("guardId", "name mobile")
       .populate("residentId", "name flatNo")
       .sort({ createdAt: -1 });
 
     res.json(visitors);
+
   } catch (error) {
+    console.error("GET VISITORS ERROR:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
