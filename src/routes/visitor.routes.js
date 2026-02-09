@@ -85,6 +85,7 @@ router.put(
 router.get(
     "/",
     requireAuth,
+    requireResident, 
     getVisitors
 );
 
