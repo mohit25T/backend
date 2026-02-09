@@ -9,7 +9,7 @@ router.post("/send-otp", sendOtp);
 router.post("/send-user-otp", sendOtpUser);
 router.post("/verify-otp", verifyOtpLogin);
 router.post("/verify-user-otp", verifyUserLogin);
-router.post("/logout", authMiddleware, logoutUser);
+router.post("/logout", requireAuth, logoutUser);
 
 
 /**
