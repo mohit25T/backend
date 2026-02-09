@@ -171,7 +171,7 @@ export const verifyUserLogin = async (req, res) => {
   try {
     // 🔔 FCM token sent from mobile app
     const { mobile, otp, fcmToken } = req.body;
-    console.log("FCM token is : ", fcmToken);
+console.log("FCM token is : ",fcmToken);
     let user = await User.findOne({ mobile });
     let invite = null;
 

@@ -1,5 +1,5 @@
 import express from "express";
-import { getMe, sendOtp, sendOtpUser, verifyOtpLogin, verifyUserLogin, requestEmailChange, verifyEmailChange } from "../controllers/auth.controller.js";
+import { getMe, sendOtp, sendOtpUser, verifyOtpLogin, verifyUserLogin,logoutUser, requestEmailChange, verifyEmailChange } from "../controllers/auth.controller.js";
 import { requireAuth } from "../middlewares/auth.middleware.js"
 
 const router = express.Router();
@@ -9,6 +9,8 @@ router.post("/send-otp", sendOtp);
 router.post("/send-user-otp", sendOtpUser);
 router.post("/verify-otp", verifyOtpLogin);
 router.post("/verify-user-otp", verifyUserLogin);
+router.post("/logout", requireAuth, logoutUser);
+
 
 /**
  * 🔐 REQUEST EMAIL CHANGE

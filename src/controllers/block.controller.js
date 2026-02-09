@@ -56,7 +56,6 @@ export const blockUnblockUser = async (req, res) => {
   }
 };
 
-
 /* -------- SOCIETY -------- */
 export const toggleSocietyStatus = async (req, res) => {
   const { societyId } = req.params;
