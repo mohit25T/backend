@@ -77,18 +77,34 @@ export const getMyProfile = async (req, res) => {
  */
 export const getResidentVisitorHistory = async (req, res) => {
   try {
-    const residentId = req.user.userId;
-    const societyId = req.user.societyId;
+    const { userId, societyId, roles } = req.user;
 
-    if (!residentId || !societyId) {
+    // ===============================
+    // 🔐 Role check (IMPORTANT)
+    // ===============================
+    if (
+      !roles ||
+      roles.length !== 1 ||
+      !roles.includes("RESIDENT")
+    ) {
+      return res.status(403).json({
+        success: false,
+        message: "Access denied. Residents only."
+      });
+    }
+
+    if (!userId || !societyId) {
       return res.status(403).json({
         success: false,
         message: "Resident not linked to society"
       });
     }
 
+    // ===============================
+    // ✅ Strict resident-only filter
+    // ===============================
     const visitors = await VisitorLog.find({
-      residentId: residentId,
+      residentId: userId,
       societyId: societyId
     })
       .populate("guardId", "name")
