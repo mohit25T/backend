@@ -7,7 +7,7 @@ import VisitorLog from "../models/VisitorLog.js";
  * ==========================================
  * ✅ Email INCLUDED (for admin panels & export)
  */
-  export const getUsersByRole = async (req, res) => {
+export const getUsersByRole = async (req, res) => {
   const { role } = req.query;
 
   if (!role) {
@@ -77,31 +77,19 @@ export const getMyProfile = async (req, res) => {
  */
 export const getResidentVisitorHistory = async (req, res) => {
   try {
-    const { userId, societyId, roles } = req.user;
+    const residentId = req.user.userId;
+    const societyId = req.user.societyId;
 
-    // ===============================
-    // 🔐 Role check (RESIDENT required)
-    // ===============================
-    if (!roles || !roles.includes("RESIDENT")) {
-      return res.status(403).json({
-        success: false,
-        message: "Access denied. Residents only."
-      });
-    }
-
-    if (!userId || !societyId) {
+    if (!residentId || !societyId) {
       return res.status(403).json({
         success: false,
         message: "Resident not linked to society"
       });
     }
 
-    // ===============================
-    // ✅ Resident sees ONLY their flat visitors
-    // ===============================
     const visitors = await VisitorLog.find({
-      residentId: userId,
-      societyId
+      residentId: residentId,
+      societyId: societyId
     })
       .populate("guardId", "name")
       .sort({ createdAt: -1 });
@@ -123,9 +111,9 @@ export const getResidentVisitorHistory = async (req, res) => {
 
 export const getUsersBySociety = async (req, res) => {
   try {
-    
-  const societyId = req.user.societyId;
+    const societyId = req.user.societyId;
     const { role } = req.query;
+    console.log(societyId)
     if (!societyId) {
       return res.status(400).json({
         message: "societyId is required"
@@ -145,6 +133,7 @@ export const getUsersBySociety = async (req, res) => {
       .select("name email mobile roles status societyId createdAt")
       .sort({ createdAt: -1 });
 
+    console.log(users)
     return res.json(users);
   } catch (error) {
     console.error("GET USERS BY SOCIETY ERROR:", error);

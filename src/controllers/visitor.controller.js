@@ -288,7 +288,7 @@ export const markVisitorExited = async (req, res) => {
 export const getVisitors = async (req, res) => {
   try {
     const { status } = req.query;
-    const { societyId, roles, userId } = req.user;
+    const { societyId, roles, userId, flatNo } = req.user;
 
     // ===============================
     // 1️⃣ Base filter (society-wide)
@@ -311,6 +311,7 @@ export const getVisitors = async (req, res) => {
       roles.includes("RESIDENT")
     ) {
       filter.residentId = userId;
+      filter.flatNo = flatNo;
     }
 
     // ===============================

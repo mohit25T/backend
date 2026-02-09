@@ -11,7 +11,7 @@ const router = express.Router();
 router.patch(
     "/user/:userId",
     requireAuth,
-   blockUnblockUser
+    blockUnblockUser
 );
 
 router.patch(
