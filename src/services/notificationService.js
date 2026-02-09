@@ -22,7 +22,6 @@ export async function sendPushNotification(
     },
     data,
   };
-  console.log("Message to send:", message);
 
   await admin.messaging().send(message);
 }
@@ -54,6 +53,8 @@ export async function sendPushNotificationToMany(
     },
     data,
   };
+    console.log("🚀 Sending FCM to tokens:", uniqueTokens);
+    console.log("Message to send:", message);
 
   try {
     const response = await admin.messaging().sendEachForMulticast(message);
@@ -74,4 +75,5 @@ export async function sendPushNotificationToMany(
     console.error("🔥 FCM MULTICAST ERROR:", error);
   }
 }
+
 
