@@ -22,6 +22,7 @@ export async function sendPushNotification(
     },
     data,
   };
+  console.log("Message to send:", message);
 
   await admin.messaging().send(message);
 }
@@ -73,3 +74,4 @@ export async function sendPushNotificationToMany(
     console.error("🔥 FCM MULTICAST ERROR:", error);
   }
 }
+
