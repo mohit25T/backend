@@ -407,3 +407,28 @@ export const getMe = async (req, res) => {
     res.status(500).json({ message: "Failed to fetch profile" });
   }
 };
+
+
+/**
+ * =====================================================
+ * LOGOUT USER
+ * Clears FCM token so device stops receiving pushes
+ * =====================================================
+ */
+export const logoutUser = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+
+    await User.findByIdAndUpdate(userId, {
+      $set: {
+        fcmToken: null,
+        fcmUpdatedAt: null
+      }
+    });
+
+    res.json({ message: "Logged out successfully" });
+  } catch (error) {
+    console.error("LOGOUT ERROR:", error);
+    res.status(500).json({ message: "Logout failed" });
+  }
+};
