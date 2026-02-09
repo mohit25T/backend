@@ -40,10 +40,12 @@ export async function sendPushNotificationToMany(
   body,
   data = {}
 ) {
-  // Remove empty / duplicate tokens
   const uniqueTokens = [...new Set(tokens)].filter(Boolean);
 
-  if (uniqueTokens.length === 0) return;
+  if (uniqueTokens.length === 0) {
+    console.log("⚠️ No valid FCM tokens found");
+    return null;
+  }
 
   const message = {
     tokens: uniqueTokens,
@@ -53,27 +55,36 @@ export async function sendPushNotificationToMany(
     },
     data,
   };
-    console.log("🚀 Sending FCM to tokens:", uniqueTokens);
-    console.log("Message to send:", message);
 
   try {
     const response = await admin.messaging().sendEachForMulticast(message);
 
-    // Optional: log failures (useful for cleanup later)
+    console.log("✅ FCM multicast response:", {
+      successCount: response.successCount,
+      failureCount: response.failureCount,
+    });
+
+    // Log failed tokens (very important for debugging)
     if (response.failureCount > 0) {
       response.responses.forEach((resp, idx) => {
         if (!resp.success) {
           console.error(
-            "❌ Failed FCM token:",
+            "❌ Failed token:",
             uniqueTokens[idx],
             resp.error?.message
           );
         }
       });
     }
+
+    // 🔥 THIS IS THE FIX
+    return response;
+
   } catch (error) {
     console.error("🔥 FCM MULTICAST ERROR:", error);
+    throw error;
   }
 }
+
 
 
