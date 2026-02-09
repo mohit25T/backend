@@ -13,7 +13,7 @@ export const requireAuth = async (req, res, next) => {
     // 1️⃣ Verify JWT
     const decoded = verifyToken(token);
     req.user = decoded;
-console.log("Decoded token:",req.user)
+
     // 2️⃣ Check user status (BLOCKED / ACTIVE)
     const user = await User.findById(decoded.userId);
     if (!user || user.status === "BLOCKED") {
