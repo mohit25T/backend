@@ -6,10 +6,29 @@ import {
 } from "../services/notificationService.js";
 
 /**
+ * =====================================================
+ * 🔧 Helper: normalize flat number
+ * =====================================================
+ */
+const normalizeFlatNo = (flatNo) =>
+  flatNo?.trim().toUpperCase();
+
+/**
+ * =====================================================
+ * 🔧 Helper: Get valid FCM tokens from user
+ * =====================================================
+ */
+const getUserTokens = (user) => {
+  if (!user) return [];
+  if (user.fcmToken) return [user.fcmToken];
+  return [];
+};
+
+/**
  * ===============================
  * 1️⃣ Guard creates visitor entry
  * ===============================
- * 🔔 Notify RESIDENT (all devices)
+ * 🔔 Notify RESIDENT (ONLY that flat)
  */
 export const createVisitorEntry = async (req, res) => {
   try {
@@ -27,13 +46,17 @@ export const createVisitorEntry = async (req, res) => {
     const societyId = req.user.societyId;
     const guardId = req.user.userId;
 
+    const normalizedFlatNo = normalizeFlatNo(flatNo);
+
+    // ✅ STRICT & SAFE resident lookup
     const resident = await User.findOne({
       societyId,
-      flatNo,
-      roles: { $in: ["RESIDENT"] }
+      flatNo: normalizedFlatNo,
+      roles: "RESIDENT",
+      status: "ACTIVE"
     });
 
-    if (!resident) {
+    if (!resident || resident.flatNo !== normalizedFlatNo) {
       return res.status(404).json({
         message: "Resident not found for this flat"
       });
@@ -45,7 +68,7 @@ export const createVisitorEntry = async (req, res) => {
       personMobile,
       purpose,
       vehicleNo,
-      flatNo,
+      flatNo: normalizedFlatNo,
       entryType,
       deliveryCompany,
       parcelType,
@@ -54,21 +77,23 @@ export const createVisitorEntry = async (req, res) => {
       status: "PENDING"
     });
 
-    // 🔔 Visitor Arrived → Resident (ALL DEVICES)
-    const noti = await sendPushNotificationToMany(
-      resident.fcmTokens || [resident.fcmToken],
+    // 🔔 Visitor Arrived → Resident
+    await sendPushNotificationToMany(
+      getUserTokens(resident),
       "Visitor Arrived 🚪",
-      `${personName} is waiting at the gate for Flat ${flatNo}`,
-      { type: "VISITOR_ARRIVED", visitorId: visitor._id.toString() }
+      `${personName} is waiting at the gate for Flat ${normalizedFlatNo}`,
+      {
+        type: "VISITOR_ARRIVED",
+        visitorId: visitor._id.toString()
+      }
     );
-    console.log("🔔 Notification response:", noti);
 
     res.status(201).json({
       message: "Visitor entry created successfully",
       visitor
     });
   } catch (error) {
-    console.error(error);
+    console.error("CREATE VISITOR ERROR:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
@@ -84,14 +109,12 @@ export const approveVisitor = async (req, res) => {
     const { id } = req.params;
 
     const visitor = await VisitorLog.findById(id);
-
-    if (!visitor)
+    if (!visitor) {
       return res.status(404).json({ message: "Visitor not found" });
+    }
 
     if (visitor.status !== "PENDING") {
-      return res.status(400).json({
-        message: "Visitor already processed"
-      });
+      return res.status(400).json({ message: "Visitor already processed" });
     }
 
     if (visitor.residentId.toString() !== req.user.userId.toString()) {
@@ -102,22 +125,21 @@ export const approveVisitor = async (req, res) => {
     visitor.approvedBy = req.user.userId;
     await visitor.save();
 
-    // 🔔 Notify Guard (ALL DEVICES)
     const guard = await User.findById(visitor.guardId);
-    if (guard) {
-      await sendPushNotificationToMany(
-        guard.fcmTokens || [guard.fcmToken],
-        "Visitor Approved ✅",
-        `Visitor approved for Flat ${visitor.flatNo}`,
-        { type: "VISITOR_APPROVED", visitorId: visitor._id.toString() }
-      );
-    }
 
-    res.json({
-      message: "Visitor approved",
-      visitor
-    });
+    await sendPushNotificationToMany(
+      getUserTokens(guard),
+      "Visitor Approved ✅",
+      `Visitor approved for Flat ${visitor.flatNo}`,
+      {
+        type: "VISITOR_APPROVED",
+        visitorId: visitor._id.toString()
+      }
+    );
+
+    res.json({ message: "Visitor approved", visitor });
   } catch (error) {
+    console.error("APPROVE VISITOR ERROR:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
@@ -133,14 +155,12 @@ export const rejectVisitor = async (req, res) => {
     const { id } = req.params;
 
     const visitor = await VisitorLog.findById(id);
-
-    if (!visitor)
+    if (!visitor) {
       return res.status(404).json({ message: "Visitor not found" });
+    }
 
     if (visitor.status !== "PENDING") {
-      return res.status(400).json({
-        message: "Visitor already processed"
-      });
+      return res.status(400).json({ message: "Visitor already processed" });
     }
 
     if (visitor.residentId.toString() !== req.user.userId.toString()) {
@@ -151,22 +171,21 @@ export const rejectVisitor = async (req, res) => {
     visitor.approvedBy = req.user.userId;
     await visitor.save();
 
-    // 🔔 Notify Guard
     const guard = await User.findById(visitor.guardId);
-    if (guard) {
-      await sendPushNotificationToMany(
-        guard.fcmTokens || [guard.fcmToken],
-        "Visitor Rejected ❌",
-        `Visitor rejected for Flat ${visitor.flatNo}`,
-        { type: "VISITOR_REJECTED", visitorId: visitor._id.toString() }
-      );
-    }
 
-    res.json({
-      message: "Visitor rejected",
-      visitor
-    });
+    await sendPushNotificationToMany(
+      getUserTokens(guard),
+      "Visitor Rejected ❌",
+      `Visitor rejected for Flat ${visitor.flatNo}`,
+      {
+        type: "VISITOR_REJECTED",
+        visitorId: visitor._id.toString()
+      }
+    );
+
+    res.json({ message: "Visitor rejected", visitor });
   } catch (error) {
+    console.error("REJECT VISITOR ERROR:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
@@ -182,14 +201,12 @@ export const markVisitorEntered = async (req, res) => {
     const { id } = req.params;
 
     const visitor = await VisitorLog.findById(id).populate("residentId");
-
-    if (!visitor)
+    if (!visitor) {
       return res.status(404).json({ message: "Visitor not found" });
+    }
 
     if (visitor.status !== "APPROVED") {
-      return res.status(400).json({
-        message: "Visitor not approved yet"
-      });
+      return res.status(400).json({ message: "Visitor not approved yet" });
     }
 
     visitor.status = "ENTERED";
@@ -198,22 +215,22 @@ export const markVisitorEntered = async (req, res) => {
 
     const guard = await User.findById(visitor.guardId);
 
-    // 🔔 Resident + Guard
     await sendPushNotificationToMany(
       [
-        ...(visitor.residentId?.fcmTokens || []),
-        ...(guard?.fcmTokens || [])
+        ...getUserTokens(visitor.residentId),
+        ...getUserTokens(guard)
       ],
       "Visitor Entered ✅",
       `${visitor.personName} has entered the society`,
-      { type: "VISITOR_ENTERED", visitorId: visitor._id.toString() }
+      {
+        type: "VISITOR_ENTERED",
+        visitorId: visitor._id.toString()
+      }
     );
 
-    res.json({
-      message: "Visitor entered successfully",
-      visitor
-    });
+    res.json({ message: "Visitor entered successfully", visitor });
   } catch (error) {
+    console.error("ENTER VISITOR ERROR:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
@@ -229,14 +246,12 @@ export const markVisitorExited = async (req, res) => {
     const { id } = req.params;
 
     const visitor = await VisitorLog.findById(id).populate("residentId");
-
-    if (!visitor)
+    if (!visitor) {
       return res.status(404).json({ message: "Visitor not found" });
+    }
 
     if (visitor.status !== "ENTERED") {
-      return res.status(400).json({
-        message: "Visitor has not entered yet"
-      });
+      return res.status(400).json({ message: "Visitor has not entered yet" });
     }
 
     visitor.status = "EXITED";
@@ -247,19 +262,20 @@ export const markVisitorExited = async (req, res) => {
 
     await sendPushNotificationToMany(
       [
-        ...(visitor.residentId?.fcmTokens || []),
-        ...(guard?.fcmTokens || [])
+        ...getUserTokens(visitor.residentId),
+        ...getUserTokens(guard)
       ],
       "Visitor Exited 🚶",
       `${visitor.personName} has exited the society`,
-      { type: "VISITOR_EXITED", visitorId: visitor._id.toString() }
+      {
+        type: "VISITOR_EXITED",
+        visitorId: visitor._id.toString()
+      }
     );
 
-    res.json({
-      message: "Visitor exited successfully",
-      visitor
-    });
+    res.json({ message: "Visitor exited successfully", visitor });
   } catch (error) {
+    console.error("EXIT VISITOR ERROR:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
@@ -298,26 +314,16 @@ export const getSocietyFlats = async (req, res) => {
     const societyId = req.user.societyId;
 
     const residents = await User.find(
-      {
-        societyId,
-        roles: { $in: ["RESIDENT"] }
-      },
-      {
-        flatNo: 1,
-        name: 1
-      }
+      { societyId, roles: { $in: ["RESIDENT"] } },
+      { flatNo: 1, name: 1 }
     ).sort({ flatNo: 1 });
 
-    const flats = residents
-      .filter((r) => r.flatNo)
-      .map((r) => ({
-        flatNo: r.flatNo,
-        residentName: r.name
-      }));
-
-    res.json(flats);
+    res.json(
+      residents
+        .filter(r => r.flatNo)
+        .map(r => ({ flatNo: r.flatNo, residentName: r.name }))
+    );
   } catch (error) {
-    console.error(error);
     res.status(500).json({ message: "Failed to fetch flats" });
   }
 };
