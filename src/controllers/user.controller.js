@@ -80,13 +80,9 @@ export const getResidentVisitorHistory = async (req, res) => {
     const { userId, societyId, roles } = req.user;
 
     // ===============================
-    // 🔐 Role check (IMPORTANT)
+    // 🔐 Role check (RESIDENT required)
     // ===============================
-    if (
-      !roles ||
-      roles.length !== 1 ||
-      !roles.includes("RESIDENT")
-    ) {
+    if (!roles || !roles.includes("RESIDENT")) {
       return res.status(403).json({
         success: false,
         message: "Access denied. Residents only."
@@ -101,11 +97,11 @@ export const getResidentVisitorHistory = async (req, res) => {
     }
 
     // ===============================
-    // ✅ Strict resident-only filter
+    // ✅ Resident sees ONLY their flat visitors
     // ===============================
     const visitors = await VisitorLog.find({
       residentId: userId,
-      societyId: societyId
+      societyId
     })
       .populate("guardId", "name")
       .sort({ createdAt: -1 });
