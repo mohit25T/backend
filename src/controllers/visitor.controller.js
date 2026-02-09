@@ -288,34 +288,25 @@ export const markVisitorExited = async (req, res) => {
 export const getVisitors = async (req, res) => {
   try {
     const { status } = req.query;
-    const { societyId, roles, userId, flatNo } = req.user;
+    const { societyId, flatNo } = req.user;
 
     // ===============================
-    // 1️⃣ Base filter (society-wide)
+    // 1️⃣ Mandatory flat-wise filter
     // ===============================
-    const filter = { societyId };
+    const filter = {
+      societyId,
+      flatNo, // 🔒 ALWAYS restrict to user's flat
+    };
 
     // ===============================
-    // 2️⃣ Status filter (optional)
+    // 2️⃣ Optional status filter
     // ===============================
     if (status) {
       filter.status = status;
     }
 
     // ===============================
-    // 3️⃣ Role-based + flat-wise restriction
-    // ===============================
-    // If ONLY resident (not admin / guard)
-    if (
-      roles.length === 1 &&
-      roles.includes("RESIDENT")
-    ) {
-      filter.residentId = userId; // ownership check
-      filter.flatNo = flatNo;     // flat-wise restriction
-    }
-
-    // ===============================
-    // 4️⃣ Fetch visitors
+    // 3️⃣ Fetch visitors
     // ===============================
     const visitors = await VisitorLog.find(filter)
       .populate("guardId", "name mobile")
