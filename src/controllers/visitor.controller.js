@@ -7,8 +7,15 @@ import {
 
 /**
  * =====================================================
+ * 🔧 Helper: normalize flat number
+ * =====================================================
+ */
+const normalizeFlatNo = (flatNo) =>
+  flatNo?.trim().toUpperCase();
+
+/**
+ * =====================================================
  * 🔧 Helper: Get valid FCM tokens from user
- * (supports future multi-device upgrade)
  * =====================================================
  */
 const getUserTokens = (user) => {
@@ -21,7 +28,7 @@ const getUserTokens = (user) => {
  * ===============================
  * 1️⃣ Guard creates visitor entry
  * ===============================
- * 🔔 Notify RESIDENT
+ * 🔔 Notify RESIDENT (ONLY that flat)
  */
 export const createVisitorEntry = async (req, res) => {
   try {
@@ -39,13 +46,17 @@ export const createVisitorEntry = async (req, res) => {
     const societyId = req.user.societyId;
     const guardId = req.user.userId;
 
+    const normalizedFlatNo = normalizeFlatNo(flatNo);
+
+    // ✅ STRICT & SAFE resident lookup
     const resident = await User.findOne({
       societyId,
-      flatNo,
-      roles: { $in: ["RESIDENT"] }
+      flatNo: normalizedFlatNo,
+      roles: "RESIDENT",
+      status: "ACTIVE"
     });
 
-    if (!resident) {
+    if (!resident || resident.flatNo !== normalizedFlatNo) {
       return res.status(404).json({
         message: "Resident not found for this flat"
       });
@@ -57,7 +68,7 @@ export const createVisitorEntry = async (req, res) => {
       personMobile,
       purpose,
       vehicleNo,
-      flatNo,
+      flatNo: normalizedFlatNo,
       entryType,
       deliveryCompany,
       parcelType,
@@ -70,7 +81,7 @@ export const createVisitorEntry = async (req, res) => {
     await sendPushNotificationToMany(
       getUserTokens(resident),
       "Visitor Arrived 🚪",
-      `${personName} is waiting at the gate for Flat ${flatNo}`,
+      `${personName} is waiting at the gate for Flat ${normalizedFlatNo}`,
       {
         type: "VISITOR_ARRIVED",
         visitorId: visitor._id.toString()
@@ -82,7 +93,7 @@ export const createVisitorEntry = async (req, res) => {
       visitor
     });
   } catch (error) {
-    console.error(error);
+    console.error("CREATE VISITOR ERROR:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
@@ -128,6 +139,7 @@ export const approveVisitor = async (req, res) => {
 
     res.json({ message: "Visitor approved", visitor });
   } catch (error) {
+    console.error("APPROVE VISITOR ERROR:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
@@ -173,6 +185,7 @@ export const rejectVisitor = async (req, res) => {
 
     res.json({ message: "Visitor rejected", visitor });
   } catch (error) {
+    console.error("REJECT VISITOR ERROR:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
@@ -217,6 +230,7 @@ export const markVisitorEntered = async (req, res) => {
 
     res.json({ message: "Visitor entered successfully", visitor });
   } catch (error) {
+    console.error("ENTER VISITOR ERROR:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
@@ -261,6 +275,7 @@ export const markVisitorExited = async (req, res) => {
 
     res.json({ message: "Visitor exited successfully", visitor });
   } catch (error) {
+    console.error("EXIT VISITOR ERROR:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
