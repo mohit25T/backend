@@ -55,13 +55,13 @@ export const createVisitorEntry = async (req, res) => {
     });
 
     // 🔔 Visitor Arrived → Resident (ALL DEVICES)
-    await sendPushNotificationToMany(
+    const noti = await sendPushNotificationToMany(
       resident.fcmTokens || [resident.fcmToken],
       "Visitor Arrived 🚪",
       `${personName} is waiting at the gate for Flat ${flatNo}`,
       { type: "VISITOR_ARRIVED", visitorId: visitor._id.toString() }
     );
-
+console.log("noti: ",noti)
     res.status(201).json({
       message: "Visitor entry created successfully",
       visitor
