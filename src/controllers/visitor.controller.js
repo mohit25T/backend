@@ -288,7 +288,7 @@ export const markVisitorExited = async (req, res) => {
 export const getVisitors = async (req, res) => {
   try {
     const { status } = req.query;
-    const { societyId, roles, userId } = req.user;
+    const { societyId, roles, userId, flatNo } = req.user;
 
     // ===============================
     // 1️⃣ Base filter (society-wide)
@@ -303,14 +303,15 @@ export const getVisitors = async (req, res) => {
     }
 
     // ===============================
-    // 3️⃣ Role-based restriction
+    // 3️⃣ Role-based + flat-wise restriction
     // ===============================
-    // 👉 If ONLY resident (not admin / guard)
+    // If ONLY resident (not admin / guard)
     if (
       roles.length === 1 &&
       roles.includes("RESIDENT")
     ) {
-      filter.residentId = userId;
+      filter.residentId = userId; // ownership check
+      filter.flatNo = flatNo;     // flat-wise restriction
     }
 
     // ===============================
@@ -328,6 +329,7 @@ export const getVisitors = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
 
 /**
  * ===============================
