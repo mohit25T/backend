@@ -84,7 +84,7 @@ export const getResidentVisitorHistory = async (req, res) => {
     // ===============================
     if (
       !roles ||
-      roles.length !== 1 ||
+      roles.length !== 2 ||
       !roles.includes("RESIDENT")
     ) {
       return res.status(403).json({
