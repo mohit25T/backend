@@ -78,7 +78,7 @@ export const createVisitorEntry = async (req, res) => {
     });
 
     // 🔔 Visitor Arrived → Resident
-    await sendPushNotificationToMany(
+    const noti = await sendPushNotificationToMany(
       getUserTokens(resident),
       "Visitor Arrived 🚪",
       `${personName} is waiting at the gate for Flat ${normalizedFlatNo}`,
@@ -87,7 +87,7 @@ export const createVisitorEntry = async (req, res) => {
         visitorId: visitor._id.toString()
       }
     );
-
+console.log(noti)
     res.status(201).json({
       message: "Visitor entry created successfully",
       visitor
