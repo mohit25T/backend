@@ -305,7 +305,7 @@ export const getVisitors = async (req, res) => {
     // ===============================
     // 3️⃣ Flat restriction
     // ===============================
-    if (roles.includes("RESIDENT")) {
+    if (roles.includes("RESIDENT"))&&!roles.includes("GUARD") {
       filter.residentId = userId;
     }
 
