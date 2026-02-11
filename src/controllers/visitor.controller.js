@@ -87,7 +87,7 @@ export const createVisitorEntry = async (req, res) => {
         visitorId: visitor._id.toString()
       }
     );
-console.log(noti)
+    console.log(noti)
     res.status(201).json({
       message: "Visitor entry created successfully",
       visitor
@@ -305,7 +305,7 @@ export const getVisitors = async (req, res) => {
     // ===============================
     // 3️⃣ Flat restriction
     // ===============================
-    if (roles.includes("RESIDENT")&&roles.includes("GUARD")) {
+    if (roles.includes("RESIDENT") || roles.includes("GUARD")) {
       filter.residentId = userId;
     }
 
