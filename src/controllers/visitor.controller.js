@@ -288,12 +288,12 @@ export const markVisitorExited = async (req, res) => {
 export const getVisitors = async (req, res) => {
   try {
     const { status } = req.query;
-    const { flatNo, roles, userId } = req.user;
+    const { societyId, roles, userId } = req.user;
 
     // ===============================
     // 1️⃣ Base filter
     // ===============================
-    const filter = { flatNo };
+    const filter = { societyId };
 
     // ===============================
     // 2️⃣ Status filter
@@ -305,7 +305,7 @@ export const getVisitors = async (req, res) => {
     // ===============================
     // 3️⃣ Flat restriction
     // ===============================
-    if (roles.includes("RESIDENT")) {
+    if (roles.includes("RESIDENT") && roles.includes("GUARD")) {
       filter.residentId = userId;
     }
 
