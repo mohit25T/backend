@@ -288,12 +288,12 @@ export const markVisitorExited = async (req, res) => {
 export const getVisitors = async (req, res) => {
   try {
     const { status } = req.query;
-    const { societyId, roles, userId } = req.user;
+    const { flatNo, roles, userId } = req.user;
 
     // ===============================
     // 1️⃣ Base filter
     // ===============================
-    const filter = { societyId };
+    const filter = { flatNo };
 
     // ===============================
     // 2️⃣ Status filter
