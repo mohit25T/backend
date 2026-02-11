@@ -290,22 +290,28 @@ export const getVisitors = async (req, res) => {
     const { status } = req.query;
     const { societyId, roles, userId } = req.user;
 
+    // ===============================
+    // 1️⃣ Base filter
+    // ===============================
     const filter = { societyId };
 
-    // Status filter
+    // ===============================
+    // 2️⃣ Status filter
+    // ===============================
     if (status) {
       filter.status = status;
     }
 
-    const isResident = roles.includes("RESIDENT");
-    const isGuard = roles.includes("GUARD");
-    const isAdmin = roles.includes("ADMIN");
-
-    // 🔒 Only restrict for pure residents
-    if (isResident && !isGuard && !isAdmin) {
+    // ===============================
+    // 3️⃣ Flat restriction
+    // ===============================
+    if (roles.includes("RESIDENT") && roles.includes("GUARD")) {
       filter.residentId = userId;
     }
 
+    // ===============================
+    // 4️⃣ Fetch visitors
+    // ===============================
     const visitors = await VisitorLog.find(filter)
       .populate("guardId", "name mobile")
       .populate("residentId", "name flatNo")
@@ -317,7 +323,6 @@ export const getVisitors = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
-
 
 
 /**
