@@ -4,7 +4,6 @@ import admin from "../config/firebase.js";
  * =====================================================
  * 🔔 Send notification to a SINGLE device (OLD - KEEP)
  * =====================================================
- * Used for backward compatibility
  */
 export async function sendPushNotification(
   token,
@@ -21,6 +20,27 @@ export async function sendPushNotification(
       body,
     },
     data,
+
+    // 🔥 ADDED SECTION (no other changes)
+    android: {
+      priority: "high",
+      notification: {
+        channelId: "visitor_alerts",
+        sound: "default",
+        priority: "high",
+        defaultVibrateTimings: true,
+        defaultSound: true,
+      },
+    },
+
+    apns: {
+      payload: {
+        aps: {
+          sound: "default",
+          contentAvailable: true,
+        },
+      },
+    },
   };
 
   await admin.messaging().send(message);
@@ -30,9 +50,6 @@ export async function sendPushNotification(
  * =====================================================
  * 🔔 Send notification to MULTIPLE devices (NEW)
  * =====================================================
- * - Supports resident + guard
- * - Supports multiple devices per user
- * - Filters invalid tokens automatically
  */
 export async function sendPushNotificationToMany(
   tokens = [],
@@ -54,6 +71,27 @@ export async function sendPushNotificationToMany(
       body,
     },
     data,
+
+    // 🔥 ADDED SECTION (no other changes)
+    android: {
+      priority: "high",
+      notification: {
+        channelId: "visitor_alerts",
+        sound: "default",
+        priority: "high",
+        defaultVibrateTimings: true,
+        defaultSound: true,
+      },
+    },
+
+    apns: {
+      payload: {
+        aps: {
+          sound: "default",
+          contentAvailable: true,
+        },
+      },
+    },
   };
 
   try {
@@ -64,7 +102,6 @@ export async function sendPushNotificationToMany(
       failureCount: response.failureCount,
     });
 
-    // Log failed tokens (very important for debugging)
     if (response.failureCount > 0) {
       response.responses.forEach((resp, idx) => {
         if (!resp.success) {
@@ -77,7 +114,6 @@ export async function sendPushNotificationToMany(
       });
     }
 
-    // 🔥 THIS IS THE FIX
     return response;
 
   } catch (error) {
@@ -85,6 +121,3 @@ export async function sendPushNotificationToMany(
     throw error;
   }
 }
-
-
-
