@@ -86,35 +86,23 @@ export const getResidentBills = async (req, res) => {
 
 // 🔹 Resident marks bill as paid
 export const markBillAsPaid = async (req, res) => {
-  try {
-    const bill = await Maintenance.findById(req.params.id);
+    try {
+        const bill = await Maintenance.findById(req.params.id);
 
-    if (!bill) {
-      return res.status(404).json({ message: "Bill not found" });
+        if (!bill) {
+            return res.status(404).json({ message: "Bill not found" });
+        }
+
+        bill.status = "Paid";
+        await bill.save();
+
+        res.json({ message: "Bill marked as paid successfully" });
+
+    } catch (error) {
+        res.status(500).json({ message: error.message });
     }
-
-    // 🔹 Ensure resident owns this bill
-    if (bill.residentId.toString() !== req.user.userId) {
-      return res.status(403).json({ message: "Unauthorized" });
-    }
-
-    // 🔹 Prevent double payment
-    if (bill.status === "Paid") {
-      return res.status(400).json({ message: "Bill already paid" });
-    }
-
-    bill.status = "Paid";
-    bill.paidAt = new Date();
-
-    await bill.save();
-
-    res.json({ message: "Bill marked as paid successfully" });
-
-  } catch (error) {
-    console.error("Error marking bill paid:", error);
-    res.status(500).json({ message: error.message });
-  }
 };
+
 
 
 
