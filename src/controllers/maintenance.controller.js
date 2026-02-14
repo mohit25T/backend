@@ -4,40 +4,70 @@ import User from "../models/User.js";
 
 // 🔹 Admin generates bills for all residents
 export const generateMonthlyBills = async (req, res) => {
-    try {
-        const { month, amount, dueDate } = req.body;
-        console.log("Admin User:", req.user);
-        console.log("Admin societyId:", req.user.societyId);
+  try {
+    const { month, amount, dueDate } = req.body;
 
-        const residents = await User.find({
-            societyId: req.user.societyId,
-            roles: "RESIDENT"
-        });
-        console.log("Residents found for billing:", residents.length);
-        if (!residents.length) {
-            return res.status(400).json({ message: "No residents found" });
-        }
-
-        const bills = residents
-            .filter(r => r.flatNo) // skip if no flat
-            .map((resident) => ({
-                societyId: req.user.societyId,
-                residentId: resident._id,
-                flatNumber: resident.flatNo,
-                month,
-                amount,
-                dueDate,
-            }));
-
-
-        await Maintenance.insertMany(bills);
-
-        res.status(201).json({ message: "Maintenance bills generated successfully" });
-
-    } catch (error) {
-        console.error("Error generating bills:", error);
-        res.status(500).json({ message: error.message });
+    if (!month || !amount || !dueDate) {
+      return res.status(400).json({
+        message: "Month, amount and dueDate are required",
+      });
     }
+
+    // 🔹 Fetch only residents of this society
+    const residents = await User.find({
+      societyId: req.user.societyId,
+      roles: "RESIDENT",
+    });
+
+    if (!residents.length) {
+      return res.status(400).json({
+        message: "No residents found",
+      });
+    }
+
+    // 🔹 Prevent duplicate month generation
+    const existingBills = await Maintenance.findOne({
+      societyId: req.user.societyId,
+      month: month,
+    });
+
+    if (existingBills) {
+      return res.status(400).json({
+        message: "Maintenance already generated for this month",
+      });
+    }
+
+    // 🔹 Prepare bills (skip residents without flatNo)
+    const bills = residents
+      .filter((r) => r.flatNo)
+      .map((resident) => ({
+        societyId: req.user.societyId,
+        residentId: resident._id,
+        flatNumber: resident.flatNo,
+        month,
+        amount,
+        dueDate,
+        status: "Pending",
+      }));
+
+    if (!bills.length) {
+      return res.status(400).json({
+        message: "Residents missing flat numbers",
+      });
+    }
+
+    await Maintenance.insertMany(bills);
+
+    return res.status(201).json({
+      message: "Maintenance bills generated successfully",
+    });
+
+  } catch (error) {
+    console.error("Error generating bills:", error);
+    return res.status(500).json({
+      message: "Something went wrong while generating bills",
+    });
+  }
 };
 
 
