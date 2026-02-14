@@ -11,7 +11,7 @@ export const generateMonthlyBills = async (req, res) => {
             societyId: req.user.societyId,
             role: "RESIDENT",
         });
-
+console.log ("Residents found for billing:", residents.length);
         if (!residents.length) {
             return res.status(400).json({ message: "No residents found" });
         }
