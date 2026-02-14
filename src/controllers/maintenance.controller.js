@@ -10,8 +10,7 @@ export const generateMonthlyBills = async (req, res) => {
         console.log("Admin societyId:", req.user.societyId);
 
         const residents = await User.find({
-            societyId: req.user.societyId,
-            role: "RESIDENT",
+            societyId: req.user.societyId
         });
         console.log("Residents found for billing:", residents.length);
         if (!residents.length) {
