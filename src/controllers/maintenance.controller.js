@@ -1,5 +1,5 @@
-import Maintenance from "../models/maintenance.model.js";
-import User from "../models/user.model.js";
+import Maintenance from "../models/maintenance.js";
+import User from "../models/User.js";
 
 
 // 🔹 Admin generates bills for all residents
