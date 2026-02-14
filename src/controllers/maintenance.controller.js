@@ -63,7 +63,6 @@ export const generateMonthlyBills = async (req, res) => {
         });
 
     } catch (error) {
-        console.error("Error generating bills:", error);
         return res.status(500).json({
             message: "Something went wrong while generating bills",
         });
@@ -77,11 +76,9 @@ export const getResidentBills = async (req, res) => {
         const bills = await Maintenance.find({
             residentId: req.user.userId,
         }).sort({ createdAt: -1 });
-        console.log("Fetched bills for resident:", bills);
         res.json(bills);
 
     } catch (error) {
-        console.error("Error fetching resident bills:", error);
         res.status(500).json({ message: error.message });
     }
 };
@@ -89,40 +86,52 @@ export const getResidentBills = async (req, res) => {
 
 // 🔹 Resident marks bill as paid
 export const markBillAsPaid = async (req, res) => {
-    try {
-        const bill = await Maintenance.findById(req.params.id);
+  try {
+    const bill = await Maintenance.findById(req.params.id);
 
-        if (!bill) {
-            return res.status(404).json({ message: "Bill not found" });
-        }
-
-        if (bill.residentId.toString() !== req.user._id.toString()) {
-            return res.status(403).json({ message: "Unauthorized" });
-        }
-
-        bill.status = "Paid";
-        bill.paidAt = new Date();
-
-        await bill.save();
-
-        res.json({ message: "Bill marked as paid successfully" });
-
-    } catch (error) {
-        res.status(500).json({ message: error.message });
+    if (!bill) {
+      return res.status(404).json({ message: "Bill not found" });
     }
+
+    // 🔹 Ensure resident owns this bill
+    if (bill.residentId.toString() !== req.user.userId) {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+
+    // 🔹 Prevent double payment
+    if (bill.status === "Paid") {
+      return res.status(400).json({ message: "Bill already paid" });
+    }
+
+    bill.status = "Paid";
+    bill.paidAt = new Date();
+
+    await bill.save();
+
+    res.json({ message: "Bill marked as paid successfully" });
+
+  } catch (error) {
+    console.error("Error marking bill paid:", error);
+    res.status(500).json({ message: error.message });
+  }
 };
+
 
 
 // 🔹 Admin views all payments in society
 export const getAllSocietyBills = async (req, res) => {
-    try {
-        const bills = await Maintenance.find({
-            societyId: req.user.societyId,
-        }).populate("residentId", "name email flatNumber");
+  try {
+    const bills = await Maintenance.find({
+      societyId: req.user.societyId,
+    })
+      .populate("residentId", "name flatNo")
+      .sort({ createdAt: -1 });
 
-        res.json(bills);
+    res.json(bills);
 
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
+  } catch (error) {
+    console.error("Error fetching society bills:", error);
+    res.status(500).json({ message: error.message });
+  }
 };
+
