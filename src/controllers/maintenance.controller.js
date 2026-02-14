@@ -77,7 +77,7 @@ export const getResidentBills = async (req, res) => {
         const bills = await Maintenance.find({
             residentId: req.user._id,
         }).sort({ createdAt: -1 });
-
+        console.log("Fetched bills for resident:", bills);
         res.json(bills);
 
     } catch (error) {
