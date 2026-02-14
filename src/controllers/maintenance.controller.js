@@ -6,12 +6,14 @@ import User from "../models/User.js";
 export const generateMonthlyBills = async (req, res) => {
     try {
         const { month, amount, dueDate } = req.body;
+        console.log("Admin User:", req.user);
+        console.log("Admin societyId:", req.user.societyId);
 
         const residents = await User.find({
             societyId: req.user.societyId,
             role: "RESIDENT",
         });
-console.log ("Residents found for billing:", residents.length);
+        console.log("Residents found for billing:", residents.length);
         if (!residents.length) {
             return res.status(400).json({ message: "No residents found" });
         }
