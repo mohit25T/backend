@@ -75,7 +75,7 @@ export const generateMonthlyBills = async (req, res) => {
 export const getResidentBills = async (req, res) => {
     try {
         const bills = await Maintenance.find({
-            residentId: req.user._id,
+            residentId: req.user.userId,
         }).sort({ createdAt: -1 });
         console.log("Fetched bills for resident:", bills);
         res.json(bills);
