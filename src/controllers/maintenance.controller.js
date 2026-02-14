@@ -18,14 +18,17 @@ export const generateMonthlyBills = async (req, res) => {
             return res.status(400).json({ message: "No residents found" });
         }
 
-        const bills = residents.map((resident) => ({
-            societyId: req.user.societyId,
-            residentId: resident._id,
-            flatNumber: resident.flatNo,
-            month,
-            amount,
-            dueDate,
-        }));
+        const bills = residents
+            .filter(r => r.flatNo) // skip if no flat
+            .map((resident) => ({
+                societyId: req.user.societyId,
+                residentId: resident._id,
+                flatNumber: resident.flatNo,
+                month,
+                amount,
+                dueDate,
+            }));
+
 
         await Maintenance.insertMany(bills);
 
