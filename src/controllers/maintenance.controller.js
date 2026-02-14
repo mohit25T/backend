@@ -20,7 +20,7 @@ export const generateMonthlyBills = async (req, res) => {
         const bills = residents.map((resident) => ({
             societyId: req.user.societyId,
             residentId: resident._id,
-            flatNo: resident.flatNo,
+            flatNumber: resident.flatNo,
             month,
             amount,
             dueDate,
