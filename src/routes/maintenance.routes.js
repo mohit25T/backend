@@ -37,7 +37,6 @@ router.put(
 router.get(
   "/all",
   requireAuth,
-  requireAdmin,
   getAllSocietyBills
 );
 
