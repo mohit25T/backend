@@ -104,8 +104,6 @@ export const markBillAsPaid = async (req, res) => {
 };
 
 
-
-
 // 🔹 Admin views all payments in society
 export const getAllSocietyBills = async (req, res) => {
   try {
