@@ -1,5 +1,6 @@
 import Maintenance from "../models/maintenance.js";
 import User from "../models/User.js";
+import { sendPushNotification } from "../utils/sendPushNotification.js";
 
 
 // 🔹 Admin generates bills for all residents
@@ -13,7 +14,6 @@ export const generateMonthlyBills = async (req, res) => {
             });
         }
 
-        // 🔹 Fetch only residents of this society
         const residents = await User.find({
             societyId: req.user.societyId,
             roles: "RESIDENT",
@@ -25,10 +25,9 @@ export const generateMonthlyBills = async (req, res) => {
             });
         }
 
-        // 🔹 Prevent duplicate month generation
         const existingBills = await Maintenance.findOne({
             societyId: req.user.societyId,
-            month: month,
+            month,
         });
 
         if (existingBills) {
@@ -37,7 +36,6 @@ export const generateMonthlyBills = async (req, res) => {
             });
         }
 
-        // 🔹 Prepare bills (skip residents without flatNo)
         const bills = residents
             .filter((r) => r.flatNo)
             .map((resident) => ({
@@ -58,11 +56,27 @@ export const generateMonthlyBills = async (req, res) => {
 
         await Maintenance.insertMany(bills);
 
+        // 🔔 Notify all residents
+        for (const resident of residents) {
+            if (resident.fcmToken) {
+                await sendPushNotification(
+                    resident.fcmToken,
+                    "New Maintenance Bill 🧾",
+                    `Maintenance for ${month} has been generated`,
+                    {
+                        type: "MAINTENANCE_GENERATED",
+                        month,
+                    }
+                );
+            }
+        }
+
         return res.status(201).json({
             message: "Maintenance bills generated successfully",
         });
 
     } catch (error) {
+        console.error("Generate Maintenance Error:", error);
         return res.status(500).json({
             message: "Something went wrong while generating bills",
         });
@@ -70,24 +84,43 @@ export const generateMonthlyBills = async (req, res) => {
 };
 
 
-// 🔹 Resident gets own bills
+// 🔹 Resident gets own bills (Paginated)
 export const getResidentBills = async (req, res) => {
     try {
-        const bills = await Maintenance.find({
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 20;
+        const skip = (page - 1) * limit;
+
+        const query = {
             residentId: req.user.userId,
-        }).sort({ createdAt: -1 });
-        res.json(bills);
+        };
+
+        const total = await Maintenance.countDocuments(query);
+
+        const bills = await Maintenance.find(query)
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit);
+
+        res.json({
+            data: bills,
+            currentPage: page,
+            totalPages: Math.ceil(total / limit),
+            hasMore: page * limit < total,
+        });
 
     } catch (error) {
+        console.error("Get Resident Bills Error:", error);
         res.status(500).json({ message: error.message });
     }
 };
 
 
-// 🔹 Resident marks bill as paid
+// 🔹 Resident/Admin marks bill as paid
 export const markBillAsPaid = async (req, res) => {
     try {
-        const bill = await Maintenance.findById(req.params.id);
+        const bill = await Maintenance.findById(req.params.id)
+            .populate("residentId");
 
         if (!bill) {
             return res.status(404).json({ message: "Bill not found" });
@@ -96,28 +129,58 @@ export const markBillAsPaid = async (req, res) => {
         bill.status = "Paid";
         await bill.save();
 
-        res.json({ message: "Bill marked as paid successfully" });
+        // 🔔 Notify resident
+        if (bill.residentId?.fcmToken) {
+            await sendPushNotification(
+                bill.residentId.fcmToken,
+                "Payment Confirmed ✅",
+                `Your maintenance payment for ${bill.month} has been confirmed`,
+                {
+                    type: "MAINTENANCE_PAID",
+                    billId: bill._id.toString(),
+                }
+            );
+        }
+
+        res.json({
+            message: "Bill marked as paid successfully",
+        });
 
     } catch (error) {
+        console.error("Mark Bill Paid Error:", error);
         res.status(500).json({ message: error.message });
     }
 };
 
 
-// 🔹 Admin views all payments in society
+// 🔹 Admin views all society bills (Paginated)
 export const getAllSocietyBills = async (req, res) => {
-  try {
-    const bills = await Maintenance.find({
-      societyId: req.user.societyId,
-    })
-      .populate("residentId", "name flatNo")
-      .sort({ createdAt: -1 });
+    try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 20;
+        const skip = (page - 1) * limit;
 
-    res.json(bills);
+        const query = {
+            societyId: req.user.societyId,
+        };
 
-  } catch (error) {
-    console.error("Error fetching society bills:", error);
-    res.status(500).json({ message: error.message });
-  }
+        const total = await Maintenance.countDocuments(query);
+
+        const bills = await Maintenance.find(query)
+            .populate("residentId", "name flatNo")
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit);
+
+        res.json({
+            data: bills,
+            currentPage: page,
+            totalPages: Math.ceil(total / limit),
+            hasMore: page * limit < total,
+        });
+
+    } catch (error) {
+        console.error("Error fetching society bills:", error);
+        res.status(500).json({ message: error.message });
+    }
 };
-
