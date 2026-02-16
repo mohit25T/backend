@@ -176,7 +176,7 @@ export const verifyUserLogin = async (req, res) => {
     let user = await User.findOne({ mobile });
 
     if (user) {
-      const society = await Society.findById(user.societyId);
+      const society = await society.findById(user.societyId);
 
       if (
         user.status === "BLOCKED" ||
