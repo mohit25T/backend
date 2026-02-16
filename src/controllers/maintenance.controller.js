@@ -165,7 +165,6 @@ export const getAllSocietyBills = async (req, res) => {
         const query = {
             societyId: req.user.societyId,
         };
-
         const total = await Maintenance.countDocuments(query);
 
         const bills = await Maintenance.find(query)
@@ -174,6 +173,7 @@ export const getAllSocietyBills = async (req, res) => {
             .skip(skip)
             .limit(limit);
 
+        console.log("Fetched society bills:", bills);
         res.json({
             data: bills,
             currentPage: page,
