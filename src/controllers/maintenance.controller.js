@@ -1,7 +1,9 @@
 import Maintenance from "../models/maintenance.js";
 import User from "../models/User.js";
-import { sendPushNotification } from "../utils/sendPushNotification.js";
-
+import {
+    sendPushNotification,
+    sendPushNotificationToMany
+} from "../services/notificationService.js";
 
 // 🔹 Admin generates bills for all residents
 export const generateMonthlyBills = async (req, res) => {
