@@ -1,5 +1,6 @@
 import Invite from "../models/Invite.js";
 import User from "../models/User.js";
+import society from "../models/Society.js";
 import EmailChangeRequest from "../models/EmailChangeRequest.js";
 import { signToken } from "../utils/jwt.js";
 import { saveOtp, verifyOtp } from "../utils/otpStore.js";
