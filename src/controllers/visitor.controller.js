@@ -318,7 +318,7 @@ export const getVisitors = async (req, res) => {
         filter.status = normalizedStatus;
       }
     }
-    console.log("Visitor filter:", filter)
+   
     // ===============================
     // 3️⃣ Resident restriction
     // ===============================
@@ -340,7 +340,7 @@ export const getVisitors = async (req, res) => {
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limitNumber);
-
+    console.log("Fetched visitors:", visitors)
     res.json({
       success: true,
       data: visitors,
