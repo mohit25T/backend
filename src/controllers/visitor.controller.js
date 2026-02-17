@@ -301,14 +301,26 @@ export const getVisitors = async (req, res) => {
     const filter = { societyId };
 
     // ===============================
-    // 2️⃣ Status filter
+    // 2️⃣ Status filter (SAFE + CASE FIXED)
     // ===============================
     if (status) {
-      filter.status = status;
+      const normalizedStatus = status.trim().toUpperCase();
+
+      const allowedStatuses = [
+        "PENDING",
+        "APPROVED",
+        "REJECTED",
+        "ENTERED",
+        "EXITED"
+      ];
+
+      if (allowedStatuses.includes(normalizedStatus)) {
+        filter.status = normalizedStatus;
+      }
     }
 
     // ===============================
-    // 3️⃣ Flat restriction (Resident only)
+    // 3️⃣ Resident restriction
     // ===============================
     if (roles.includes("RESIDENT")) {
       filter.residentId = userId;
@@ -330,6 +342,7 @@ export const getVisitors = async (req, res) => {
       .limit(limitNumber);
 
     res.json({
+      success: true,
       data: visitors,
       currentPage: pageNumber,
       totalPages: Math.ceil(total / limitNumber),
@@ -338,7 +351,10 @@ export const getVisitors = async (req, res) => {
 
   } catch (error) {
     console.error("GET VISITORS ERROR:", error);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({
+      success: false,
+      message: "Server error"
+    });
   }
 };
 
