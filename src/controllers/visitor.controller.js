@@ -290,7 +290,7 @@ export const getVisitors = async (req, res) => {
   try {
     const { status, page = 1, limit = 20 } = req.query;
     const { societyId, roles, userId } = req.user;
-    console.log("GET VISITORS QUERY:", status);
+
     const pageNumber = parseInt(page);
     const limitNumber = parseInt(limit);
     const skip = (pageNumber - 1) * limitNumber;
@@ -318,7 +318,7 @@ export const getVisitors = async (req, res) => {
         filter.status = normalizedStatus;
       }
     }
-
+    console.log("Visitor filter:", filter)
     // ===============================
     // 3️⃣ Resident restriction
     // ===============================
