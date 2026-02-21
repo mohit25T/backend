@@ -33,6 +33,7 @@ app.use(cors({
   methods: ["GET", "POST", "PUT", "DELETE"],
   credentials: true
 }));
+app.options("*", cors());
 
 app.use("/api/admin", adminRoutes);
 app.use("/api/adminR", adminReplacementRoutes);
