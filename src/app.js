@@ -24,16 +24,8 @@ app.use((req, res, next) => {
   next();
 });
 
-//app.use(cors());
+app.use(cors());
 app.use(express.json());
-//import cors from "cors";
-
-app.use(cors({
-  origin: "https://web-wv9f.onrender.com",
-  methods: ["GET", "POST", "PUT", "DELETE"],
-  credentials: true
-}));
-app.options("*", cors());
 
 app.use("/api/admin", adminRoutes);
 app.use("/api/adminR", adminReplacementRoutes);
