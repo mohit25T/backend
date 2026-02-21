@@ -24,9 +24,13 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use(cors());
+//app.use(cors());
 app.use(express.json());
-
+app.use(cors({
+  origin: "https://web-3mhl.onrender.com", // or your domain
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  credentials: true
+}));
 app.use("/api/admin", adminRoutes);
 app.use("/api/adminR", adminReplacementRoutes);
 app.use("/api/users", userRoutes);
