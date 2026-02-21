@@ -24,7 +24,7 @@ app.use((req, res, next) => {
   next();
 });
 
-//app.use(cors());
+app.use(cors());
 app.use(express.json());
 app.use(cors({
   origin: "https://web-deploy-j4qo.onrender.com", // or your domain
