@@ -438,13 +438,13 @@ export const getMe = async (req, res) => {
 export const logoutUser = async (req, res) => {
   try {
     const userId = req.user.userId;
+    const { fcmToken } = req.body;
 
-    await User.findByIdAndUpdate(userId, {
-      $set: {
-        fcmToken: null,
-        fcmUpdatedAt: null
-      }
-    });
+    if (fcmToken) {
+      await User.findByIdAndUpdate(userId, {
+        $pull: { fcmTokens: fcmToken }
+      });
+    }
 
     res.json({ message: "Logged out successfully" });
   } catch (error) {
