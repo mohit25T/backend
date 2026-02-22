@@ -140,6 +140,7 @@ export const getUsersBySociety = async (req, res) => {
   try {
 
     const societyId = req.user.societyId;
+    console.log("Society ID from token:", societyId);
     const { role } = req.query;
     if (!societyId) {
       return res.status(400).json({
@@ -159,7 +160,7 @@ export const getUsersBySociety = async (req, res) => {
       .populate("societyId", "name city _id")
       .select("name email mobile roles status societyId createdAt")
       .sort({ createdAt: -1 });
-console.log("User",users);
+    console.log("User", users);
 
     return res.json(users);
   } catch (error) {
