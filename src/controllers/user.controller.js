@@ -159,6 +159,7 @@ export const getUsersBySociety = async (req, res) => {
       .populate("societyId", "name city _id")
       .select("name email mobile roles status societyId createdAt")
       .sort({ createdAt: -1 });
+console.log("User",users);
 
     return res.json(users);
   } catch (error) {
