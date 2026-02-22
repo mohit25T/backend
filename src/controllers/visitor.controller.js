@@ -20,7 +20,7 @@ const normalizeFlatNo = (flatNo) =>
  */
 const getUserTokens = (user) => {
   if (!user) return [];
-  if (user.fcmToken) return [user.fcmToken];
+  if (user.fcmTokens) return [user.fcmTokens];
   return [];
 };
 
