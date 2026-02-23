@@ -20,7 +20,13 @@ const userSchema = new mongoose.Schema(
 
     roles: {
       type: [String],
-      enum: ["SUPER_ADMIN", "ADMIN", "RESIDENT", "GUARD"],
+      enum: [
+        "SUPER_ADMIN",
+        "ADMIN",
+        "OWNER",   // ✅ NEW
+        "TENANT",  // ✅ NEW
+        "GUARD"
+      ],
       required: true
     },
 
@@ -40,16 +46,22 @@ const userSchema = new mongoose.Schema(
       default: "ACTIVE"
     },
 
+    /**
+     * 🏠 Flat Number
+     * Required for OWNER or TENANT
+     */
     flatNo: {
       type: String,
       required: function () {
-        return this.roles?.includes("RESIDENT");
+        return (
+          this.roles?.includes("OWNER") ||
+          this.roles?.includes("TENANT")
+        );
       }
     },
 
     /**
-     * 🔔 FCM TOKENS (NEW – MULTI DEVICE SUPPORT)
-     * Each login device adds its token here
+     * 🔔 FCM TOKENS (MULTI DEVICE SUPPORT)
      */
     fcmTokens: {
       type: [String],

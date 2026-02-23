@@ -23,7 +23,7 @@ const inviteSchema = new mongoose.Schema(
 
     role: {
       type: String,
-      enum: ["ADMIN", "RESIDENT", "GUARD"],
+      enum: ["ADMIN", "OWNER", "TENANT", "GUARD"],
       required: true
     },
 
@@ -39,11 +39,11 @@ const inviteSchema = new mongoose.Schema(
       required: true
     },
 
-    // 🏠 Flat number required only for RESIDENT
+    // 🏠 Flat number required for OWNER and TENANT
     flatNo: {
       type: String,
       required: function () {
-        return this.role === "RESIDENT";
+        return this.role === "OWNER" || this.role === "TENANT";
       }
     },
 

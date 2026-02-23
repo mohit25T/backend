@@ -3,9 +3,8 @@ import VisitorLog from "../models/VisitorLog.js";
 
 /**
  * ==========================================
- * GET USERS BY ROLE (ADMIN / RESIDENT / GUARD)
+ * GET USERS BY ROLE (ADMIN / OWNER / TENANT / GUARD)
  * ==========================================
- * ✅ Email INCLUDED (for admin panels & export)
  */
 export const getUsersByRole = async (req, res) => {
   const { role } = req.query;
@@ -16,7 +15,7 @@ export const getUsersByRole = async (req, res) => {
 
   const users = await User.find({ roles: { $in: [role] } })
     .populate("societyId", "name city _id")
-    .select("name email mobile roles status societyId createdAt") // ✅ email added
+    .select("name email mobile roles status societyId createdAt")
     .sort({ createdAt: -1 });
 
   res.json(users);
@@ -26,7 +25,6 @@ export const getUsersByRole = async (req, res) => {
  * ==========================
  * GET MY PROFILE
  * ==========================
- * ✅ Email REQUIRED (profile + change email flow)
  */
 export const getMyProfile = async (req, res) => {
   try {
@@ -49,7 +47,7 @@ export const getMyProfile = async (req, res) => {
       user: {
         _id: user._id,
         name: user.name,
-        email: user.email,            // ✅ ADDED
+        email: user.email,
         mobile: user.mobile,
         roles: user.roles,
         flatNo: user.flatNo,
@@ -71,46 +69,42 @@ export const getMyProfile = async (req, res) => {
 
 /**
  * =================================
- * GET RESIDENT VISITOR HISTORY
+ * GET OWNER / TENANT VISITOR HISTORY
  * =================================
- * ❌ Email NOT REQUIRED here
  */
 export const getResidentVisitorHistory = async (req, res) => {
   try {
     const { userId, societyId, roles } = req.user;
 
-    // ===============================
-    // 🔐 Role check (RESIDENT required)
-    // ===============================
-    if (!roles || !roles.includes("RESIDENT")) {
+    // ✅ OWNER or TENANT allowed
+    if (
+      !roles ||
+      (!roles.includes("OWNER") && !roles.includes("TENANT"))
+    ) {
       return res.status(403).json({
         success: false,
-        message: "Access denied. Residents only."
+        message: "Access denied. Flat members only."
       });
     }
 
     if (!userId || !societyId) {
       return res.status(403).json({
         success: false,
-        message: "Resident not linked to society"
+        message: "User not linked to society"
       });
     }
 
-    // 🔹 Pagination Params
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 20;
     const skip = (page - 1) * limit;
 
-    // 🔹 Base filter (ONLY resident’s visitors)
     const filter = {
       residentId: userId,
       societyId
     };
 
-    // 🔹 Total count
     const totalVisitors = await VisitorLog.countDocuments(filter);
 
-    // 🔹 Fetch paginated data
     const visitors = await VisitorLog.find(filter)
       .populate("guardId", "name")
       .sort({ createdAt: -1 })
@@ -127,7 +121,7 @@ export const getResidentVisitorHistory = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("Resident Visitor History Error:", error);
+    console.error("Visitor History Error:", error);
     return res.status(500).json({
       success: false,
       message: "Failed to fetch visitor history"
@@ -136,21 +130,23 @@ export const getResidentVisitorHistory = async (req, res) => {
 };
 
 
+/**
+ * =================================
+ * GET USERS BY SOCIETY
+ * =================================
+ */
 export const getUsersBySociety = async (req, res) => {
   try {
-
     const societyId = req.user.societyId;
-    console.log("Society ID from token:", societyId);
     const { role } = req.query;
+
     if (!societyId) {
       return res.status(400).json({
         message: "societyId is required"
       });
     }
 
-    const filter = {
-      societyId
-    };
+    const filter = { societyId };
 
     if (role) {
       filter.roles = { $in: [role] };
@@ -160,9 +156,9 @@ export const getUsersBySociety = async (req, res) => {
       .populate("societyId", "name city _id")
       .select("name email mobile roles status societyId createdAt")
       .sort({ createdAt: -1 });
-    console.log("User", users);
 
     return res.json(users);
+
   } catch (error) {
     console.error("GET USERS BY SOCIETY ERROR:", error);
     return res.status(500).json({
