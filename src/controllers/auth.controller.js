@@ -123,7 +123,7 @@ export const sendOtpUser = async (req, res) => {
     saveOtp({ mobile, email, otp });
 
     await sendOtpEmail(email, otp);
-
+console.log("Otp:",otp);
     res.json({
       message: "OTP sent successfully to email",
       role: invite?.role || user.roles[0],
