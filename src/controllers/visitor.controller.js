@@ -4,6 +4,7 @@ import {
   sendPushNotification,
   sendPushNotificationToMany
 } from "../services/notificationService.js";
+import cloudinary from "../config/cloudinary.js";
 
 /**
  * =====================================================
@@ -29,6 +30,7 @@ const getUserTokens = (user) => {
  * 1️⃣ Guard creates visitor entry
  * ===============================
  * 🔔 Notify OWNER (flat owner)
+ * 📸 Supports visitor photo
  */
 export const createVisitorEntry = async (req, res) => {
   try {
@@ -47,7 +49,7 @@ export const createVisitorEntry = async (req, res) => {
     const guardId = req.user.userId;
     const normalizedFlatNo = normalizeFlatNo(flatNo);
 
-    // ✅ OWNER lookup (was RESIDENT before)
+    // ✅ OWNER lookup
     const owner = await User.findOne({
       societyId,
       flatNo: normalizedFlatNo,
@@ -61,6 +63,24 @@ export const createVisitorEntry = async (req, res) => {
       });
     }
 
+    /* ===============================
+       📸 Upload Visitor Photo (if provided)
+    =============================== */
+    let visitorPhotoUrl = null;
+
+    if (req.file) {
+      const result = await cloudinary.uploader.upload(req.file.path, {
+        folder: "apartment_app/visitor_photos",
+        width: 800,
+        crop: "scale"
+      });
+
+      visitorPhotoUrl = result.secure_url;
+    }
+
+    /* ===============================
+       Create Visitor Entry
+    =============================== */
     const visitor = await VisitorLog.create({
       societyId,
       personName,
@@ -72,7 +92,8 @@ export const createVisitorEntry = async (req, res) => {
       deliveryCompany,
       parcelType,
       guardId,
-      residentId: owner._id, // ⚠️ keeping field name unchanged
+      residentId: owner._id,
+      visitorPhoto: visitorPhotoUrl, // ✅ NEW FIELD
       status: "PENDING"
     });
 

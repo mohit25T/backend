@@ -46,6 +46,16 @@ const userSchema = new mongoose.Schema(
       default: "ACTIVE"
     },
 
+    profileImage: {
+      type: String,
+      default: null
+    },
+
+    isProfileComplete: {
+      type: Boolean,
+      default: false
+    },
+
     /**
      * 🏠 Flat Number
      * Required for OWNER or TENANT

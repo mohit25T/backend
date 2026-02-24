@@ -232,10 +232,14 @@ export const verifyUserLogin = async (req, res) => {
         societyId: user.societyId,
       });
 
+      // ✅ ADD THIS LINE
+      const requiresProfilePhoto = !user.profileImage;
+
       return res.json({
         token,
         roles: user.roles,
         societyId: user.societyId,
+        requiresProfilePhoto, // ✅ NEW FIELD
       });
     }
 
@@ -263,6 +267,7 @@ export const verifyUserLogin = async (req, res) => {
       status: "ACTIVE",
       fcmTokens: fcmToken ? [fcmToken] : [],
       fcmUpdatedAt: fcmToken ? new Date() : null,
+      isProfileComplete: false, // ✅ FORCE FIRST TIME UPLOAD
     });
 
     invite.status = "USED";
@@ -283,10 +288,12 @@ export const verifyUserLogin = async (req, res) => {
       societyId: user.societyId,
     });
 
+    // ✅ NEW USER ALWAYS REQUIRES PHOTO
     res.json({
       token,
       roles: user.roles,
       societyId: user.societyId,
+      requiresProfilePhoto: true,
     });
   } catch (err) {
     console.error("VERIFY USER LOGIN ERROR:", err);

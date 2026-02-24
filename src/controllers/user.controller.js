@@ -1,5 +1,6 @@
 import User from "../models/User.js";
 import VisitorLog from "../models/VisitorLog.js";
+import cloudinary from "../config/cloudinary.js";
 
 /**
  * ==========================================
@@ -42,8 +43,12 @@ export const getMyProfile = async (req, res) => {
       });
     }
 
+    // ✅ NEW FLAG
+    const requiresProfilePhoto = !user.profileImage;
+
     return res.status(200).json({
       success: true,
+      requiresProfilePhoto, // ✅ Added (does not break old frontend)
       user: {
         _id: user._id,
         name: user.name,
@@ -54,7 +59,10 @@ export const getMyProfile = async (req, res) => {
         status: user.status,
         society: user.societyId,
         invitedBy: user.invitedBy,
-        createdAt: user.createdAt
+        createdAt: user.createdAt,
+
+        // ✅ NEW FIELD
+        profileImage: user.profileImage || null
       }
     });
 
@@ -163,6 +171,53 @@ export const getUsersBySociety = async (req, res) => {
     console.error("GET USERS BY SOCIETY ERROR:", error);
     return res.status(500).json({
       message: "Failed to fetch users"
+    });
+  }
+};
+
+/**
+ * =================================
+ * UPLOAD PROFILE PHOTO
+ * =================================
+ */
+export const uploadProfilePhoto = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: "Image file is required"
+      });
+    }
+
+    // 🔥 Upload to Cloudinary
+    const result = await cloudinary.uploader.upload(req.file.path, {
+      folder: "apartment_app/profile_photos",
+      width: 500,
+      crop: "scale"
+    });
+
+    const user = await User.findByIdAndUpdate(
+      userId,
+      {
+        profileImage: result.secure_url,
+        isProfileComplete: true
+      },
+      { new: true }
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Profile photo uploaded successfully",
+      profileImage: user.profileImage
+    });
+
+  } catch (error) {
+    console.error("UPLOAD PROFILE PHOTO ERROR:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to upload profile photo"
     });
   }
 };

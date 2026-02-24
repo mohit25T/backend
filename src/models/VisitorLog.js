@@ -9,6 +9,11 @@ const visitorLogSchema = new mongoose.Schema(
       index: true
     },
 
+    visitorPhoto: {
+      type: String,
+      default: null
+    },
+
     // 🔹 Visitor info
     personName: {
       type: String,
