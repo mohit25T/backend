@@ -332,7 +332,6 @@ export const getVisitors = async (req, res) => {
       filter.status = status.trim().toUpperCase();
     }
 
-    // ✅ Owner/Tenant restriction
     if (roles.includes("OWNER") || roles.includes("TENANT")) {
       filter.residentId = userId;
     }
@@ -344,11 +343,18 @@ export const getVisitors = async (req, res) => {
       .populate("residentId", "name flatNo")
       .sort({ createdAt: -1 })
       .skip(skip)
-      .limit(limitNumber);
+      .limit(limitNumber)
+      .lean(); // important
+
+    // Ensure visitorPhoto always returned
+    const formattedVisitors = visitors.map(v => ({
+      ...v,
+      visitorPhoto: v.visitorPhoto || null
+    }));
 
     res.json({
       success: true,
-      data: visitors,
+      data: formattedVisitors,
       currentPage: pageNumber,
       totalPages: Math.ceil(total / limitNumber),
       hasMore: pageNumber * limitNumber < total
