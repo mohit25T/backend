@@ -84,5 +84,4 @@ export async function sendPushNotificationToMany(
     console.error("🔥 FCM MULTICAST ERROR:", error);
     throw error;
   }
-
 }
