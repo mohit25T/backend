@@ -31,7 +31,7 @@ router.post(
     "/create",
     requireAuth,
     requireGuard,
-    upload.single("photo"), // ✅ NEW
+    upload.single(), // ✅ NEW
     createVisitorEntry
 );
 
