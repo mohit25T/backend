@@ -47,9 +47,16 @@ export const createVisitorEntry = async (req, res) => {
 
     const societyId = req.user.societyId;
     const guardId = req.user.userId;
+
+    if (!flatNo) {
+      return res.status(400).json({ message: "Flat number is required" });
+    }
+
     const normalizedFlatNo = normalizeFlatNo(flatNo);
 
-    // ✅ OWNER lookup
+    /* ===============================
+       🔍 OWNER Lookup
+    =============================== */
     const owner = await User.findOne({
       societyId,
       flatNo: normalizedFlatNo,
@@ -64,22 +71,18 @@ export const createVisitorEntry = async (req, res) => {
     }
 
     /* ===============================
-       📸 Upload Visitor Photo (if provided)
+       📸 Visitor Photo (Already Uploaded by Multer)
     =============================== */
     let visitorPhotoUrl = null;
 
     if (req.file) {
-      const result = await cloudinary.uploader.upload(req.file.path, {
-        folder: "apartment_app/visitor_photos",
-        width: 800,
-        crop: "scale"
-      });
-
-      visitorPhotoUrl = result.secure_url;
+      // Since using multer-storage-cloudinary,
+      // file is already uploaded
+      visitorPhotoUrl = req.file.path;
     }
 
     /* ===============================
-       Create Visitor Entry
+       📝 Create Visitor Entry
     =============================== */
     const visitor = await VisitorLog.create({
       societyId,
@@ -93,28 +96,41 @@ export const createVisitorEntry = async (req, res) => {
       parcelType,
       guardId,
       residentId: owner._id,
-      visitorPhoto: visitorPhotoUrl, // ✅ NEW FIELD
+      visitorPhoto: visitorPhotoUrl,
       status: "PENDING"
     });
 
-    await sendPushNotificationToMany(
-      getUserTokens(owner),
-      "Visitor Arrived 🚪",
-      `${personName} is waiting at the gate for Flat ${normalizedFlatNo}`,
-      {
-        type: "VISITOR_ARRIVED",
-        visitorId: visitor._id.toString()
-      }
-    );
+    /* ===============================
+       📲 Send Push Notification
+    =============================== */
+    try {
+      await sendPushNotificationToMany(
+        getUserTokens(owner),
+        "Visitor Arrived 🚪",
+        `${personName} is waiting at the gate for Flat ${normalizedFlatNo}`,
+        {
+          type: "VISITOR_ARRIVED",
+          visitorId: visitor._id.toString()
+        }
+      );
+    } catch (pushError) {
+      console.error("Push Notification Error:", pushError);
+      // Don't fail visitor creation if push fails
+    }
 
-    res.status(201).json({
+    /* ===============================
+       ✅ Response
+    =============================== */
+    return res.status(201).json({
       message: "Visitor entry created successfully",
       visitor
     });
 
   } catch (error) {
     console.error("CREATE VISITOR ERROR:", error);
-    res.status(500).json({ message: "Server error" });
+    return res.status(500).json({
+      message: error.message || "Server error"
+    });
   }
 };
 
