@@ -71,14 +71,14 @@ export const createVisitorEntry = async (req, res) => {
     }
 
     /* ===============================
-       📸 Visitor Photo (Already Uploaded by Multer)
+       📸 Visitor Photo (Cloudinary Auto Upload)
     =============================== */
     let visitorPhotoUrl = null;
 
-    if (req.file) {
-      // Since using multer-storage-cloudinary,
-      // file is already uploaded
-      visitorPhotoUrl = req.file.path;
+    if (req.files && req.files.length > 0) {
+      // Since using multer-storage-cloudinary
+      // File is already uploaded
+      visitorPhotoUrl = req.files[0].path;
     }
 
     /* ===============================
@@ -115,7 +115,6 @@ export const createVisitorEntry = async (req, res) => {
       );
     } catch (pushError) {
       console.error("Push Notification Error:", pushError);
-      // Don't fail visitor creation if push fails
     }
 
     /* ===============================
