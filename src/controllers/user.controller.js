@@ -150,6 +150,7 @@ export const getUsersBySociety = async (req, res) => {
 
     if (!societyId) {
       return res.status(400).json({
+        success: false,
         message: "societyId is required"
       });
     }
@@ -162,19 +163,25 @@ export const getUsersBySociety = async (req, res) => {
 
     const users = await User.find(filter)
       .populate("societyId", "name city _id")
-      .select("name email mobile roles status societyId createdAt")
-      .sort({ createdAt: -1 });
+      .select(
+        "name email mobile roles status societyId createdAt profileImage"
+      )
+      .sort({ createdAt: -1 })
+      .lean(); // 🔥 Better performance
 
-    return res.json(users);
+    return res.status(200).json({
+      success: true,
+      users
+    });
 
   } catch (error) {
     console.error("GET USERS BY SOCIETY ERROR:", error);
     return res.status(500).json({
+      success: false,
       message: "Failed to fetch users"
     });
   }
 };
-
 /**
  * =================================
  * UPLOAD PROFILE PHOTO
