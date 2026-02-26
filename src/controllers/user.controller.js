@@ -184,24 +184,26 @@ export const uploadProfilePhoto = async (req, res) => {
   try {
     const userId = req.user.userId;
 
-    if (!req.file) {
+    /* ===============================
+       📸 Profile Photo (Already Uploaded by Middleware)
+    =============================== */
+    if (!req.files || req.files.length === 0) {
       return res.status(400).json({
         success: false,
         message: "Image file is required"
       });
     }
 
-    // 🔥 Upload to Cloudinary
-    const result = await cloudinary.uploader.upload(req.file.path, {
-      folder: "apartment_app/profile_photos",
-      width: 500,
-      crop: "scale"
-    });
+    // ✅ Cloudinary URL comes directly from multer-storage-cloudinary
+    const profileImageUrl = req.files[0].path;
 
+    /* ===============================
+       📝 Update User
+    =============================== */
     const user = await User.findByIdAndUpdate(
       userId,
       {
-        profileImage: result.secure_url,
+        profileImage: profileImageUrl,
         isProfileComplete: true
       },
       { new: true }

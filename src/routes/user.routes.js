@@ -12,7 +12,7 @@ router.get("/by-society", requireAuth, getUsersBySociety);
 router.post(
     "/upload-profile-photo",
     requireAuth,
-    upload.single("image"),
+    upload.any(),
     uploadProfilePhoto
 );
 export default router;
