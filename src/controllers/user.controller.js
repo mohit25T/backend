@@ -168,7 +168,7 @@ export const getUsersBySociety = async (req, res) => {
       )
       .sort({ createdAt: -1 })
       .lean(); // 🔥 Better performance
-
+    console.log("USERS BY SOCIETY:", users);
     return res.status(200).json({
       success: true,
       users
