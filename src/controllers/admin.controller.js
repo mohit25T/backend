@@ -109,7 +109,7 @@ export const getPendingTenantRequests = async (req, res) => {
   try {
     const admin = await User.findById(req.user.userId);
 
-    if (admin.role !== "ADMIN") {
+    if (admin.roles !== "ADMIN") {
       return res.status(403).json({
         message: "Only admin can view pending tenants"
       });
