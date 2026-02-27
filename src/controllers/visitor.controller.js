@@ -355,7 +355,6 @@ export const getVisitors = async (req, res) => {
 
     const visitors = await VisitorLog.find(filter)
       .populate("guardId", "name mobile")
-      .populate("name flatNo")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limitNumber)
