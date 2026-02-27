@@ -201,10 +201,10 @@ export const inviteResident = async (req, res) => {
      * ROLE PERMISSION LOGIC
      */
     const isAdminInvitingOwner =
-      inviter.role === "ADMIN" && userRole === "OWNER";
+      inviter.roles === "ADMIN" && userRole === "OWNER";
 
     const isOwnerInvitingTenant =
-      inviter.role === "OWNER" &&
+      inviter.roles === "OWNER" &&
       userRole === "TENANT" &&
       inviter.flatNo === flatNo;
 
