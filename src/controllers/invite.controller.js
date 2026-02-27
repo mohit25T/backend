@@ -196,12 +196,13 @@ export const inviteResident = async (req, res) => {
         message: "Society not found"
       });
     }
+    console.log("INVITER ROLES:", inviter.roles);
 
     /**
      * ROLE PERMISSION LOGIC
      */
     const isAdminInvitingOwner =
-      inviter.roles === "ADMIN" && userRole === "OWNER";
+      inviter.roles.includes("ADMIN") && userRole === "OWNER";
 
     const isOwnerInvitingTenant =
       inviter.roles === "OWNER" &&
