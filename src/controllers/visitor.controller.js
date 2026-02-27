@@ -395,6 +395,7 @@ export const getVisitors = async (req, res) => {
       visitorPhoto: v.visitorPhoto || null
     }));
 
+    console.log("visitor", formattedVisitors);
     res.json({
       success: true,
       data: formattedVisitors,
