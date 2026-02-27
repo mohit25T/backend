@@ -379,7 +379,7 @@ export const getVisitors = async (req, res) => {
       // 🔥 Flat-based filtering
       filter.flatNo = flatNo;
     }
-
+console.log("Visitor Filter:", filter);
     const total = await VisitorLog.countDocuments(filter);
 
     const visitors = await VisitorLog.find(filter)
