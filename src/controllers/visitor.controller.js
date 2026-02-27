@@ -67,10 +67,8 @@ export const createVisitorEntry = async (req, res) => {
     let targetResidents;
 
     if (tenants.length > 0) {
-      // 🔥 Tenant exists → tenant handles visitor
       targetResidents = tenants;
     } else {
-      // 🔥 No tenant → owner handles visitor
       targetResidents = await User.find({
         societyId,
         flatNo: normalizedFlatNo,
@@ -82,6 +80,22 @@ export const createVisitorEntry = async (req, res) => {
     if (!targetResidents || targetResidents.length === 0) {
       return res.status(404).json({
         message: "No active resident found for this flat"
+      });
+    }
+
+    /* ===============================
+       🚫 Duplicate Prevention
+    =============================== */
+    const existingPendingVisitor = await VisitorLog.findOne({
+      societyId,
+      flatNo: normalizedFlatNo,
+      personMobile,
+      status: "PENDING"
+    });
+
+    if (existingPendingVisitor) {
+      return res.status(409).json({
+        message: "Visitor already has a pending entry for this flat"
       });
     }
 
@@ -133,9 +147,6 @@ export const createVisitorEntry = async (req, res) => {
       console.error("Push Notification Error:", pushError);
     }
 
-    /* ===============================
-       ✅ Response
-    =============================== */
     return res.status(201).json({
       message: "Visitor entry created successfully",
       visitor
