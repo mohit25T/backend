@@ -37,6 +37,7 @@ export const sendOtpEmail = async (toEmail, otp) => {
         }
       }
     );
+    console.log(`OTP email sent to ${toEmail}`);
   } catch (error) {
     console.error(
       "Brevo email error:",

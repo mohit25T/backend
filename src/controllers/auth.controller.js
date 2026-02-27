@@ -121,7 +121,7 @@ export const sendOtpUser = async (req, res) => {
 
     const otp = generateOtp();
     saveOtp({ mobile, email, otp });
-
+    
     await sendOtpEmail(email, otp);
     console.log("Otp:", otp);
     res.json({
