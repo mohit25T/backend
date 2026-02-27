@@ -335,7 +335,7 @@ export const markVisitorExited = async (req, res) => {
 export const getVisitors = async (req, res) => {
   try {
     const { status, page = 1, limit = 20 } = req.query;
-    const { societyId, roles, userId } = req.user;
+    const { societyId, roles, userId, flatNo } = req.user;
 
     const pageNumber = parseInt(page);
     const limitNumber = parseInt(limit);
@@ -347,20 +347,49 @@ export const getVisitors = async (req, res) => {
       filter.status = status.trim().toUpperCase();
     }
 
+    /* ======================================
+       🔐 Resident Filtering Logic
+    ====================================== */
+
     if (roles.includes("OWNER") || roles.includes("TENANT")) {
-      filter.residentId = userId;
+
+      // 🔍 Check if active tenant exists for this flat
+      const tenantExists = await User.exists({
+        societyId,
+        flatNo,
+        roles: "TENANT",
+        status: "ACTIVE"
+      });
+
+      let canView = false;
+
+      if (roles.includes("TENANT")) {
+        canView = true;
+      } else if (roles.includes("OWNER") && !tenantExists) {
+        canView = true;
+      }
+
+      if (!canView) {
+        return res.status(403).json({
+          success: false,
+          message: "Not authorized to view visitors"
+        });
+      }
+
+      // 🔥 Flat-based filtering
+      filter.flatNo = flatNo;
     }
 
     const total = await VisitorLog.countDocuments(filter);
 
     const visitors = await VisitorLog.find(filter)
       .populate("guardId", "name mobile")
+      .populate("approvedBy", "name roles")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limitNumber)
-      .lean(); // important
+      .lean();
 
-    // Ensure visitorPhoto always returned
     const formattedVisitors = visitors.map(v => ({
       ...v,
       visitorPhoto: v.visitorPhoto || null
