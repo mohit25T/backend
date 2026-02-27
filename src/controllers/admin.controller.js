@@ -82,7 +82,6 @@ export const getAllSocietyVisitors = async (req, res) => {
     const visitors = await VisitorLog.find({ societyId })
       .populate("approvedBy", "name")
       .populate("guardId", "name")
-      .populate("residentId", "name")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);
