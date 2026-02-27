@@ -335,25 +335,31 @@ export const markVisitorExited = async (req, res) => {
 export const getVisitors = async (req, res) => {
   try {
     const { status, page = 1, limit = 20 } = req.query;
-    const { societyId, roles, userId, flatNo } = req.user;
+    const { societyId, roles, userId } = req.user;
 
     const pageNumber = parseInt(page);
     const limitNumber = parseInt(limit);
     const skip = (pageNumber - 1) * limitNumber;
-    console.log("Get Visitors - User:", req.user);
+
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
+    }
+
+    const flatNo = user.flatNo;
+
     const filter = { societyId };
 
     if (status) {
       filter.status = status.trim().toUpperCase();
     }
 
-    /* ======================================
-       🔐 Resident Filtering Logic
-    ====================================== */
-
     if (roles.includes("OWNER") || roles.includes("TENANT")) {
 
-      // 🔍 Check if active tenant exists for this flat
       const tenantExists = await User.exists({
         societyId,
         flatNo,
@@ -376,10 +382,9 @@ export const getVisitors = async (req, res) => {
         });
       }
 
-      // 🔥 Flat-based filtering
       filter.flatNo = flatNo;
     }
-    console.log("Visitor Filter:", filter);
+
     const total = await VisitorLog.countDocuments(filter);
 
     const visitors = await VisitorLog.find(filter)
@@ -390,15 +395,9 @@ export const getVisitors = async (req, res) => {
       .limit(limitNumber)
       .lean();
 
-    const formattedVisitors = visitors.map(v => ({
-      ...v,
-      visitorPhoto: v.visitorPhoto || null
-    }));
-
-    console.log("visitor", formattedVisitors);
     res.json({
       success: true,
-      data: formattedVisitors,
+      data: visitors,
       currentPage: pageNumber,
       totalPages: Math.ceil(total / limitNumber),
       hasMore: pageNumber * limitNumber < total
