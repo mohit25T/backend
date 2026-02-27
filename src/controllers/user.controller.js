@@ -2,6 +2,10 @@ import User from "../models/User.js";
 import VisitorLog from "../models/VisitorLog.js";
 import cloudinary from "../config/cloudinary.js";
 
+const normalizeFlatNo = (flatNo) =>
+  flatNo?.trim().toUpperCase();
+
+
 /**
  * ==========================================
  * GET USERS BY ROLE (ADMIN / OWNER / TENANT / GUARD)
