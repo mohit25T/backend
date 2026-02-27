@@ -173,22 +173,26 @@ export const cancelInvite = async (req, res) => {
  */
 export const inviteResident = async (req, res) => {
   try {
-    const { name, mobile, email, flatNo, roles } = req.body;
+    const { name, mobile, email, flatNo, role } = req.body;
 
-    const userRole = roles?.[0]?.toUpperCase() || "OWNER";
+    // 🔥 Normalize role
+    const userRole = role?.toUpperCase();
 
-    if (!["OWNER", "TENANT"].includes(userRole)) {
+    // ✅ Validate role
+    if (!userRole || !["OWNER", "TENANT"].includes(userRole)) {
       return res.status(400).json({
         message: "Role must be OWNER or TENANT"
       });
     }
 
+    // ✅ Basic validation
     if (!name || !mobile || !email || !flatNo) {
       return res.status(400).json({
         message: "All fields are required"
       });
     }
 
+    // 🔍 Get inviter from DB
     const inviter = await User.findById(req.user.userId);
 
     if (!inviter || !inviter.societyId) {
@@ -196,16 +200,19 @@ export const inviteResident = async (req, res) => {
         message: "Society not found"
       });
     }
+
     console.log("INVITER ROLES:", inviter.roles);
 
     /**
-     * ROLE PERMISSION LOGIC
+     * 🔐 ROLE PERMISSION LOGIC
      */
+
     const isAdminInvitingOwner =
-      inviter.roles.includes("ADMIN") && userRole === "OWNER";
+      inviter.roles.includes("ADMIN") &&
+      userRole === "OWNER";
 
     const isOwnerInvitingTenant =
-      inviter.roles === "OWNER" &&
+      inviter.roles.includes("OWNER") &&
       userRole === "TENANT" &&
       inviter.flatNo === flatNo;
 
@@ -216,12 +223,12 @@ export const inviteResident = async (req, res) => {
     }
 
     /**
-     * EXISTING USER CHECK
+     * 👤 EXISTING USER CHECK
      */
     const existingUser = await User.findOne({
       societyId: inviter.societyId,
       flatNo,
-      role: userRole
+      roles: userRole
     });
 
     if (existingUser) {
@@ -231,7 +238,7 @@ export const inviteResident = async (req, res) => {
     }
 
     /**
-     * DUPLICATE INVITE CHECK
+     * 📩 DUPLICATE INVITE CHECK
      */
     const flatExists = await Invite.findOne({
       societyId: inviter.societyId,
@@ -246,10 +253,16 @@ export const inviteResident = async (req, res) => {
       });
     }
 
+    /**
+     * ⏳ Invite Expiry
+     */
     const expiresAt = new Date(
       Date.now() + INVITE_EXPIRY_HOURS * 60 * 60 * 1000
     );
 
+    /**
+     * 🔍 Check if same mobile already invited
+     */
     let invite = await Invite.findOne({
       mobile,
       role: userRole,
@@ -263,6 +276,7 @@ export const inviteResident = async (req, res) => {
     }
 
     if (invite) {
+      // 🔄 Update existing invite
       invite.name = name;
       invite.email = email;
       invite.flatNo = flatNo;
@@ -271,6 +285,7 @@ export const inviteResident = async (req, res) => {
       invite.invitedBy = inviter._id;
       await invite.save();
     } else {
+      // 🆕 Create new invite
       invite = await Invite.create({
         name,
         mobile,
@@ -283,6 +298,9 @@ export const inviteResident = async (req, res) => {
       });
     }
 
+    /**
+     * 📝 Audit Log
+     */
     await auditLogger({
       req,
       action: "INVITE_RESIDENT",
@@ -293,6 +311,7 @@ export const inviteResident = async (req, res) => {
     });
 
     return res.json({
+      success: true,
       message: `${userRole} invite sent successfully`,
       invite
     });
