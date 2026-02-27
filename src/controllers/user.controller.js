@@ -102,7 +102,7 @@ export const getResidentVisitorHistory = async (req, res) => {
       });
     }
 
-    // 🔥 Fetch user to get flatNo
+    // 🔥 Fetch full user to get flatNo
     const user = await User.findById(userId);
 
     if (!user || !user.flatNo) {
@@ -112,7 +112,7 @@ export const getResidentVisitorHistory = async (req, res) => {
       });
     }
 
-    const flatNo = user.flatNo;
+    const flatNo = normalizeFlatNo(user.flatNo);
 
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 20;
@@ -123,6 +123,27 @@ export const getResidentVisitorHistory = async (req, res) => {
       flatNo
     };
 
+    /* ===============================
+       🔐 Strict Date-Based Privacy
+    =============================== */
+
+    const activeTenant = await User.findOne({
+      societyId,
+      flatNo,
+      roles: { $in: ["TENANT"] },
+      status: "ACTIVE"
+    });
+
+    if (activeTenant) {
+      if (roles.includes("TENANT")) {
+        // Tenant sees only after move-in
+        filter.createdAt = { $gte: activeTenant.createdAt };
+      } else if (roles.includes("OWNER")) {
+        // Owner sees only before tenant move-in
+        filter.createdAt = { $lt: activeTenant.createdAt };
+      }
+    }
+
     const totalVisitors = await VisitorLog.countDocuments(filter);
 
     const visitors = await VisitorLog.find(filter)
@@ -130,7 +151,8 @@ export const getResidentVisitorHistory = async (req, res) => {
       .populate("approvedBy", "name roles")
       .sort({ createdAt: -1 })
       .skip(skip)
-      .limit(limit);
+      .limit(limit)
+      .lean();
 
     return res.status(200).json({
       success: true,
