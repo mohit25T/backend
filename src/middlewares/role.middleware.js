@@ -7,6 +7,7 @@ export const requireSuperAdmin = (req, res, next) => {
 
 
 export const requireAdmin = (req, res, next) => {
+  console.log("Checking admin role for user:", req.user);
   if (!req.user.roles || !req.user.roles.includes("ADMIN")) {
     return res.status(403).json({ message: "Admin access required" });
   }
