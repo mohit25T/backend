@@ -361,39 +361,35 @@ export const getVisitors = async (req, res) => {
       });
     }
 
-    const flatNo = user.flatNo;
+    const flatNo = normalizeFlatNo(user.flatNo);
 
-    const filter = { societyId };
+    const filter = { societyId, flatNo };
 
     if (status) {
       filter.status = status.trim().toUpperCase();
     }
 
-    if (roles.includes("OWNER") || roles.includes("TENANT")) {
+    /* ===============================
+       🔐 Privacy Logic
+    =============================== */
 
-      const tenantExists = await User.exists({
-        societyId,
-        flatNo,
-        roles: "TENANT",
-        status: "ACTIVE"
-      });
+    const activeTenant = await User.findOne({
+      societyId,
+      flatNo,
+      roles: "TENANT",
+      status: "ACTIVE"
+    });
 
-      let canView = false;
-
-      if (roles.includes("TENANT")) {
-        canView = true;
-      } else if (roles.includes("OWNER") && !tenantExists) {
-        canView = true;
+    if (roles.includes("TENANT")) {
+      if (activeTenant) {
+        filter.createdAt = { $gte: activeTenant.createdAt };
       }
+    }
 
-      if (!canView) {
-        return res.status(403).json({
-          success: false,
-          message: "Not authorized to view visitors"
-        });
+    if (roles.includes("OWNER")) {
+      if (activeTenant) {
+        filter.createdAt = { $lt: activeTenant.createdAt };
       }
-
-      filter.flatNo = flatNo;
     }
 
     const total = await VisitorLog.countDocuments(filter);
