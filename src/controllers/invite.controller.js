@@ -175,7 +175,7 @@ export const inviteResident = async (req, res) => {
   try {
     const { name, mobile, email, flatNo, role } = req.body;
 
-    const userRole = role?.toUpperCase() || "OWNER";
+    const userRole = roles?.toUpperCase() || "OWNER";
 
     if (!["OWNER", "TENANT"].includes(userRole)) {
       return res.status(400).json({
