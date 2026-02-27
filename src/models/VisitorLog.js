@@ -19,19 +19,11 @@ const visitorLogSchema = new mongoose.Schema(
       required: true
     },
 
-    personMobile: {
-      type: String
-    },
+    personMobile: String,
+    purpose: String,
+    vehicleNo: String,
 
-    purpose: {
-      type: String,
-    },
-
-    vehicleNo: {
-      type: String
-    },
-
-    // 🏠 Flat info
+    // 🏠 Flat info (CORE LINK)
     flatNo: {
       type: String,
       required: true
@@ -43,18 +35,11 @@ const visitorLogSchema = new mongoose.Schema(
       ref: "User"
     },
 
-    // 🧍 Resident
-    residentId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      required: true
-    },
-
     approvedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User"
     },
-
+    
     // 🔁 Visitor flow
     status: {
       type: String,
@@ -66,6 +51,11 @@ const visitorLogSchema = new mongoose.Schema(
         "EXITED"
       ],
       default: "PENDING"
+    },
+
+    approvedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User"
     },
 
     checkInAt: Date,
@@ -80,6 +70,7 @@ const visitorLogSchema = new mongoose.Schema(
     deliveryCompany: String,
     parcelType: String,
 
+    // 🔐 OTP system
     otp: String,
 
     otpStatus: {
@@ -100,28 +91,25 @@ const visitorLogSchema = new mongoose.Schema(
 );
 
 /* =====================================================
-   🔥 PRODUCTION OPTIMIZED INDEXES
+   🔥 PRODUCTION OPTIMIZED INDEXES (FLAT-BASED)
 ===================================================== */
 
-// For main society visitor listing (pagination)
+// Main society listing
 visitorLogSchema.index({ societyId: 1, createdAt: -1 });
 
-// For status filtering inside society
+// Status filtering
 visitorLogSchema.index({ societyId: 1, status: 1 });
 
-// For resident-specific history
-visitorLogSchema.index({ residentId: 1, createdAt: -1 });
+// Flat-based pending list (VERY IMPORTANT)
+visitorLogSchema.index({ societyId: 1, flatNo: 1, status: 1 });
 
-// For guard-specific logs
+// Guard logs
 visitorLogSchema.index({ guardId: 1, createdAt: -1 });
 
-// For flat-based search
-visitorLogSchema.index({ societyId: 1, flatNo: 1 });
-
-// For entry type filtering
+// Entry type filtering
 visitorLogSchema.index({ societyId: 1, entryType: 1 });
 
-// For OTP lookup
+// OTP lookup
 visitorLogSchema.index({ otp: 1, otpStatus: 1 });
 
 export default mongoose.model("VisitorLog", visitorLogSchema);

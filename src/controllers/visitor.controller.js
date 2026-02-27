@@ -55,29 +55,42 @@ export const createVisitorEntry = async (req, res) => {
     const normalizedFlatNo = normalizeFlatNo(flatNo);
 
     /* ===============================
-       🔍 OWNER Lookup
+       🔍 Check Active Tenant First
     =============================== */
-    const owner = await User.find({
+    const tenants = await User.find({
       societyId,
       flatNo: normalizedFlatNo,
-      roles: { $in: ["OWNER", "TENANT"] },
+      roles: "TENANT",
       status: "ACTIVE"
     });
 
-    if (!owner || owner.length === 0) {
+    let targetResidents;
+
+    if (tenants.length > 0) {
+      // 🔥 Tenant exists → tenant handles visitor
+      targetResidents = tenants;
+    } else {
+      // 🔥 No tenant → owner handles visitor
+      targetResidents = await User.find({
+        societyId,
+        flatNo: normalizedFlatNo,
+        roles: "OWNER",
+        status: "ACTIVE"
+      });
+    }
+
+    if (!targetResidents || targetResidents.length === 0) {
       return res.status(404).json({
-        message: "No active residents found for this flat"
+        message: "No active resident found for this flat"
       });
     }
 
     /* ===============================
-       📸 Visitor Photo (Cloudinary Auto Upload)
+       📸 Visitor Photo
     =============================== */
     let visitorPhotoUrl = null;
 
     if (req.files && req.files.length > 0) {
-      // Since using multer-storage-cloudinary
-      // File is already uploaded
       visitorPhotoUrl = req.files[0].path;
     }
 
@@ -95,7 +108,6 @@ export const createVisitorEntry = async (req, res) => {
       deliveryCompany,
       parcelType,
       guardId,
-      residentId: owner._id,
       visitorPhoto: visitorPhotoUrl,
       status: "PENDING"
     });
@@ -104,8 +116,12 @@ export const createVisitorEntry = async (req, res) => {
        📲 Send Push Notification
     =============================== */
     try {
+      const allTokens = targetResidents.flatMap(user =>
+        getUserTokens(user)
+      );
+
       await sendPushNotificationToMany(
-        getUserTokens(owner),
+        allTokens,
         "Visitor Arrived 🚪",
         `${personName} is waiting at the gate for Flat ${normalizedFlatNo}`,
         {
@@ -132,7 +148,6 @@ export const createVisitorEntry = async (req, res) => {
     });
   }
 };
-
 
 /**
  * =================================
