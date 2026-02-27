@@ -84,7 +84,7 @@ export const getResidentVisitorHistory = async (req, res) => {
   try {
     const { userId, societyId, roles } = req.user;
 
-    // ✅ OWNER or TENANT allowed
+    // ✅ Only OWNER or TENANT
     if (
       !roles ||
       (!roles.includes("OWNER") && !roles.includes("TENANT"))
@@ -102,19 +102,32 @@ export const getResidentVisitorHistory = async (req, res) => {
       });
     }
 
+    // 🔥 Fetch user to get flatNo
+    const user = await User.findById(userId);
+
+    if (!user || !user.flatNo) {
+      return res.status(400).json({
+        success: false,
+        message: "User flat not found"
+      });
+    }
+
+    const flatNo = user.flatNo;
+
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 20;
     const skip = (page - 1) * limit;
 
     const filter = {
-      residentId: userId,
-      societyId
+      societyId,
+      flatNo
     };
 
     const totalVisitors = await VisitorLog.countDocuments(filter);
 
     const visitors = await VisitorLog.find(filter)
       .populate("guardId", "name")
+      .populate("approvedBy", "name roles")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);
@@ -136,7 +149,6 @@ export const getResidentVisitorHistory = async (req, res) => {
     });
   }
 };
-
 
 /**
  * =================================
