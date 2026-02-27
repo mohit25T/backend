@@ -1,6 +1,7 @@
 import User from "../models/User.js";
 import VisitorLog from "../models/VisitorLog.js";
 import { auditLogger } from "../utils/auditLogger.js"; // ✅ ADDED
+import Invite from "../models/Invite.js";
 
 /**
  * UPDATE ADMIN DETAILS
