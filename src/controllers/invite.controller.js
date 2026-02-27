@@ -167,14 +167,15 @@ export const cancelInvite = async (req, res) => {
 
 /**
  * INVITE RESIDENT
- * (Now supports OWNER or TENANT)
- * API name kept same to avoid breaking frontend
+ * ADMIN → can invite OWNER
+ * OWNER → can invite TENANT (only for their own flat)
+ * TENANT → cannot invite
  */
 export const inviteResident = async (req, res) => {
   try {
     const { name, mobile, email, flatNo, role } = req.body;
 
-    const userRole = role || "OWNER";
+    const userRole = role?.toUpperCase() || "OWNER";
 
     if (!["OWNER", "TENANT"].includes(userRole)) {
       return res.status(400).json({
@@ -184,27 +185,63 @@ export const inviteResident = async (req, res) => {
 
     if (!name || !mobile || !email || !flatNo) {
       return res.status(400).json({
-        message: "Name, mobile, email and flat number are required"
+        message: "All fields are required"
       });
     }
 
-    const admin = await User.findById(req.user.userId);
-    if (!admin || !admin.societyId) {
+    const inviter = await User.findById(req.user.userId);
+
+    if (!inviter || !inviter.societyId) {
       return res.status(403).json({
-        message: "Admin society not found"
+        message: "Society not found"
       });
     }
 
-    const flatExists = await Invite.findOne({
-      societyId: admin.societyId,
+    /**
+     * ROLE PERMISSION LOGIC
+     */
+    const isAdminInvitingOwner =
+      inviter.role === "ADMIN" && userRole === "OWNER";
+
+    const isOwnerInvitingTenant =
+      inviter.role === "OWNER" &&
+      userRole === "TENANT" &&
+      inviter.flatNo === flatNo;
+
+    if (!isAdminInvitingOwner && !isOwnerInvitingTenant) {
+      return res.status(403).json({
+        message: "Not authorized to invite this role"
+      });
+    }
+
+    /**
+     * EXISTING USER CHECK
+     */
+    const existingUser = await User.findOne({
+      societyId: inviter.societyId,
       flatNo,
-      role: { $in: ["OWNER", "TENANT"] },
+      role: userRole
+    });
+
+    if (existingUser) {
+      return res.status(409).json({
+        message: `${userRole} already exists for this flat`
+      });
+    }
+
+    /**
+     * DUPLICATE INVITE CHECK
+     */
+    const flatExists = await Invite.findOne({
+      societyId: inviter.societyId,
+      flatNo,
+      role: userRole,
       status: { $in: ["PENDING", "USED"] }
     });
 
     if (flatExists) {
       return res.status(409).json({
-        message: `Flat ${flatNo} already assigned`
+        message: `${userRole} already invited for this flat`
       });
     }
 
@@ -215,7 +252,7 @@ export const inviteResident = async (req, res) => {
     let invite = await Invite.findOne({
       mobile,
       role: userRole,
-      societyId: admin.societyId
+      societyId: inviter.societyId
     });
 
     if (invite?.status === "USED") {
@@ -230,7 +267,7 @@ export const inviteResident = async (req, res) => {
       invite.flatNo = flatNo;
       invite.status = "PENDING";
       invite.expiresAt = expiresAt;
-      invite.invitedBy = admin._id;
+      invite.invitedBy = inviter._id;
       await invite.save();
     } else {
       invite = await Invite.create({
@@ -239,8 +276,8 @@ export const inviteResident = async (req, res) => {
         email,
         flatNo,
         role: userRole,
-        societyId: admin.societyId,
-        invitedBy: admin._id,
+        societyId: inviter.societyId,
+        invitedBy: inviter._id,
         expiresAt
       });
     }
@@ -250,19 +287,19 @@ export const inviteResident = async (req, res) => {
       action: "INVITE_RESIDENT",
       targetType: "INVITE",
       targetId: invite._id,
-      societyId: admin.societyId,
+      societyId: inviter.societyId,
       description: `${userRole} invited: ${name} (${mobile}) | Flat ${flatNo}`
     });
 
-    res.json({
+    return res.json({
       message: `${userRole} invite sent successfully`,
       invite
     });
 
   } catch (err) {
-    console.error("INVITE RESIDENT ERROR:", err);
-    res.status(500).json({
-      message: "Failed to invite user"
+    console.error("INVITE ERROR:", err);
+    return res.status(500).json({
+      message: "Failed to invite resident"
     });
   }
 };
