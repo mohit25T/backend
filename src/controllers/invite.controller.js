@@ -173,9 +173,9 @@ export const cancelInvite = async (req, res) => {
  */
 export const inviteResident = async (req, res) => {
   try {
-    const { name, mobile, email, flatNo, role } = req.body;
+    const { name, mobile, email, flatNo, roles } = req.body;
 
-    const userRole = roles?.toUpperCase() || "OWNER";
+    const userRole = roles?.[0]?.toUpperCase() || "OWNER";
 
     if (!["OWNER", "TENANT"].includes(userRole)) {
       return res.status(400).json({
