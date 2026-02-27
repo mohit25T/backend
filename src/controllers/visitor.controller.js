@@ -340,7 +340,7 @@ export const getVisitors = async (req, res) => {
     const pageNumber = parseInt(page);
     const limitNumber = parseInt(limit);
     const skip = (pageNumber - 1) * limitNumber;
-
+    console.log("Get Visitors - User:", req.user);
     const filter = { societyId };
 
     if (status) {
@@ -379,7 +379,7 @@ export const getVisitors = async (req, res) => {
       // 🔥 Flat-based filtering
       filter.flatNo = flatNo;
     }
-console.log("Visitor Filter:", filter);
+    console.log("Visitor Filter:", filter);
     const total = await VisitorLog.countDocuments(filter);
 
     const visitors = await VisitorLog.find(filter)
