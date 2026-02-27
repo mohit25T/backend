@@ -121,7 +121,7 @@ export const getPendingTenantRequests = async (req, res) => {
       role: "TENANT",
       status: "PENDING"
     }).sort({ createdAt: -1 });
-
+    console.log("PENDING TENANTS:", pendingTenants);
     return res.json({
       success: true,
       data: pendingTenants
