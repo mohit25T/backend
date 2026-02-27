@@ -57,16 +57,16 @@ export const createVisitorEntry = async (req, res) => {
     /* ===============================
        🔍 OWNER Lookup
     =============================== */
-    const owner = await User.findOne({
+    const owner = await User.find({
       societyId,
       flatNo: normalizedFlatNo,
-      roles: "OWNER",
+      roles: { $in: ["OWNER", "TENANT"] },
       status: "ACTIVE"
     });
 
-    if (!owner) {
+    if (!owner || owner.length === 0) {
       return res.status(404).json({
-        message: "Flat owner not found"
+        message: "No active residents found for this flat"
       });
     }
 
