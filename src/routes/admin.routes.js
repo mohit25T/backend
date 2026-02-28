@@ -1,5 +1,5 @@
 import express from "express";
-import { updateAdminDetails, getAllSocietyVisitors,getPendingTenantRequests } from "../controllers/admin.controller.js";
+import { updateAdminDetails, getAllSocietyVisitors, getPendingTenantRequests } from "../controllers/admin.controller.js";
 import { requireAuth } from "../middlewares/auth.middleware.js";
 import { requireSuperAdmin, requireAdmin } from "../middlewares/role.middleware.js";
 
@@ -21,5 +21,12 @@ router.get(
   requireAuth,
   requireAdmin,
   getPendingTenantRequests
+);
+
+router.patch(
+  "/approve-tenant/:inviteId",
+  requireAuth,
+  requireAdmin,
+  approveTenant
 );
 export default router;

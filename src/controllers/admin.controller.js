@@ -132,3 +132,52 @@ export const getPendingTenantRequests = async (req, res) => {
     });
   }
 };
+
+export const approveTenant = async (req, res) => {
+  try {
+    const { inviteId } = req.params;
+
+    const invite = await Invite.findById(inviteId);
+
+    if (!invite || invite.role !== "TENANT") {
+      return res.status(400).json({
+        message: "Invalid tenant invite"
+      });
+    }
+
+    if (invite.status !== "PENDING") {
+      return res.status(400).json({
+        message: "Invite already processed"
+      });
+    }
+
+    // 🔥 Create Tenant User
+    const user = await User.create({
+      name: invite.name,
+      mobile: invite.mobile,
+      email: invite.email,
+      roles: ["TENANT"],
+      flatNo: invite.flatNo,
+      societyId: invite.societyId,
+      invitedBy: invite.invitedBy,
+      status: "ACTIVE",
+      fcmTokens: [],
+      isProfileComplete: false
+    });
+
+    // 🔥 Mark invite used
+    invite.status = "USED";
+    await invite.save();
+
+    return res.json({
+      message: "Tenant approved successfully",
+      user
+    });
+
+  } catch (error) {
+    console.error("APPROVE TENANT ERROR:", error);
+    return res.status(500).json({
+      message: "Failed to approve tenant"
+    });
+  }
+};

@@ -74,63 +74,56 @@ export const sendOtpUser = async (req, res) => {
       return res.status(400).json({ message: "Mobile number required" });
     }
 
+    // 🔥 Only check USER (not invite)
     const user = await User.findOne({ mobile });
 
-    if (user) {
-      const society = await Society.findById(user.societyId);
+    if (!user) {
+      return res.status(403).json({
+        message: "Account not approved yet. Please contact admin."
+      });
+    }
 
-      if (
-        user.status === "BLOCKED" ||
-        society?.status === "BLOCKED"
-      ) {
-        return res.status(403).json({
-          message:
-            user.status === "BLOCKED"
-              ? "Your account has been blocked. Contact admin."
-              : "Your society access has been suspended."
-        });
-      }
+    const society = await Society.findById(user.societyId);
+
+    if (
+      user.status === "BLOCKED" ||
+      society?.status === "BLOCKED"
+    ) {
+      return res.status(403).json({
+        message:
+          user.status === "BLOCKED"
+            ? "Your account has been blocked. Contact admin."
+            : "Your society access has been suspended."
+      });
     }
 
     // ❌ Block Super Admin from mobile app
-    if (user?.roles.includes("SUPER_ADMIN")) {
+    if (user.roles.includes("SUPER_ADMIN")) {
       return res.status(403).json({
         message: "Super admin login not allowed in mobile app",
       });
     }
 
-    const invite = await Invite.findOne({
-      mobile,
-      role: { $in: ["ADMIN", "OWNER", "TENANT", "GUARD"] },
-      status: "PENDING",
-      expiresAt: { $gt: new Date() },
-    });
-
-    if (!user && !invite) {
-      return res.status(403).json({
-        message: "You are not invited to any society",
-      });
-    }
-
-    const email = user?.email || invite?.email;
-    if (!email) {
+    if (!user.email) {
       return res.status(400).json({
         message: "Email not found for OTP",
       });
     }
 
     const otp = generateOtp();
-    saveOtp({ mobile, email, otp });
-    
-    await sendOtpEmail(email, otp);
-    console.log("Otp:", otp);
-    res.json({
-      message: "OTP sent successfully to email",
-      role: invite?.role || user.roles[0],
+    saveOtp({ mobile, email: user.email, otp });
+
+    await sendOtpEmail(user.email, otp);
+    console.log("OTP:", otp);
+
+    return res.json({
+      message: "OTP sent successfully",
+      role: user.roles[0]   // 🔥 Always from USER
     });
+
   } catch (err) {
     console.error("SEND USER OTP ERROR:", err);
-    res.status(500).json({ message: "Failed to send OTP" });
+    return res.status(500).json({ message: "Failed to send OTP" });
   }
 };
 
@@ -188,99 +181,41 @@ export const verifyUserLogin = async (req, res) => {
   try {
     const { mobile, otp, fcmToken } = req.body;
 
-    let user = await User.findOne({ mobile });
-    let invite = null;
+    const user = await User.findOne({ mobile });
 
+    // ❌ No user → No login
     if (!user) {
-      invite = await Invite.findOne({
-        mobile,
-        role: { $in: ["ADMIN", "OWNER", "TENANT", "GUARD"] },
-        status: "PENDING",
-        expiresAt: { $gt: new Date() },
+      return res.status(403).json({
+        message: "Account not approved yet. Please contact admin."
       });
     }
 
-    const email = user?.email || invite?.email;
-    if (!email) {
+    if (!user.email) {
       return res.status(400).json({
         message: "Email not found for OTP verification",
       });
     }
 
-    const isValid = verifyOtp({ mobile, email, otp });
-    if (!isValid) {
-      return res.status(401).json({ message: "Invalid OTP" });
-    }
-
-    /**
-     * =====================
-     * EXISTING USER LOGIN
-     * =====================
-     */
-    if (user) {
-      if (fcmToken) {
-        if (!user.fcmTokens.includes(fcmToken)) {
-          user.fcmTokens.push(fcmToken);
-          user.fcmUpdatedAt = new Date();
-          await user.save();
-        }
-      }
-
-      const token = signToken({
-        userId: user._id,
-        roles: user.roles,
-        societyId: user.societyId,
-      });
-
-      // ✅ ADD THIS LINE
-      const requiresProfilePhoto = !user.profileImage;
-
-      return res.json({
-        token,
-        roles: user.roles,
-        societyId: user.societyId,
-        requiresProfilePhoto, // ✅ NEW FIELD
-      });
-    }
-
-    /**
-     * =====================
-     * CREATE USER FROM INVITE
-     * =====================
-     */
-    if (!invite) {
-      return res.status(403).json({
-        message: "You are not invited to any society",
-      });
-    }
-
-    const roles = [invite.role];
-
-    user = await User.create({
-      name: invite.name,
+    const isValid = verifyOtp({
       mobile,
-      email,
-      roles,
-      flatNo: invite.flatNo,
-      societyId: invite.societyId,
-      invitedBy: invite.invitedBy,
-      status: "ACTIVE",
-      fcmTokens: fcmToken ? [fcmToken] : [],
-      fcmUpdatedAt: fcmToken ? new Date() : null,
-      isProfileComplete: false, // ✅ FORCE FIRST TIME UPLOAD
+      email: user.email,
+      otp
     });
 
-    invite.status = "USED";
-    await invite.save();
+    if (!isValid) {
+      return res.status(401).json({
+        message: "Invalid OTP"
+      });
+    }
 
-    await auditLogger({
-      req,
-      action: "USER_VERIFIED",
-      targetType: "USER",
-      targetId: user._id,
-      societyId: user.societyId,
-      description: `${invite.role} verified via OTP: ${user.name} (${user.mobile})`,
-    });
+    // 🔥 Update FCM token
+    if (fcmToken) {
+      if (!user.fcmTokens.includes(fcmToken)) {
+        user.fcmTokens.push(fcmToken);
+        user.fcmUpdatedAt = new Date();
+        await user.save();
+      }
+    }
 
     const token = signToken({
       userId: user._id,
@@ -288,16 +223,18 @@ export const verifyUserLogin = async (req, res) => {
       societyId: user.societyId,
     });
 
-    // ✅ NEW USER ALWAYS REQUIRES PHOTO
-    res.json({
+    const requiresProfilePhoto = !user.profileImage;
+
+    return res.json({
       token,
       roles: user.roles,
       societyId: user.societyId,
-      requiresProfilePhoto: true,
+      requiresProfilePhoto,
     });
+
   } catch (err) {
     console.error("VERIFY USER LOGIN ERROR:", err);
-    res.status(500).json({ message: "Login failed" });
+    return res.status(500).json({ message: "Login failed" });
   }
 };
 
