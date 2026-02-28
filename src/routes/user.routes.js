@@ -1,5 +1,5 @@
 import express from "express";
-import { getUsersByRole, getMyProfile, getResidentVisitorHistory, getUsersBySociety, uploadProfilePhoto } from "../controllers/user.controller.js";
+import { getUsersByRole, getMyProfile, getResidentVisitorHistory, getUsersBySociety, uploadProfilePhoto, getResidentTenantDetails } from "../controllers/user.controller.js";
 import { requireAuth } from "../middlewares/auth.middleware.js";
 import { requireSuperAdmin, requireResident } from "../middlewares/role.middleware.js";
 import upload from "../middlewares/upload.middleware.js";
@@ -14,5 +14,12 @@ router.post(
     requireAuth,
     upload.any(),
     uploadProfilePhoto
+);
+
+router.get(
+    "/my-tenant",
+    requireAuth,
+    requireResident,
+    getResidentTenantDetails
 );
 export default router;

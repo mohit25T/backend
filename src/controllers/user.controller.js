@@ -268,3 +268,56 @@ export const uploadProfilePhoto = async (req, res) => {
     });
   }
 };
+
+export const getResidentTenantDetails = async (req, res) => {
+  try {
+    const owner = await User.findById(req.user.userId);
+
+    if (!owner.roles.includes("OWNER")) {
+      return res.status(403).json({
+        message: "Only owner can view tenant details"
+      });
+    }
+
+    // 1️⃣ Check ACTIVE tenant
+    const activeTenant = await User.findOne({
+      societyId: owner.societyId,
+      flatNo: owner.flatNo,
+      roles: { $in: ["TENANT"] }
+    });
+
+    if (activeTenant) {
+      return res.json({
+        success: true,
+        type: "ACTIVE",
+        data: activeTenant
+      });
+    }
+
+    // 2️⃣ Check PENDING invite for this flat
+    const pendingTenant = await Invite.findOne({
+      societyId: owner.societyId,
+      flatNo: owner.flatNo,
+      role: "TENANT",
+      status: "PENDING"
+    });
+
+    if (pendingTenant) {
+      return res.json({
+        success: true,
+        type: "PENDING",
+        data: pendingTenant
+      });
+    }
+
+    return res.status(404).json({
+      message: "No tenant found for your flat"
+    });
+
+  } catch (err) {
+    console.error("RESIDENT TENANT ERROR:", err);
+    return res.status(500).json({
+      message: "Failed to fetch tenant details"
+    });
+  }
+};
