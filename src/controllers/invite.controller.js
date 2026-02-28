@@ -297,7 +297,7 @@ export const inviteResident = async (req, res) => {
         expiresAt
       });
     }
-
+    console.log("INVITE CREATED/UPDATED:", invite);
     /**
      * 📝 Audit Log
      */
