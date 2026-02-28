@@ -236,7 +236,7 @@ export const inviteResident = async (req, res) => {
         message: `${userRole} already exists for this flat`
       });
     }
-
+    console.log("EXISTING USER CHECK PASSED");
     /**
      * 📩 DUPLICATE INVITE CHECK
      */
@@ -274,7 +274,7 @@ export const inviteResident = async (req, res) => {
         message: `${userRole} already onboarded`
       });
     }
-
+console.log("DUPLICATE INVITE CHECK PASSED");
     if (invite) {
       // 🔄 Update existing invite
       invite.name = name;
