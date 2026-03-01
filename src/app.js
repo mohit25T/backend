@@ -19,7 +19,7 @@ import visitorRoutes from "./routes/visitor.routes.js";
 import updateUserRoutes from "./routes/superAdmin.routes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
 import maintenanceRoutes from "./routes/maintenance.routes.js";
-import errorHandler from "./middlewares/errorHandler.js";
+import { errorHandler } from "./middlewares/errorHandler.js";
 import complaintRoutes from "./routes/complaint.routes.js";
 import noticeRoutes from "./routes/notice.routes.js"; // if not already added
 
