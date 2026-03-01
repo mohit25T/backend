@@ -283,7 +283,8 @@ export const getResidentTenantDetails = async (req, res) => {
     const activeTenant = await User.findOne({
       societyId: owner.societyId,
       flatNo: owner.flatNo,
-      roles: { $in: ["TENANT"] }
+      roles: { $in: ["TENANT"] },
+      status: "ACTIVE"
     });
 
     if (activeTenant) {
