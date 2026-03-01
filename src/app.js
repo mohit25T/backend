@@ -19,7 +19,9 @@ import visitorRoutes from "./routes/visitor.routes.js";
 import updateUserRoutes from "./routes/superAdmin.routes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
 import maintenanceRoutes from "./routes/maintenance.routes.js";
-import { errorHandler } from "./middlewares/errorHandler.js";
+import errorHandler from "./middlewares/errorHandler.js";
+import complaintRoutes from "./routes/complaint.routes.js";
+import noticeRoutes from "./routes/notice.routes.js"; // if not already added
 
 const app = express();
 /* =========================================
@@ -135,6 +137,8 @@ app.use("/api/audit-logs", auditLogRoutes);
 app.use("/api/user", updateUserRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/maintenance", maintenanceRoutes);
+app.use("/api/complaints", complaintRoutes);
+app.use("/api/notices", noticeRoutes);
 
 /* =========================================
    GLOBAL ERROR HANDLER

@@ -1,12 +1,27 @@
 import Notice from "../models/Notice.js";
 import User from "../models/User.js";
+import {
+    sendPushNotificationToMany
+} from "../services/notificationService.js";
 
-/* ================= CREATE ================= */
+/* ===============================
+   🔧 Helper
+=============================== */
+const getUserTokens = (user) => {
+    if (!user) return [];
+    if (Array.isArray(user.fcmTokens)) return user.fcmTokens;
+    return [];
+};
+
+/* ===============================
+   1️⃣ CREATE NOTICE
+   🔔 Notify Entire Society
+=============================== */
 export const createNotice = async (req, res) => {
     try {
         const admin = await User.findById(req.user.userId);
 
-        if (!admin.roles.includes("ADMIN")) {
+        if (!admin || !admin.roles.includes("ADMIN")) {
             return res.status(403).json({
                 message: "Only admin allowed"
             });
@@ -14,18 +29,53 @@ export const createNotice = async (req, res) => {
 
         const { title, message, priority, expiresAt } = req.body;
 
+        if (!title || !message) {
+            return res.status(400).json({
+                message: "Title and message required"
+            });
+        }
+
         const notice = await Notice.create({
             societyId: admin.societyId,
             createdBy: admin._id,
             title,
             message,
             priority,
-            expiresAt
+            expiresAt: expiresAt ? new Date(expiresAt) : null
         });
 
-        return res.json({
+        /* ===============================
+           🔔 Notify All Active Users
+        =============================== */
+        try {
+            const users = await User.find({
+                societyId: admin.societyId,
+                status: "ACTIVE"
+            });
+
+            const allTokens = users.flatMap(user =>
+                getUserTokens(user)
+            );
+
+            if (allTokens.length > 0) {
+                await sendPushNotificationToMany(
+                    allTokens,
+                    "New Notice 📢",
+                    title,
+                    {
+                        type: "NOTICE_CREATED",
+                        noticeId: notice._id.toString()
+                    }
+                );
+            }
+
+        } catch (pushError) {
+            console.error("Notice Push Error:", pushError);
+        }
+
+        return res.status(201).json({
             success: true,
-            message: "Notice created",
+            message: "Notice created successfully",
             data: notice
         });
 
@@ -37,7 +87,10 @@ export const createNotice = async (req, res) => {
     }
 };
 
-/* ================= GET ================= */
+
+/* ===============================
+   2️⃣ GET NOTICES
+=============================== */
 export const getNotices = async (req, res) => {
     try {
         const user = await User.findById(req.user.userId);
@@ -63,12 +116,15 @@ export const getNotices = async (req, res) => {
     }
 };
 
-/* ================= DELETE ================= */
+
+/* ===============================
+   3️⃣ DELETE NOTICE
+=============================== */
 export const deleteNotice = async (req, res) => {
     try {
         const admin = await User.findById(req.user.userId);
 
-        if (!admin.roles.includes("ADMIN")) {
+        if (!admin || !admin.roles.includes("ADMIN")) {
             return res.status(403).json({
                 message: "Only admin allowed"
             });
@@ -82,7 +138,6 @@ export const deleteNotice = async (req, res) => {
             });
         }
 
-        // 🔒 Society validation (important)
         if (
             notice.societyId.toString() !==
             admin.societyId.toString()

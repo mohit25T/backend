@@ -1,7 +1,7 @@
 import express from "express";
 import upload from "../middlewares/upload.middleware.js";
 import { requireAuth } from "../middlewares/auth.middleware.js";
-import { requireResident } from "../middlewares/role.middleware.js";
+import { requireAdmin, requireResident } from "../middlewares/role.middleware.js";
 import {
     createComplaint,
     getMyComplaints,
@@ -18,7 +18,7 @@ router.post(
     "/",
     requireAuth,
     requireResident,
-    upload.single("image"), // 🔥 important
+    upload.any(), // 🔥 important
     createComplaint
 );
 
@@ -36,6 +36,7 @@ router.get(
 router.get(
     "/",
     requireAuth,
+    requireAdmin,
     getAllComplaints
 );
 
@@ -43,6 +44,7 @@ router.get(
 router.patch(
     "/:id",
     requireAuth,
+    requireAdmin,
     updateComplaintStatus
 );
 

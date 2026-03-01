@@ -1,65 +1,68 @@
 import mongoose from "mongoose";
 
 const complaintSchema = new mongoose.Schema(
-  {
-    societyId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Society",
-      required: true,
-      index: true
+    {
+        societyId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Society",
+            required: true,
+            index: true
+        },
+
+        userId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User",
+            required: true,
+            index: true
+        },
+
+        flatNo: {
+            type: String,
+            required: true,
+            index: true
+        },
+
+        category: {
+            type: String,
+            enum: ["PLUMBING", "ELECTRICITY", "SECURITY", "CLEANING", "LIFT", "OTHER"],
+            required: true,
+            index: true
+        },
+
+        priority: {
+            type: String,
+            enum: ["LOW", "MEDIUM", "HIGH"],
+            default: "MEDIUM",
+            index: true
+        },
+
+        title: {
+            type: String,
+            required: true
+        },
+
+        description: String,
+
+        image: {
+            type: [String],
+            default: []
+        },
+
+        status: {
+            type: String,
+            enum: ["OPEN", "IN_PROGRESS", "RESOLVED"],
+            default: "OPEN",
+            index: true
+        },
+
+        adminResponse: String,
+
+        resolvedAt: {
+            type: Date,
+            index: true
+        }
     },
-
-    userId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      required: true,
-      index: true
-    },
-
-    flatNo: {
-      type: String,
-      required: true,
-      index: true
-    },
-
-    category: {
-      type: String,
-      enum: ["PLUMBING", "ELECTRICITY", "SECURITY", "CLEANING", "LIFT", "OTHER"],
-      required: true,
-      index: true
-    },
-
-    priority: {
-      type: String,
-      enum: ["LOW", "MEDIUM", "HIGH"],
-      default: "MEDIUM",
-      index: true
-    },
-
-    title: {
-      type: String,
-      required: true
-    },
-
-    description: String,
-
-    image: String,
-
-    status: {
-      type: String,
-      enum: ["OPEN", "IN_PROGRESS", "RESOLVED"],
-      default: "OPEN",
-      index: true
-    },
-
-    adminResponse: String,
-
-    resolvedAt: {
-      type: Date,
-      index: true
-    }
-  },
-  { timestamps: true }
+    { timestamps: true }
 );
 
 /* ================= INDEXES ================= */
