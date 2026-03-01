@@ -71,10 +71,12 @@ export const sendOtpUser = async (req, res) => {
     const { mobile } = req.body;
 
     if (!mobile) {
-      return res.status(400).json({ message: "Mobile number required" });
+      return res.status(400).json({
+        message: "Mobile number required"
+      });
     }
 
-    // 🔥 Only check USER (not invite)
+    // 🔍 Find user
     const user = await User.findOne({ mobile });
 
     if (!user) {
@@ -83,47 +85,69 @@ export const sendOtpUser = async (req, res) => {
       });
     }
 
+    // 🔍 Find society
     const society = await Society.findById(user.societyId);
 
-    if (
-      user.status === "BLOCKED" ||
-      society?.status === "BLOCKED"
-    ) {
+    // 🔐 Society Block Check
+    if (society?.status === "BLOCKED") {
       return res.status(403).json({
-        message:
-          user.status === "BLOCKED"
-            ? "Your account has been blocked. Contact admin."
-            : "Your society access has been suspended."
+        message: "Your society access has been suspended."
       });
     }
 
-    // ❌ Block Super Admin from mobile app
+    // 🔐 User Account Block Check
+    if (user.status === "BLOCKED") {
+      return res.status(403).json({
+        message: "Your account has been blocked. Contact admin."
+      });
+    }
+
+    // ❌ Tenant Removed (Inactive)
+    if (user.status === "INACTIVE") {
+      return res.status(403).json({
+        message: "Your tenancy has ended. Please contact the flat owner."
+      });
+    }
+
+    // ❌ Super Admin Mobile Login Restriction
     if (user.roles.includes("SUPER_ADMIN")) {
       return res.status(403).json({
-        message: "Super admin login not allowed in mobile app",
+        message: "Super admin login not allowed in mobile app"
       });
     }
 
+    // 📧 Email Required for OTP
     if (!user.email) {
       return res.status(400).json({
-        message: "Email not found for OTP",
+        message: "Email not found for OTP"
       });
     }
 
+    // 🔢 Generate OTP
     const otp = generateOtp();
-    saveOtp({ mobile, email: user.email, otp });
+
+    saveOtp({
+      mobile,
+      email: user.email,
+      otp
+    });
 
     await sendOtpEmail(user.email, otp);
+
     console.log("OTP:", otp);
 
     return res.json({
+      success: true,
       message: "OTP sent successfully",
-      role: user.roles[0]   // 🔥 Always from USER
+      role: user.roles[0]
     });
 
   } catch (err) {
     console.error("SEND USER OTP ERROR:", err);
-    return res.status(500).json({ message: "Failed to send OTP" });
+
+    return res.status(500).json({
+      message: "Failed to send OTP"
+    });
   }
 };
 
