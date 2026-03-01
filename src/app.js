@@ -65,7 +65,7 @@ app.use(express.urlencoded({ extended: true, limit: "10kb" }));
 app.use(
   cors({
     origin: [
-      "https://web-deploy-j4qo.onrender.com",
+      "https://m.apexitworld.com",
       "https://apexitworld.com",
       "http://localhost:3000"
     ],
