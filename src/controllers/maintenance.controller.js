@@ -1,4 +1,4 @@
-import Maintenance from "../models/maintenance.js";
+import Maintenance from "../models/Maintenance.js";
 import User from "../models/User.js";
 import {
     sendPushNotificationToMany
