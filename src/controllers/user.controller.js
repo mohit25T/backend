@@ -336,7 +336,7 @@ export const removeTenant = async (req, res) => {
       societyId: owner.societyId,
       flatNo: owner.flatNo,
       roles: { $in: ["TENANT"] },
-      isActiveTenant: true
+      status: "ACTIVE"
     });
 
     if (!tenant) {
@@ -345,9 +345,10 @@ export const removeTenant = async (req, res) => {
       });
     }
 
-    // 🔥 Deactivate tenant
-    tenant.isActiveTenant = false;
+    // ✅ Mark tenant as left
+    tenant.status = "INACTIVE";
     tenant.leftAt = new Date();
+
     await tenant.save();
 
     return res.json({
