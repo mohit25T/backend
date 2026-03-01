@@ -1,6 +1,6 @@
 import express from "express";
 import { requireAuth } from "../middlewares/auth.middleware.js";
-import { requireResident } from "../middlewares/role.middleware.js";
+import { requireAdmin, requireResident } from "../middlewares/role.middleware.js";
 import {
     createNotice,
     getNotices,
@@ -15,6 +15,7 @@ const router = express.Router();
 router.post(
     "/",
     requireAuth,
+    requireResident, // ✅ Only residents can create notices, but inside controller we will check if they are admin
     createNotice
 );
 
@@ -22,6 +23,7 @@ router.post(
 router.delete(
     "/:id",
     requireAuth,
+    requireAdmin,
     deleteNotice
 );
 

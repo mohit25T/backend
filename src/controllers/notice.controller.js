@@ -5,11 +5,13 @@ import {
 } from "../services/notificationService.js";
 
 /* ===============================
-   🔧 Helper
+   🔧 Helper: Get Valid Tokens
 =============================== */
 const getUserTokens = (user) => {
     if (!user) return [];
-    if (Array.isArray(user.fcmTokens)) return user.fcmTokens;
+    if (Array.isArray(user.fcmTokens)) {
+        return user.fcmTokens.filter(token => !!token);
+    }
     return [];
 };
 
@@ -40,7 +42,7 @@ export const createNotice = async (req, res) => {
             createdBy: admin._id,
             title,
             message,
-            priority,
+            priority: priority || "MEDIUM",
             expiresAt: expiresAt ? new Date(expiresAt) : null
         });
 
@@ -53,9 +55,15 @@ export const createNotice = async (req, res) => {
                 status: "ACTIVE"
             });
 
-            const allTokens = users.flatMap(user =>
-                getUserTokens(user)
-            );
+            // Collect & Deduplicate Tokens
+            const tokenSet = new Set();
+
+            users.forEach(user => {
+                const tokens = getUserTokens(user);
+                tokens.forEach(token => tokenSet.add(token));
+            });
+
+            const allTokens = Array.from(tokenSet);
 
             if (allTokens.length > 0) {
                 await sendPushNotificationToMany(
@@ -94,6 +102,12 @@ export const createNotice = async (req, res) => {
 export const getNotices = async (req, res) => {
     try {
         const user = await User.findById(req.user.userId);
+
+        if (!user) {
+            return res.status(404).json({
+                message: "User not found"
+            });
+        }
 
         const notices = await Notice.find({
             societyId: user.societyId,
