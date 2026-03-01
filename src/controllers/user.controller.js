@@ -321,3 +321,44 @@ export const getResidentTenantDetails = async (req, res) => {
     });
   }
 };
+
+export const removeTenant = async (req, res) => {
+  try {
+    const owner = await User.findById(req.user.userId);
+
+    if (!owner.roles.includes("OWNER")) {
+      return res.status(403).json({
+        message: "Only owner can remove tenant"
+      });
+    }
+
+    const tenant = await User.findOne({
+      societyId: owner.societyId,
+      flatNo: owner.flatNo,
+      roles: { $in: ["TENANT"] },
+      isActiveTenant: true
+    });
+
+    if (!tenant) {
+      return res.status(404).json({
+        message: "No active tenant found"
+      });
+    }
+
+    // 🔥 Deactivate tenant
+    tenant.isActiveTenant = false;
+    tenant.leftAt = new Date();
+    await tenant.save();
+
+    return res.json({
+      success: true,
+      message: "Tenant removed successfully"
+    });
+
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({
+      message: "Failed to remove tenant"
+    });
+  }
+};
