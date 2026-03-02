@@ -15,7 +15,7 @@ const router = express.Router();
 
 // Create complaint with image upload
 router.post(
-    "/",
+    "/create",
     requireAuth,
     requireResident,
     upload.any(), // 🔥 important
