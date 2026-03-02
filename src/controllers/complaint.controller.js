@@ -102,7 +102,7 @@ export const createComplaint = async (req, res) => {
     } catch (err) {
         console.error("CREATE COMPLAINT ERROR:", err);
         return res.status(500).json({
-            message: "Failed to submit complaint"
+            message: err.message || "Failed to submit complaint"
         });
     }
 };
