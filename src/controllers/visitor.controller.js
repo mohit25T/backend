@@ -49,43 +49,48 @@ export const createVisitorEntry = async (req, res) => {
     const guardId = req.user.userId;
 
     if (!flatNo) {
-      return res.status(400).json({ message: "Flat number is required" });
+      return res.status(400).json({
+        message: "Flat number is required"
+      });
     }
 
     const normalizedFlatNo = normalizeFlatNo(flatNo);
 
-    /* ===============================
-       🔍 Check Active Tenant First
-    =============================== */
-    const tenants = await User.find({
+    /* =====================================================
+       🔍 STEP 1: Find Active Resident (Tenant Priority)
+    ===================================================== */
+
+    // 1️⃣ Try to find active tenants first
+    let targetResidents = await User.find({
       societyId,
       flatNo: normalizedFlatNo,
-      roles: "TENANT",
+      roles: { $in: ["TENANT"] },
       status: "ACTIVE"
     });
 
-    let targetResidents;
-
-    if (tenants.length > 0) {
-      targetResidents = tenants;
-    } else {
+    // 2️⃣ If no tenant, fallback to owner
+    if (targetResidents.length === 0) {
       targetResidents = await User.find({
         societyId,
         flatNo: normalizedFlatNo,
-        roles: "OWNER",
+        roles: { $in: ["OWNER"] },
         status: "ACTIVE"
       });
     }
 
-    if (!targetResidents || targetResidents.length === 0) {
+    if (targetResidents.length === 0) {
       return res.status(404).json({
         message: "No active resident found for this flat"
       });
     }
 
-    /* ===============================
-       🚫 Duplicate Prevention
-    =============================== */
+    // Assign first matched resident
+    const resident = targetResidents[0];
+
+    /* =====================================================
+       🚫 STEP 2: Prevent Duplicate Pending Visitors
+    ===================================================== */
+
     const existingPendingVisitor = await VisitorLog.findOne({
       societyId,
       flatNo: normalizedFlatNo,
@@ -99,35 +104,23 @@ export const createVisitorEntry = async (req, res) => {
       });
     }
 
-    /* ===============================
-       📸 Visitor Photo
-    =============================== */
+    /* =====================================================
+       📸 STEP 3: Handle Visitor Photo
+    ===================================================== */
+
     let visitorPhotoUrl = null;
 
     if (req.files && req.files.length > 0) {
-      visitorPhotoUrl = req.files[0].path;
+      visitorPhotoUrl = req.files[0].path; // Cloudinary URL
     }
 
-    // Find resident by flat number
-    const resident = await User.findOne({
-      societyId,
-      flatNo: normalizedFlatNo,
-      roles: { $in: ["TENANT", "OWNER"] },
-      status: "ACTIVE"
-    });
+    /* =====================================================
+       📝 STEP 4: Create Visitor Entry
+    ===================================================== */
 
-    if (!resident) {
-      return res.status(404).json({
-        message: "Resident not found for this flat"
-      });
-    }
-
-    /* ===============================
-       📝 Create Visitor Entry
-    =============================== */
     const visitor = await VisitorLog.create({
       societyId,
-      residentId: resident._id,
+      residentId: resident._id, // 🔥 Important
       personName,
       personMobile,
       purpose,
@@ -141,34 +134,39 @@ export const createVisitorEntry = async (req, res) => {
       status: "PENDING"
     });
 
-    /* ===============================
-       📲 Send Push Notification
-    =============================== */
+    /* =====================================================
+       📲 STEP 5: Send Push Notification to Residents
+    ===================================================== */
+
     try {
       const allTokens = targetResidents.flatMap(user =>
-        getUserTokens(user)
+        getUserTokens(user) || []
       );
 
-      await sendPushNotificationToMany(
-        allTokens,
-        "Visitor Arrived 🚪",
-        `${personName} is waiting at the gate for Flat ${normalizedFlatNo}`,
-        {
-          type: "VISITOR_ARRIVED",
-          visitorId: visitor._id.toString()
-        }
-      );
+      if (allTokens.length > 0) {
+        await sendPushNotificationToMany(
+          allTokens,
+          "Visitor Arrived 🚪",
+          `${personName} is waiting at the gate for Flat ${normalizedFlatNo}`,
+          {
+            type: "VISITOR_ARRIVED",
+            visitorId: visitor._id.toString()
+          }
+        );
+      }
     } catch (pushError) {
       console.error("Push Notification Error:", pushError);
     }
 
     return res.status(201).json({
+      success: true,
       message: "Visitor entry created successfully",
       visitor
     });
 
   } catch (error) {
     console.error("CREATE VISITOR ERROR:", error);
+
     return res.status(500).json({
       message: error.message || "Server error"
     });
