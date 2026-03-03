@@ -1,5 +1,5 @@
 import User from "../models/User.js";
-import VisitorLog from "../models/VisitorLog.js";
+import Invite from "../models/Invite.js";
 import cloudinary from "../config/cloudinary.js";
 
 const normalizeFlatNo = (flatNo) =>
