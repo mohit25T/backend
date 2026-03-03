@@ -79,7 +79,7 @@ export const inviteAdmin = async (req, res) => {
     mobile,
     email,
     flatNo,
-    role: "ADMIN",
+    roles: "ADMIN",
     societyId,
     invitedBy: req.user.userId,
     expiresAt
