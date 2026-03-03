@@ -233,13 +233,18 @@ export const verifyUserLogin = async (req, res) => {
     }
 
     // 🔥 Update FCM token
-    if (fcmToken) {
-      if (!user.fcmTokens.includes(fcmToken)) {
-        user.fcmTokens.push(fcmToken);
-        user.fcmUpdatedAt = new Date();
-        await user.save();
-      }
-    }
+// 🔥 Safe FCM handling
+if (fcmToken) {
+  if (!Array.isArray(user.fcmTokens)) {
+    user.fcmTokens = [];
+  }
+
+  if (!user.fcmTokens.includes(fcmToken)) {
+    user.fcmTokens.push(fcmToken);
+    user.fcmUpdatedAt = new Date();
+    await user.save();
+  }
+}
 
     const token = signToken({
       userId: user._id,
