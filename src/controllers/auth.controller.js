@@ -205,16 +205,15 @@ export const verifyUserLogin = async (req, res) => {
   try {
     const { mobile, otp, fcmToken } = req.body;
 
-    const user = await Invite.findOne({ mobile });
+    const invite = await Invite.findOne({ mobile });
 
-    // ❌ No user → No login
-    if (!user) {
+    if (!invite) {
       return res.status(403).json({
         message: "Account not approved yet. Please contact admin."
       });
     }
 
-    if (!user.email) {
+    if (!invite.email) {
       return res.status(400).json({
         message: "Email not found for OTP verification",
       });
@@ -222,7 +221,7 @@ export const verifyUserLogin = async (req, res) => {
 
     const isValid = verifyOtp({
       mobile,
-      email: user.email,
+      email: invite.email,
       otp
     });
 
@@ -232,19 +231,37 @@ export const verifyUserLogin = async (req, res) => {
       });
     }
 
-    // 🔥 Update FCM token
-// 🔥 Safe FCM handling
-if (fcmToken) {
-  if (!Array.isArray(user.fcmTokens)) {
-    user.fcmTokens = [];
-  }
+    /* ===============================
+       🔥 CHECK IF USER ALREADY EXISTS
+    =============================== */
+    let user = await User.findOne({ mobile });
 
-  if (!user.fcmTokens.includes(fcmToken)) {
-    user.fcmTokens.push(fcmToken);
-    user.fcmUpdatedAt = new Date();
-    await user.save();
-  }
-}
+    if (!user) {
+      user = await User.create({
+        name: invite.name,
+        mobile: invite.mobile,
+        email: invite.email,
+        roles: invite.roles,
+        societyId: invite.societyId,
+        flatNo: invite.flatNo,
+        status: "ACTIVE",
+        fcmTokens: fcmToken ? [fcmToken] : []
+      });
+
+      invite.status = "USED";
+      await invite.save();
+    } else {
+      // Update FCM safely
+      if (fcmToken) {
+        user.fcmTokens = user.fcmTokens || [];
+
+        if (!user.fcmTokens.includes(fcmToken)) {
+          user.fcmTokens.push(fcmToken);
+          user.fcmUpdatedAt = new Date();
+          await user.save();
+        }
+      }
+    }
 
     const token = signToken({
       userId: user._id,
