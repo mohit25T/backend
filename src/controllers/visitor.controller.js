@@ -181,43 +181,117 @@ export const createVisitorEntry = async (req, res) => {
 export const approveVisitor = async (req, res) => {
   try {
     const { id } = req.params;
+    const { userId } = req.user;
+
+    /* ==========================================
+       1️⃣ Find Visitor
+    ========================================== */
 
     const visitor = await VisitorLog.findById(id);
-    if (!visitor) return res.status(404).json({ message: "Visitor not found" });
+
+    if (!visitor) {
+      return res.status(404).json({
+        success: false,
+        message: "Visitor not found"
+      });
+    }
 
     if (visitor.status !== "PENDING") {
-      return res.status(400).json({ message: "Visitor already processed" });
+      return res.status(400).json({
+        success: false,
+        message: "Visitor already processed"
+      });
     }
-    console.log("Visitor's residentId:", visitor.residentId);
-    console.log("Requesting user's ID:", req.user);
-    if (visitor.residentId.toString() !== req.user.userId.toString()) {
-      return res.status(403).json({ message: "Unauthorized" });
+
+    /* ==========================================
+       2️⃣ Find Requesting User
+    ========================================== */
+
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
     }
+
+    /* ==========================================
+       3️⃣ Flat-Based Authorization
+       (Tenant or Owner of Same Flat Can Approve)
+    ========================================== */
+
+    if (!user.flatNo) {
+      return res.status(403).json({
+        success: false,
+        message: "Unauthorized"
+      });
+    }
+
+    const normalizedUserFlat = normalizeFlatNo(user.flatNo);
+
+    if (normalizedUserFlat !== visitor.flatNo) {
+      return res.status(403).json({
+        success: false,
+        message: "Unauthorized"
+      });
+    }
+
+    /* ==========================================
+       4️⃣ Approve Visitor
+    ========================================== */
 
     visitor.status = "APPROVED";
-    visitor.approvedBy = req.user.userId;
+    visitor.approvedBy = userId;
+    visitor.approvedAt = new Date();
+
     await visitor.save();
 
-    const guard = await User.findById(visitor.guardId);
+    /* ==========================================
+       5️⃣ Notify Guard
+    ========================================== */
 
-    await sendPushNotificationToMany(
-      getUserTokens(guard),
-      "Visitor Approved ✅",
-      `Visitor approved for Flat ${visitor.flatNo}`,
-      {
-        type: "VISITOR_APPROVED",
-        visitorId: visitor._id.toString()
+    try {
+      const guard = await User.findById(visitor.guardId);
+
+      if (guard) {
+        const tokens = getUserTokens(guard) || [];
+
+        if (tokens.length > 0) {
+          await sendPushNotificationToMany(
+            tokens,
+            "Visitor Approved ✅",
+            `Visitor approved for Flat ${visitor.flatNo}`,
+            {
+              type: "VISITOR_APPROVED",
+              visitorId: visitor._id.toString()
+            }
+          );
+        }
       }
-    );
+    } catch (pushError) {
+      console.error("Push Notification Error:", pushError);
+    }
 
-    res.json({ message: "Visitor approved", visitor });
+    /* ==========================================
+       6️⃣ Response
+    ========================================== */
+
+    return res.json({
+      success: true,
+      message: "Visitor approved successfully",
+      visitor
+    });
 
   } catch (error) {
     console.error("APPROVE VISITOR ERROR:", error);
-    res.status(500).json({ message: "Server error" });
+
+    return res.status(500).json({
+      success: false,
+      message: "Server error"
+    });
   }
 };
-
 
 /**
  * =================================
