@@ -361,7 +361,7 @@ export const getVisitors = async (req, res) => {
   try {
     const { status, page = 1, limit = 20 } = req.query;
     const { societyId, roles, userId } = req.user;
-    console.log("Get Visitors - User:", req.user);
+
     const pageNumber = parseInt(page);
     const limitNumber = parseInt(limit);
     const skip = (pageNumber - 1) * limitNumber;
@@ -375,35 +375,23 @@ export const getVisitors = async (req, res) => {
       });
     }
 
-    const flatNo = normalizeFlatNo(user.flatNo);
+    let filter = { societyId };
 
-    const filter = { societyId, flatNo };
+    /* ===============================
+       🔐 ROLE BASED FILTER
+    =============================== */
+
+    if (roles.includes("TENANT") || roles.includes("OWNER")) {
+      const flatNo = normalizeFlatNo(user.flatNo);
+      filter.flatNo = flatNo;
+    }
+
+    if (roles.includes("GUARD")) {
+      filter.guardId = userId;
+    }
 
     if (status) {
       filter.status = status.trim().toUpperCase();
-    }
-
-    /* ===============================
-       🔐 Privacy Logic
-    =============================== */
-
-    const activeTenant = await User.findOne({
-      societyId,
-      flatNo,
-      roles: "TENANT",
-      status: "ACTIVE"
-    });
-
-    if (roles.includes("TENANT")) {
-      if (activeTenant) {
-        filter.createdAt = { $gte: activeTenant.createdAt };
-      }
-    }
-
-    if (roles.includes("OWNER")) {
-      if (activeTenant) {
-        filter.createdAt = { $lt: activeTenant.createdAt };
-      }
     }
 
     const total = await VisitorLog.countDocuments(filter);
@@ -415,7 +403,7 @@ export const getVisitors = async (req, res) => {
       .skip(skip)
       .limit(limitNumber)
       .lean();
-    console.log("Fetched visitors:", visitors);
+
     res.json({
       success: true,
       data: visitors,
