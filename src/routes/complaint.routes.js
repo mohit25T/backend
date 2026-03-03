@@ -18,7 +18,7 @@ router.post(
     "/create",
     requireAuth,
     requireResident,
-    upload.any(), // 🔥 important
+    upload.array("images", 5), // 🔥 important
     createComplaint
 );
 
