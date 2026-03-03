@@ -324,3 +324,71 @@ export const getAllSocietyBills = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+
+/* =========================================================
+   🔹 Admin Marks Full Year as Paid (Per Resident)
+========================================================= */
+export const payFullYearMaintenance = async (req, res) => {
+    try {
+        const { residentId, year, paymentMode, paymentNote } = req.body;
+        const societyId = req.user.societyId;
+
+        if (!residentId || !year) {
+            return res.status(400).json({
+                message: "residentId and year are required",
+            });
+        }
+
+        const bills = await Maintenance.find({
+            societyId,
+            residentId,
+            year: parseInt(year),
+            status: { $in: ["Pending", "Overdue"] },
+        }).populate("residentId");
+
+        if (!bills.length) {
+            return res.status(400).json({
+                message: "No pending bills found for this year",
+            });
+        }
+
+        const now = new Date();
+
+        for (const bill of bills) {
+            bill.status = "Paid";
+            bill.paidAt = now;
+            bill.paidBy = req.user.userId;
+            bill.paymentMode = paymentMode || "CASH";
+            bill.paymentNote =
+                paymentNote || "Full year payment marked by admin";
+            bill.reminderSent = true;
+
+            await bill.save();
+        }
+
+        const tokens = bills[0].residentId?.fcmTokens || [];
+
+        if (tokens.length) {
+            await sendPushNotificationToMany(
+                tokens,
+                "Full Year Payment Confirmed ✅",
+                `Your full year maintenance for ${year} has been marked as paid`,
+                {
+                    type: "MAINTENANCE_FULL_YEAR_PAID",
+                    year,
+                }
+            );
+        }
+
+        return res.json({
+            success: true,
+            message: "Full year maintenance marked as paid successfully",
+        });
+
+    } catch (error) {
+        console.error("Full Year Payment Error:", error);
+        return res.status(500).json({
+            message: "Something went wrong while marking full year payment",
+        });
+    }
+};
