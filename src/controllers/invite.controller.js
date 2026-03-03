@@ -201,24 +201,20 @@ export const inviteResident = async (req, res) => {
   try {
     const { name, mobile, email, flatNo, role } = req.body;
 
-    // 🔥 Normalize role
     const userRole = role?.toUpperCase();
 
-    // ✅ Validate role
     if (!userRole || !["OWNER", "TENANT"].includes(userRole)) {
       return res.status(400).json({
         message: "Role must be OWNER or TENANT"
       });
     }
 
-    // ✅ Basic validation
     if (!name || !mobile || !email || !flatNo) {
       return res.status(400).json({
         message: "All fields are required"
       });
     }
 
-    // 🔍 Get inviter from DB
     const inviter = await User.findById(req.user.userId);
 
     if (!inviter || !inviter.societyId) {
@@ -227,11 +223,9 @@ export const inviteResident = async (req, res) => {
       });
     }
 
-    console.log("INVITER ROLES:", inviter.roles);
-
-    /**
-     * 🔐 ROLE PERMISSION LOGIC
-     */
+    /* ===============================
+       🔐 ROLE PERMISSION CHECK
+    =============================== */
 
     const isAdminInvitingOwner =
       inviter.roles.includes("ADMIN") &&
@@ -248,13 +242,14 @@ export const inviteResident = async (req, res) => {
       });
     }
 
-    /**
-     * 👤 EXISTING USER CHECK
-     */
+    /* ===============================
+       👤 EXISTING USER CHECK
+    =============================== */
+
     const existingUser = await User.findOne({
       societyId: inviter.societyId,
       flatNo,
-      roles: userRole
+      roles: { $in: [userRole] }
     });
 
     if (existingUser) {
@@ -262,14 +257,15 @@ export const inviteResident = async (req, res) => {
         message: `${userRole} already exists for this flat`
       });
     }
-    console.log("EXISTING USER CHECK PASSED");
-    /**
-     * 📩 DUPLICATE INVITE CHECK
-     */
+
+    /* ===============================
+       📩 DUPLICATE INVITE CHECK
+    =============================== */
+
     const flatExists = await Invite.findOne({
       societyId: inviter.societyId,
       flatNo,
-      role: userRole,
+      roles: { $in: [userRole] },
       status: { $in: ["PENDING", "USED"] }
     });
 
@@ -279,20 +275,14 @@ export const inviteResident = async (req, res) => {
       });
     }
 
-    /**
-     * ⏳ Invite Expiry
-     */
     const expiresAt = new Date(
       Date.now() + INVITE_EXPIRY_HOURS * 60 * 60 * 1000
     );
 
-    /**
-     * 🔍 Check if same mobile already invited
-     */
     let invite = await Invite.findOne({
       mobile,
-      role: userRole,
-      societyId: inviter.societyId
+      societyId: inviter.societyId,
+      roles: { $in: [userRole] }
     });
 
     if (invite?.status === "USED") {
@@ -300,33 +290,29 @@ export const inviteResident = async (req, res) => {
         message: `${userRole} already onboarded`
       });
     }
-console.log("DUPLICATE INVITE CHECK PASSED");
+
     if (invite) {
-      // 🔄 Update existing invite
       invite.name = name;
       invite.email = email;
       invite.flatNo = flatNo;
       invite.status = "PENDING";
       invite.expiresAt = expiresAt;
       invite.invitedBy = inviter._id;
+      invite.roles = [userRole]; // 🔥 FIXED
       await invite.save();
     } else {
-      // 🆕 Create new invite
       invite = await Invite.create({
         name,
         mobile,
         email,
         flatNo,
-        role: userRole,
+        roles: [userRole], // 🔥 FIXED
         societyId: inviter.societyId,
         invitedBy: inviter._id,
         expiresAt
       });
     }
-    console.log("INVITE CREATED/UPDATED:", invite);
-    /**
-     * 📝 Audit Log
-     */
+
     await auditLogger({
       req,
       action: "INVITE_RESIDENT",
@@ -350,9 +336,6 @@ console.log("DUPLICATE INVITE CHECK PASSED");
   }
 };
 
-/**
- * INVITE GUARD
- */
 export const inviteGuard = async (req, res) => {
   try {
     const { name, mobile, email } = req.body;
@@ -364,6 +347,7 @@ export const inviteGuard = async (req, res) => {
     }
 
     const admin = await User.findById(req.user.userId);
+
     if (!admin || !admin.societyId) {
       return res.status(403).json({
         message: "Admin society not found"
@@ -376,8 +360,8 @@ export const inviteGuard = async (req, res) => {
 
     let invite = await Invite.findOne({
       mobile,
-      role: "GUARD",
-      societyId: admin.societyId
+      societyId: admin.societyId,
+      roles: { $in: ["GUARD"] }
     });
 
     if (invite && invite.status === "USED") {
@@ -392,13 +376,14 @@ export const inviteGuard = async (req, res) => {
       invite.status = "PENDING";
       invite.expiresAt = expiresAt;
       invite.invitedBy = admin._id;
+      invite.roles = ["GUARD"]; // 🔥 FIXED
       await invite.save();
     } else {
       invite = await Invite.create({
         name,
         mobile,
         email,
-        role: "GUARD",
+        roles: ["GUARD"], // 🔥 FIXED
         societyId: admin.societyId,
         invitedBy: admin._id,
         expiresAt
@@ -414,13 +399,14 @@ export const inviteGuard = async (req, res) => {
       description: `Guard invited: ${name} (${mobile})`
     });
 
-    res.json({
+    return res.json({
       message: "Guard invite sent successfully",
       invite
     });
+
   } catch (err) {
     console.error("INVITE GUARD ERROR:", err);
-    res.status(500).json({
+    return res.status(500).json({
       message: "Failed to invite guard"
     });
   }
