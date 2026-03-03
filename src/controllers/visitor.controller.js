@@ -108,11 +108,26 @@ export const createVisitorEntry = async (req, res) => {
       visitorPhotoUrl = req.files[0].path;
     }
 
+    // Find resident by flat number
+    const resident = await User.findOne({
+      societyId,
+      flatNo: normalizedFlatNo,
+      roles: { $in: ["TENANT", "OWNER"] },
+      status: "ACTIVE"
+    });
+
+    if (!resident) {
+      return res.status(404).json({
+        message: "Resident not found for this flat"
+      });
+    }
+
     /* ===============================
        📝 Create Visitor Entry
     =============================== */
     const visitor = await VisitorLog.create({
       societyId,
+      residentId: resident._id,
       personName,
       personMobile,
       purpose,
