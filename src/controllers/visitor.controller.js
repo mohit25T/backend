@@ -175,7 +175,8 @@ export const approveVisitor = async (req, res) => {
     if (visitor.status !== "PENDING") {
       return res.status(400).json({ message: "Visitor already processed" });
     }
-
+    console.log("Visitor's residentId:", visitor.residentId);
+    console.log("Requesting user's ID:", req.user);
     if (visitor.residentId.toString() !== req.user.userId.toString()) {
       return res.status(403).json({ message: "Unauthorized" });
     }
