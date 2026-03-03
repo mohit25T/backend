@@ -40,7 +40,7 @@ export const inviteAdmin = async (req, res) => {
 
   let invite = await Invite.findOne({
     mobile,
-    role: "ADMIN",
+    roles: "ADMIN",
     societyId
   });
 
