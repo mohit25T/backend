@@ -20,7 +20,7 @@ const inviteSchema = new mongoose.Schema(
     },
 
     roles: {
-      type: String,
+      type: [String],
       enum: ["ADMIN", "OWNER", "TENANT", "GUARD"],
       required: true
     },
