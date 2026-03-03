@@ -415,7 +415,7 @@ export const getVisitors = async (req, res) => {
       .skip(skip)
       .limit(limitNumber)
       .lean();
-
+    console.log("Fetched visitors:", visitors);
     res.json({
       success: true,
       data: visitors,

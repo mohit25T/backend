@@ -159,8 +159,6 @@ export const getResidentVisitorHistory = async (req, res) => {
       .limit(limit)
       .lean();
 
-    console.log("visitor history:", visitors);
-
     return res.status(200).json({
       success: true,
       totalVisitors,
