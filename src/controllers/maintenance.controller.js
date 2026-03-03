@@ -1,11 +1,17 @@
 import Maintenance from "../models/Maintenance.js";
 import User from "../models/User.js";
-import {
-    sendPushNotificationToMany
-} from "../services/notificationService.js";
+import { sendPushNotificationToMany } from "../services/notificationService.js";
 
 /* =========================================================
-   🔹 Admin generates bills for all OWNERS
+   🔹 Helper: Extract Year from Month String
+========================================================= */
+const extractYear = (monthString) => {
+    const parts = monthString.split(" ");
+    return parseInt(parts[1]);
+};
+
+/* =========================================================
+   🔹 Admin manually generates monthly bills
 ========================================================= */
 export const generateMonthlyBills = async (req, res) => {
     try {
@@ -17,10 +23,12 @@ export const generateMonthlyBills = async (req, res) => {
             });
         }
 
-        // ✅ Only OWNERS pay maintenance
+        const societyId = req.user.societyId;
+        const year = extractYear(month);
+
         const owners = await User.find({
-            societyId: req.user.societyId,
-            roles: "OWNER",
+            societyId,
+            roles: { $in: ["OWNER"] },
         });
 
         if (!owners.length) {
@@ -30,7 +38,7 @@ export const generateMonthlyBills = async (req, res) => {
         }
 
         const existingBills = await Maintenance.findOne({
-            societyId: req.user.societyId,
+            societyId,
             month,
         });
 
@@ -40,38 +48,49 @@ export const generateMonthlyBills = async (req, res) => {
             });
         }
 
-        const bills = owners
-            .filter((o) => o.flatNo)
-            .map((owner) => ({
-                societyId: req.user.societyId,
-                residentId: owner._id, // keeping field name same to avoid breaking DB
+        const bills = [];
+
+        for (const owner of owners) {
+            if (!owner.flatNo) continue;
+
+            const paidCount = await Maintenance.countDocuments({
+                societyId,
+                residentId: owner._id,
+                year,
+                status: "Paid",
+            });
+
+            if (paidCount >= 12) continue;
+
+            bills.push({
+                societyId,
+                residentId: owner._id,
                 flatNumber: owner.flatNo,
                 month,
+                year,
                 amount,
                 dueDate,
                 status: "Pending",
-            }));
+                reminderSent: false,
+            });
+        }
 
         if (!bills.length) {
             return res.status(400).json({
-                message: "Owners missing flat numbers",
+                message: "All owners have already paid yearly",
             });
         }
 
         await Maintenance.insertMany(bills);
 
-        /* 🔔 MULTI-DEVICE NOTIFICATION */
-        const allTokens = owners.flatMap(o => o.fcmTokens || []);
+        const tokens = owners.flatMap(o => o.fcmTokens || []);
 
-        if (allTokens.length) {
+        if (tokens.length) {
             await sendPushNotificationToMany(
-                allTokens,
+                tokens,
                 "New Maintenance Bill 🧾",
                 `Maintenance for ${month} has been generated`,
-                {
-                    type: "MAINTENANCE_GENERATED",
-                    month,
-                }
+                { type: "MAINTENANCE_GENERATED", month }
             );
         }
 
@@ -87,9 +106,164 @@ export const generateMonthlyBills = async (req, res) => {
     }
 };
 
+/* =========================================================
+   🔹 Auto Generate Monthly Maintenance (Cron Ready)
+========================================================= */
+export const autoGenerateMonthlyMaintenance = async () => {
+    try {
+        const today = new Date();
+        const monthName = today.toLocaleString("default", { month: "long" });
+        const year = today.getFullYear();
+        const monthString = `${monthName} ${year}`;
+
+        const societies = await User.distinct("societyId");
+
+        for (const societyId of societies) {
+
+            const existing = await Maintenance.findOne({
+                societyId,
+                month: monthString,
+            });
+
+            if (existing) continue;
+
+            const owners = await User.find({
+                societyId,
+                roles: { $in: ["OWNER"] },
+            });
+
+            const bills = [];
+
+            for (const owner of owners) {
+
+                const paidCount = await Maintenance.countDocuments({
+                    societyId,
+                    residentId: owner._id,
+                    year,
+                    status: "Paid",
+                });
+
+                if (paidCount >= 12) continue;
+
+                bills.push({
+                    societyId,
+                    residentId: owner._id,
+                    flatNumber: owner.flatNo,
+                    month: monthString,
+                    year,
+                    amount: 1000, // You can move this to society config
+                    dueDate: new Date(year, today.getMonth(), 10),
+                    status: "Pending",
+                    reminderSent: false,
+                });
+            }
+
+            if (bills.length) {
+                await Maintenance.insertMany(bills);
+
+                const tokens = owners.flatMap(o => o.fcmTokens || []);
+
+                if (tokens.length) {
+                    await sendPushNotificationToMany(
+                        tokens,
+                        "New Maintenance Bill 🧾",
+                        `Maintenance for ${monthString} has been auto-generated`,
+                        { type: "MAINTENANCE_AUTO_GENERATED", month: monthString }
+                    );
+                }
+            }
+        }
+
+        console.log("Auto maintenance generation completed");
+
+    } catch (error) {
+        console.error("Auto Maintenance Error:", error);
+    }
+};
 
 /* =========================================================
-   🔹 OWNER gets own bills (Paginated)
+   🔹 5-Day Reminder Cron
+========================================================= */
+export const sendMaintenanceDueReminders = async () => {
+    try {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const targetDate = new Date(today);
+        targetDate.setDate(targetDate.getDate() + 5);
+        targetDate.setHours(23, 59, 59, 999);
+
+        const bills = await Maintenance.find({
+            status: "Pending",
+            dueDate: { $gte: today, $lte: targetDate },
+            reminderSent: false,
+        }).populate("residentId");
+
+        for (const bill of bills) {
+            const tokens = bill.residentId?.fcmTokens || [];
+
+            if (tokens.length) {
+                await sendPushNotificationToMany(
+                    tokens,
+                    "Maintenance Due Reminder ⏰",
+                    `Your maintenance for ${bill.month} is due on ${bill.dueDate.toDateString()}`,
+                    { type: "MAINTENANCE_REMINDER", billId: bill._id.toString() }
+                );
+            }
+
+            bill.reminderSent = true;
+            await bill.save();
+        }
+
+        console.log(`Sent ${bills.length} reminders`);
+
+    } catch (error) {
+        console.error("Maintenance Reminder Error:", error);
+    }
+};
+
+/* =========================================================
+   🔹 Admin Marks Bill as Paid
+========================================================= */
+export const markBillAsPaid = async (req, res) => {
+    try {
+        const bill = await Maintenance.findById(req.params.id)
+            .populate("residentId");
+
+        if (!bill) {
+            return res.status(404).json({ message: "Bill not found" });
+        }
+
+        bill.status = "Paid";
+        bill.paidAt = new Date();
+        bill.paidBy = req.user.userId;
+        bill.reminderSent = true;
+
+        await bill.save();
+
+        const tokens = bill.residentId?.fcmTokens || [];
+
+        if (tokens.length) {
+            await sendPushNotificationToMany(
+                tokens,
+                "Payment Confirmed ✅",
+                `Your maintenance payment for ${bill.month} has been confirmed`,
+                { type: "MAINTENANCE_PAID", billId: bill._id.toString() }
+            );
+        }
+
+        res.json({
+            message: "Bill marked as paid successfully",
+        });
+
+    } catch (error) {
+        console.error("Mark Bill Paid Error:", error);
+        res.status(500).json({ message: error.message });
+    }
+};
+
+/* =========================================================
+   🔹 Resident Gets Own Bills
 ========================================================= */
 export const getResidentBills = async (req, res) => {
     try {
@@ -97,9 +271,7 @@ export const getResidentBills = async (req, res) => {
         const limit = parseInt(req.query.limit) || 20;
         const skip = (page - 1) * limit;
 
-        const query = {
-            residentId: req.user.userId,
-        };
+        const query = { residentId: req.user.userId };
 
         const total = await Maintenance.countDocuments(query);
 
@@ -121,50 +293,8 @@ export const getResidentBills = async (req, res) => {
     }
 };
 
-
 /* =========================================================
-   🔹 Admin marks bill as paid
-========================================================= */
-export const markBillAsPaid = async (req, res) => {
-    try {
-        const bill = await Maintenance.findById(req.params.id)
-            .populate("residentId");
-
-        if (!bill) {
-            return res.status(404).json({ message: "Bill not found" });
-        }
-
-        bill.status = "Paid";
-        await bill.save();
-
-        // 🔔 Notify OWNER (multi-device)
-        const tokens = bill.residentId?.fcmTokens || [];
-
-        if (tokens.length) {
-            await sendPushNotificationToMany(
-                tokens,
-                "Payment Confirmed ✅",
-                `Your maintenance payment for ${bill.month} has been confirmed`,
-                {
-                    type: "MAINTENANCE_PAID",
-                    billId: bill._id.toString(),
-                }
-            );
-        }
-
-        res.json({
-            message: "Bill marked as paid successfully",
-        });
-
-    } catch (error) {
-        console.error("Mark Bill Paid Error:", error);
-        res.status(500).json({ message: error.message });
-    }
-};
-
-
-/* =========================================================
-   🔹 Admin views all society bills (Paginated)
+   🔹 Admin Views All Society Bills
 ========================================================= */
 export const getAllSocietyBills = async (req, res) => {
     try {
@@ -172,9 +302,7 @@ export const getAllSocietyBills = async (req, res) => {
         const limit = parseInt(req.query.limit) || 20;
         const skip = (page - 1) * limit;
 
-        const query = {
-            societyId: req.user.societyId,
-        };
+        const query = { societyId: req.user.societyId };
 
         const total = await Maintenance.countDocuments(query);
 

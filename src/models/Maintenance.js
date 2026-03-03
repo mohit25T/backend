@@ -24,6 +24,11 @@ const maintenanceSchema = new mongoose.Schema(
       required: true,
     },
 
+    // 🔥 (Future safe improvement)
+    year: {
+      type: Number,
+    },
+
     amount: {
       type: Number,
       required: true,
@@ -40,9 +45,38 @@ const maintenanceSchema = new mongoose.Schema(
       default: "Pending",
     },
 
+    /* ===============================
+       💰 PAYMENT INFO
+    =============================== */
+
     paidAt: {
       type: Date,
     },
+
+    paidBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
+
+    reminderSent: {
+      type: Boolean,
+      default: false,
+    },
+
+    paymentMode: {
+      type: String,
+      enum: ["CASH", "UPI", "CHEQUE", "ONLINE"],
+    },
+
+    paymentNote: {
+      type: String,
+    },
+
+    // 🔥 Future online payment support
+    transactionId: {
+      type: String,
+    },
+
   },
   { timestamps: true }
 );
@@ -65,6 +99,9 @@ maintenanceSchema.index({ societyId: 1, flatNumber: 1 });
 
 // 🔥 For monthly reports
 maintenanceSchema.index({ societyId: 1, month: 1 });
+
+// 🔥 For yearly bulk updates (important for full-year payment)
+maintenanceSchema.index({ societyId: 1, residentId: 1, year: 1 });
 
 // 🔥 For overdue detection cron jobs
 maintenanceSchema.index({ dueDate: 1, status: 1 });

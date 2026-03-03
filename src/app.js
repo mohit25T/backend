@@ -3,6 +3,7 @@ import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
 import rateLimit from "express-rate-limit";
+import cron from "node-cron";
 
 import authRoutes from "./routes/auth.routes.js";
 import societyRoutes from "./routes/society.routes.js";
@@ -19,11 +20,18 @@ import visitorRoutes from "./routes/visitor.routes.js";
 import updateUserRoutes from "./routes/superAdmin.routes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
 import maintenanceRoutes from "./routes/maintenance.routes.js";
-import { errorHandler } from "./middlewares/errorHandler.js";
 import complaintRoutes from "./routes/complaint.routes.js";
-import noticeRoutes from "./routes/notice.routes.js"; // if not already added
+import noticeRoutes from "./routes/notice.routes.js";
+
+import {
+  autoGenerateMonthlyMaintenance,
+  sendMaintenanceDueReminders
+} from "./controllers/maintenance.controller.js";
+
+import { errorHandler } from "./middlewares/errorHandler.js";
 
 const app = express();
+
 /* =========================================
    REQUIRED ENV VALIDATION
 ========================================= */
@@ -47,7 +55,7 @@ requiredEnv.forEach((key) => {
 const isProduction = process.env.NODE_ENV === "production";
 
 if (isProduction) {
-  app.set("trust proxy", 1); // Required for Render
+  app.set("trust proxy", 1);
 }
 
 /* =========================================
@@ -56,7 +64,7 @@ if (isProduction) {
 app.use(helmet());
 
 /* =========================================
-   BODY SIZE LIMIT (Prevents payload abuse)
+   BODY SIZE LIMIT
 ========================================= */
 app.use(express.json({ limit: "10kb" }));
 app.use(express.urlencoded({ extended: true, limit: "10kb" }));
@@ -77,7 +85,7 @@ app.use(
 );
 
 /* =========================================
-   RATE LIMITING (GLOBAL)
+   RATE LIMITING
 ========================================= */
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -89,7 +97,7 @@ const globalLimiter = rateLimit({
 app.use(globalLimiter);
 
 /* =========================================
-   OTP RATE LIMITER (STRICT)
+   OTP RATE LIMITER
 ========================================= */
 const otpLimiter = rateLimit({
   windowMs: 10 * 60 * 1000,
@@ -109,7 +117,7 @@ if (isProduction) {
 }
 
 /* =========================================
-   HEALTH CHECK ENDPOINT
+   HEALTH CHECK
 ========================================= */
 app.get("/health", (req, res) => {
   res.status(200).json({
@@ -120,7 +128,7 @@ app.get("/health", (req, res) => {
 });
 
 /* =========================================
-   ROUTES (UNCHANGED)
+   ROUTES
 ========================================= */
 app.use("/api/admin", adminRoutes);
 app.use("/api/adminR", adminReplacementRoutes);
@@ -139,6 +147,24 @@ app.use("/api/notifications", notificationRoutes);
 app.use("/api/maintenance", maintenanceRoutes);
 app.use("/api/complaints", complaintRoutes);
 app.use("/api/notices", noticeRoutes);
+
+/* =========================================
+   🔥 MAINTENANCE CRON JOBS
+========================================= */
+
+// 1️⃣ Auto Generate Monthly Maintenance
+// Runs on 1st day of every month at 9:00 AM
+cron.schedule("0 9 1 * *", async () => {
+  console.log("📅 Running Auto Maintenance Generation...");
+  await autoGenerateMonthlyMaintenance();
+});
+
+// 2️⃣ 5-Day Due Reminder
+// Runs daily at 9:30 AM
+cron.schedule("30 9 * * *", async () => {
+  console.log("⏰ Running Maintenance Reminder Cron...");
+  await sendMaintenanceDueReminders();
+});
 
 /* =========================================
    GLOBAL ERROR HANDLER
