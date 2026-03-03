@@ -28,7 +28,12 @@ const visitorLogSchema = new mongoose.Schema(
       type: String,
       required: true
     },
-
+    residentId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+      index: true
+    },
     // 👮 Guard
     guardId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -39,7 +44,7 @@ const visitorLogSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User"
     },
-    
+
     // 🔁 Visitor flow
     status: {
       type: String,
