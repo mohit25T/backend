@@ -361,7 +361,7 @@ export const getVisitors = async (req, res) => {
   try {
     const { status, page = 1, limit = 20 } = req.query;
     const { societyId, roles, userId } = req.user;
-
+    console.log("Get Visitors - User:", req.user);
     const pageNumber = parseInt(page);
     const limitNumber = parseInt(limit);
     const skip = (pageNumber - 1) * limitNumber;
