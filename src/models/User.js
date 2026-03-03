@@ -74,7 +74,16 @@ const userSchema = new mongoose.Schema(
     fcmUpdatedAt: {
       type: Date,
       default: null
+    },
+
+    /* =====================================================
+       🔥 FULL YEAR MAINTENANCE TRACKING
+    ===================================================== */
+    fullYearPaidYears: {
+      type: [Number],
+      default: []
     }
+
   },
   { timestamps: true }
 );
@@ -100,5 +109,8 @@ userSchema.index({ societyId: 1, status: 1 });
 
 // For role-only filtering (admin dashboard)
 userSchema.index({ roles: 1 });
+
+// 🔥 For full year payment lookup
+userSchema.index({ societyId: 1, fullYearPaidYears: 1 });
 
 export default mongoose.model("User", userSchema);

@@ -53,6 +53,9 @@ export const generateMonthlyBills = async (req, res) => {
         for (const owner of owners) {
             if (!owner.flatNo) continue;
 
+            // 🔥 NEW: Skip if full year already paid
+            if (owner.fullYearPaidYears?.includes(year)) continue;
+
             const paidCount = await Maintenance.countDocuments({
                 societyId,
                 residentId: owner._id,
@@ -60,6 +63,7 @@ export const generateMonthlyBills = async (req, res) => {
                 status: "Paid",
             });
 
+            // Keep your original safety logic
             if (paidCount >= 12) continue;
 
             bills.push({
@@ -136,6 +140,9 @@ export const autoGenerateMonthlyMaintenance = async () => {
 
             for (const owner of owners) {
 
+                // 🔥 NEW: Skip if full year already paid
+                if (owner.fullYearPaidYears?.includes(year)) continue;
+
                 const paidCount = await Maintenance.countDocuments({
                     societyId,
                     residentId: owner._id,
@@ -151,7 +158,7 @@ export const autoGenerateMonthlyMaintenance = async () => {
                     flatNumber: owner.flatNo,
                     month: monthString,
                     year,
-                    amount: 1000, // You can move this to society config
+                    amount: 1000,
                     dueDate: new Date(year, today.getMonth(), 10),
                     status: "Pending",
                     reminderSent: false,
@@ -332,8 +339,9 @@ export const payFullYearMaintenance = async (req, res) => {
     try {
         const { residentId, year, paymentMode, paymentNote } = req.body;
         const societyId = req.user.societyId;
+        const parsedYear = parseInt(year);
 
-        if (!residentId || !year) {
+        if (!residentId || !parsedYear) {
             return res.status(400).json({
                 message: "residentId and year are required",
             });
@@ -342,7 +350,7 @@ export const payFullYearMaintenance = async (req, res) => {
         const bills = await Maintenance.find({
             societyId,
             residentId,
-            year: parseInt(year),
+            year: parsedYear,
             status: { $in: ["Pending", "Overdue"] },
         }).populate("residentId");
 
@@ -366,16 +374,21 @@ export const payFullYearMaintenance = async (req, res) => {
             await bill.save();
         }
 
+        // 🔥 NEW: Update user yearly flag
+        await User.findByIdAndUpdate(residentId, {
+            $addToSet: { fullYearPaidYears: parsedYear }
+        });
+
         const tokens = bills[0].residentId?.fcmTokens || [];
 
         if (tokens.length) {
             await sendPushNotificationToMany(
                 tokens,
                 "Full Year Payment Confirmed ✅",
-                `Your full year maintenance for ${year} has been marked as paid`,
+                `Your full year maintenance for ${parsedYear} has been marked as paid`,
                 {
                     type: "MAINTENANCE_FULL_YEAR_PAID",
-                    year,
+                    year: parsedYear,
                 }
             );
         }

@@ -8,7 +8,7 @@ import {
 } from "../controllers/maintenance.controller.js";
 
 import { requireAuth } from "../middlewares/auth.middleware.js";
-import { requireAdmin } from "../middlewares/role.middleware.js";
+import { requireAdmin, requireResident } from "../middlewares/role.middleware.js";
 
 const router = express.Router();
 
@@ -28,6 +28,7 @@ router.post(
 router.get(
   "/my-bills",
   requireAuth,
+  requireResident, // 🔥 Added protection
   getResidentBills
 );
 
