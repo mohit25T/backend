@@ -205,7 +205,7 @@ export const verifyUserLogin = async (req, res) => {
   try {
     const { mobile, otp, fcmToken } = req.body;
 
-    const user = await User.findOne({ mobile });
+    const user = await Invite.findOne({ mobile });
 
     // ❌ No user → No login
     if (!user) {
