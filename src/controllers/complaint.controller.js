@@ -44,7 +44,7 @@ export const createComplaint = async (req, res) => {
 
         if (req.files && req.files.length > 0) {
             complaintImages = req.files
-                .filter(file => file.mimetype.startsWith("image/"))
+                .filter(file => file.mimetype.startsWith("images/"))
                 .map(file => file.path); // Cloudinary secure URLs
         }
 
