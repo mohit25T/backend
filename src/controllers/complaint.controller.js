@@ -37,15 +37,17 @@ export const createComplaint = async (req, res) => {
         }
 
         /* ===============================
-           📸 Handle upload.any()
-           Support Multiple Images
+           📸 Handle Multiple Images
+           (Cloudinary URLs)
         =============================== */
         let complaintImages = [];
 
         if (req.files && req.files.length > 0) {
-            complaintImages = req.files
-                .filter(file => file.mimetype.startsWith("images/"))
-                .map(file => file.path); // Cloudinary secure URLs
+            console.log("Uploaded Files:", req.files);
+
+            // Since Cloudinary already stores only images,
+            // we directly map the secure URLs
+            complaintImages = req.files.map(file => file.path);
         }
 
         /* ===============================
@@ -59,7 +61,7 @@ export const createComplaint = async (req, res) => {
             priority,
             title,
             description,
-            images: complaintImages, // 🔥 Multiple images stored
+            images: complaintImages,
             status: "OPEN"
         });
 
