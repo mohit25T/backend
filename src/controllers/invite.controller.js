@@ -9,95 +9,121 @@ const INVITE_EXPIRY_HOURS = 24;
  * CREATE ADMIN INVITE
  */
 export const inviteAdmin = async (req, res) => {
-  const { name, mobile, email, societyId, flatNo } = req.body;
+  try {
+    const { name, mobile, email, societyId, flatNo } = req.body;
 
-  if (!name || !mobile || !email || !societyId || !flatNo) {
-    return res.status(400).json({
-      message: "Name, mobile, email, societyId and flat number are required"
+    if (!name || !mobile || !email || !societyId || !flatNo) {
+      return res.status(400).json({
+        message: "Name, mobile, email, societyId and flat number are required"
+      });
+    }
+
+    const society = await Society.findById(societyId);
+    if (!society) {
+      return res.status(404).json({ message: "Society not found" });
+    }
+
+    /* ==============================
+       🔒 Prevent same flat reassignment
+    ============================== */
+    const flatExists = await Invite.findOne({
+      societyId,
+      flatNo,
+      status: { $in: ["PENDING", "USED"] }
     });
-  }
 
-  const society = await Society.findById(societyId);
-  if (!society) {
-    return res.status(404).json({ message: "Society not found" });
-  }
+    if (flatExists) {
+      return res.status(409).json({
+        message: `Flat ${flatNo} already assigned`
+      });
+    }
 
-  const flatExists = await Invite.findOne({
-    societyId,
-    flatNo,
-    status: { $in: ["PENDING", "USED"] }
-  });
+    const expiresAt = new Date(
+      Date.now() + INVITE_EXPIRY_HOURS * 60 * 60 * 1000
+    );
 
-  if (flatExists) {
-    return res.status(409).json({
-      message: `Flat ${flatNo} already assigned`
+    /* ==============================
+       🔎 Find existing admin invite
+       (roles is now ARRAY)
+    ============================== */
+    let invite = await Invite.findOne({
+      mobile,
+      societyId,
+      roles: { $in: ["ADMIN"] } // 🔥 FIXED for array
     });
-  }
 
-  const expiresAt = new Date(
-    Date.now() + INVITE_EXPIRY_HOURS * 60 * 60 * 1000
-  );
+    if (invite && invite.status === "USED") {
+      return res.status(409).json({
+        message: "Admin already onboarded with this number"
+      });
+    }
 
-  let invite = await Invite.findOne({
-    mobile,
-    roles: "ADMIN",
-    societyId
-  });
+    /* ==============================
+       🔁 Update existing invite
+    ============================== */
+    if (invite) {
+      invite.name = name;
+      invite.email = email;
+      invite.flatNo = flatNo;
+      invite.status = "PENDING";
+      invite.expiresAt = expiresAt;
+      invite.invitedBy = req.user.userId;
 
-  if (invite && invite.status === "USED") {
-    return res.status(409).json({
-      message: "Admin already onboarded with this number"
+      // Ensure correct role structure
+      invite.roles = ["ADMIN", "OWNER"];
+
+      await invite.save();
+
+      await auditLogger({
+        req,
+        action: "UPDATE_ADMIN_INVITE",
+        targetType: "INVITE",
+        targetId: invite._id,
+        societyId,
+        description: `Admin invite updated | Flat ${flatNo}`
+      });
+
+      return res.json({
+        message: "Existing admin invite updated",
+        invite
+      });
+    }
+
+    /* ==============================
+       🆕 Create new admin invite
+    ============================== */
+    invite = await Invite.create({
+      name,
+      mobile,
+      email,
+      flatNo,
+      roles: ["ADMIN", "OWNER"], // 🔥 FIXED
+      societyId,
+      invitedBy: req.user.userId,
+      expiresAt,
+      fcmTokens: [] // 🔥 ensure no undefined issues
     });
-  }
-
-  if (invite) {
-    invite.name = name;
-    invite.email = email;
-    invite.flatNo = flatNo;
-    invite.status = "PENDING";
-    invite.expiresAt = expiresAt;
-    invite.invitedBy = req.user.userId;
-    await invite.save();
 
     await auditLogger({
       req,
-      action: "UPDATE_ADMIN_INVITE",
+      action: "CREATE_ADMIN_INVITE",
       targetType: "INVITE",
       targetId: invite._id,
       societyId,
-      description: `Admin invite updated | Flat ${flatNo}`
+      description: `Admin invited | Flat ${flatNo}`
     });
 
-    return res.json({
-      message: "Existing admin invite updated",
+    return res.status(201).json({
+      message: "Admin invite created",
       invite
     });
+
+  } catch (error) {
+    console.error("INVITE ADMIN ERROR:", error);
+    return res.status(500).json({
+      message: "Failed to create admin invite"
+    });
   }
-
-  invite = await Invite.create({
-    name,
-    mobile,
-    email,
-    flatNo,
-    roles: "ADMIN",
-    societyId,
-    invitedBy: req.user.userId,
-    expiresAt
-  });
-
-  await auditLogger({
-    req,
-    action: "CREATE_ADMIN_INVITE",
-    targetType: "INVITE",
-    targetId: invite._id,
-    societyId,
-    description: `Admin invited | Flat ${flatNo}`
-  });
-
-  res.status(201).json({
-    message: "Admin invite created",
-    invite
-  });
 };
 
 /**
