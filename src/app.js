@@ -77,7 +77,8 @@ app.use(
     origin: [
       "https://m.apexitworld.com",
       "https://apexitworld.com",
-      "http://localhost:3000"
+      "http://localhost:3000",
+      null
     ],
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     credentials: true

@@ -13,9 +13,6 @@ router.patch(
 );
 
 
-
-router.get("/Society", requireAuth, requireAdmin, getAllSocietyVisitors)
-
 router.get(
   "/pending-tenants",
   requireAuth,

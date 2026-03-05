@@ -77,6 +77,15 @@ const userSchema = new mongoose.Schema(
     },
 
     /* =====================================================
+       🔐 AUTH SESSION MANAGEMENT
+       Used for refresh token based login sessions
+    ===================================================== */
+    refreshToken: {
+      type: String,
+      default: null
+    },
+
+    /* =====================================================
        🔥 FULL YEAR MAINTENANCE TRACKING
     ===================================================== */
     fullYearPaidYears: {

@@ -55,55 +55,6 @@ export const updateAdminDetails = async (req, res) => {
   });
 };
 
-export const getAllSocietyVisitors = async (req, res) => {
-  try {
-    const userId = req.user.userId;
-
-    const user = await User.findById(userId).select("societyId");
-
-    if (!user || !user.societyId) {
-      return res.status(403).json({
-        success: false,
-        message: "User is not linked to any society"
-      });
-    }
-
-    const societyId = user.societyId;
-
-    // 🔹 Pagination Params
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 20;
-    const skip = (page - 1) * limit;
-
-    // 🔹 Total Count
-    const totalVisitors = await VisitorLog.countDocuments({ societyId });
-
-    // 🔹 Fetch Paginated Data
-    const visitors = await VisitorLog.find({ societyId })
-      .populate("approvedBy", "name")
-      .populate("guardId", "name")
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit);
-
-    return res.status(200).json({
-      success: true,
-      societyId,
-      totalVisitors,
-      currentPage: page,
-      totalPages: Math.ceil(totalVisitors / limit),
-      hasMore: page * limit < totalVisitors,
-      visitors
-    });
-
-  } catch (error) {
-    console.error("Get Society Visitors Error:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Failed to fetch society visitors"
-    });
-  }
-};
 
 export const getPendingTenantRequests = async (req, res) => {
   try {

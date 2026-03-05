@@ -11,15 +11,23 @@ import AddAdmin from "../pages/AddAdmin";
 import UsersByRole from "../pages/UsersByRole";
 import GlobalSearch from "../pages/GlobalSearch";
 import UpdateSuperAdmin from "../pages/UpdateSuperAdminMobile";
+import HomePage from "../pages/Home";
 
 const AppRouter = () => {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<Login />} />
-
         <Route
           path="/"
+          element={
+            <ProtectedRoute>
+              <HomePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/analysis"
           element={
             <ProtectedRoute>
               <Dashboard />

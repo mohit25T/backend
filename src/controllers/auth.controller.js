@@ -2,7 +2,7 @@ import Invite from "../models/Invite.js";
 import User from "../models/User.js";
 import Society from "../models/Society.js";
 import EmailChangeRequest from "../models/EmailChangeRequest.js";
-import { signToken } from "../utils/jwt.js";
+import { signToken, signRefreshToken, verifyRefreshToken } from "../utils/jwt.js";
 import { saveOtp, verifyOtp } from "../utils/otpStore.js";
 import { generateOtp } from "../utils/generateOtp.js";
 import { auditLogger } from "../utils/auditLogger.js";
@@ -11,9 +11,6 @@ import { sendOtpEmail } from "../utils/sendOtpEmail.js";
 /**
  * =====================================================
  * SEND OTP
- * Allowed only for:
- * 1. Super Admin
- * 2. Valid Admin Invite
  * =====================================================
  */
 export const sendOtp = async (req, res) => {
@@ -42,6 +39,7 @@ export const sendOtp = async (req, res) => {
     }
 
     const email = superAdmin?.email || adminInvite?.email;
+
     if (!email) {
       return res.status(400).json({
         message: "Email not found for OTP",
@@ -54,6 +52,7 @@ export const sendOtp = async (req, res) => {
     await sendOtpEmail(email, otp);
 
     res.json({ message: "OTP sent successfully to email" });
+
   } catch (err) {
     console.error("SEND OTP ERROR:", err);
     res.status(500).json({ message: "Failed to send OTP" });
@@ -63,11 +62,11 @@ export const sendOtp = async (req, res) => {
 /**
  * =====================================================
  * SEND OTP FOR MOBILE USERS
- * (ADMIN / OWNER / TENANT / GUARD)
  * =====================================================
  */
 export const sendOtpUser = async (req, res) => {
   try {
+
     const { mobile } = req.body;
 
     if (!mobile) {
@@ -76,7 +75,6 @@ export const sendOtpUser = async (req, res) => {
       });
     }
 
-    // 🔍 Find user
     const user = await User.findOne({ mobile });
 
     if (!user) {
@@ -85,45 +83,38 @@ export const sendOtpUser = async (req, res) => {
       });
     }
 
-    // 🔍 Find society
     const society = await Society.findById(user.societyId);
 
-    // 🔐 Society Block Check
     if (society?.status === "BLOCKED") {
       return res.status(403).json({
         message: "Your society access has been suspended."
       });
     }
 
-    // 🔐 User Account Block Check
     if (user.status === "BLOCKED") {
       return res.status(403).json({
         message: "Your account has been blocked. Contact admin."
       });
     }
 
-    // ❌ Tenant Removed (Inactive)
     if (user.status === "INACTIVE") {
       return res.status(403).json({
         message: "Your tenancy has ended. Please contact the flat owner."
       });
     }
 
-    // ❌ Super Admin Mobile Login Restriction
     if (user.roles.includes("SUPER_ADMIN")) {
       return res.status(403).json({
         message: "Super admin login not allowed in mobile app"
       });
     }
 
-    // 📧 Email Required for OTP
     if (!user.email) {
       return res.status(400).json({
         message: "Email not found for OTP"
       });
     }
 
-    // 🔢 Generate OTP
     const otp = generateOtp();
 
     saveOtp({
@@ -134,8 +125,6 @@ export const sendOtpUser = async (req, res) => {
 
     await sendOtpEmail(user.email, otp);
 
-    console.log("OTP:", otp);
-
     return res.json({
       success: true,
       message: "OTP sent successfully",
@@ -143,11 +132,13 @@ export const sendOtpUser = async (req, res) => {
     });
 
   } catch (err) {
+
     console.error("SEND USER OTP ERROR:", err);
 
     return res.status(500).json({
       message: "Failed to send OTP"
     });
+
   }
 };
 
@@ -157,7 +148,9 @@ export const sendOtpUser = async (req, res) => {
  * =====================================================
  */
 export const verifyOtpLogin = async (req, res) => {
+
   try {
+
     const { mobile, otp } = req.body;
 
     const user = await User.findOne({
@@ -188,26 +181,37 @@ export const verifyOtpLogin = async (req, res) => {
       role: "SUPER_ADMIN",
     });
 
-    res.json({ token });
+    const refreshToken = signRefreshToken({
+      userId: user._id
+    });
+
+    // 🔐 SAVE REFRESH TOKEN
+    user.refreshToken = refreshToken;
+    await user.save();
+
+    res.json({ token, refreshToken });
+
   } catch (err) {
+
     console.error("VERIFY SUPER ADMIN ERROR:", err);
     res.status(500).json({ message: "Login failed" });
+
   }
 };
 
 /**
  * =====================================================
- * VERIFY OTP — ADMIN / OWNER / TENANT / GUARD
- * 🔔 FCM TOKEN HANDLED HERE
+ * VERIFY OTP — USER LOGIN
  * =====================================================
  */
 export const verifyUserLogin = async (req, res) => {
+
   try {
+
     const { mobile, otp, fcmToken } = req.body;
 
     const user = await User.findOne({ mobile });
 
-    // ❌ No user → No login
     if (!user) {
       return res.status(403).json({
         message: "Account not approved yet. Please contact admin."
@@ -232,13 +236,15 @@ export const verifyUserLogin = async (req, res) => {
       });
     }
 
-    // 🔥 Update FCM token
     if (fcmToken) {
+
       if (!user.fcmTokens.includes(fcmToken)) {
+
         user.fcmTokens.push(fcmToken);
         user.fcmUpdatedAt = new Date();
-        await user.save();
+
       }
+
     }
 
     const token = signToken({
@@ -247,18 +253,75 @@ export const verifyUserLogin = async (req, res) => {
       societyId: user.societyId,
     });
 
+    const refreshToken = signRefreshToken({
+      userId: user._id
+    });
+
+    // 🔐 STORE REFRESH TOKEN
+    user.refreshToken = refreshToken;
+
+    await user.save();
+
     const requiresProfilePhoto = !user.profileImage;
 
     return res.json({
       token,
+      refreshToken,
       roles: user.roles,
       societyId: user.societyId,
       requiresProfilePhoto,
     });
 
   } catch (err) {
+
     console.error("VERIFY USER LOGIN ERROR:", err);
+
     return res.status(500).json({ message: "Login failed" });
+
+  }
+};
+
+/**
+ * =====================================================
+ * REFRESH ACCESS TOKEN
+ * =====================================================
+ */
+export const refreshAccessToken = async (req, res) => {
+
+  try {
+
+    const { refreshToken } = req.body;
+
+    if (!refreshToken) {
+      return res.status(401).json({
+        message: "Refresh token required"
+      });
+    }
+
+    const decoded = verifyRefreshToken(refreshToken);
+
+    const user = await User.findById(decoded.userId).select("refreshToken roles societyId status");
+
+    if (!user || user.refreshToken !== refreshToken) {
+      return res.status(401).json({
+        message: "Invalid session"
+      });
+    }
+
+    const token = signToken({
+      userId: decoded.userId,
+      roles: user.roles,
+      societyId: user.societyId
+    });
+
+    res.json({ token });
+
+  } catch (err) {
+
+    return res.status(401).json({
+      message: "Invalid refresh token"
+    });
+
   }
 };
 
@@ -268,7 +331,9 @@ export const verifyUserLogin = async (req, res) => {
  * =====================================================
  */
 export const requestEmailChange = async (req, res) => {
+
   try {
+
     const userId = req.user.userId;
     const { newEmail } = req.body;
 
@@ -277,6 +342,7 @@ export const requestEmailChange = async (req, res) => {
     }
 
     const user = await User.findById(userId);
+
     if (!user || !user.email) {
       return res.status(404).json({ message: "User not found" });
     }
@@ -288,6 +354,7 @@ export const requestEmailChange = async (req, res) => {
     const emailExists = await User.findOne({
       email: newEmail.toLowerCase(),
     });
+
     if (emailExists) {
       return res.status(409).json({ message: "Email already in use" });
     }
@@ -310,9 +377,12 @@ export const requestEmailChange = async (req, res) => {
     res.json({
       message: "OTP sent to your current email for verification",
     });
+
   } catch (err) {
+
     console.error("REQUEST EMAIL CHANGE ERROR:", err);
     res.status(500).json({ message: "Failed to request email change" });
+
   }
 };
 
@@ -322,7 +392,9 @@ export const requestEmailChange = async (req, res) => {
  * =====================================================
  */
 export const verifyEmailChange = async (req, res) => {
+
   try {
+
     const userId = req.user.userId;
     const { otp } = req.body;
 
@@ -348,7 +420,9 @@ export const verifyEmailChange = async (req, res) => {
     }
 
     const user = await User.findById(userId);
+
     user.email = request.newEmail;
+
     await user.save();
 
     await request.deleteOne();
@@ -361,9 +435,12 @@ export const verifyEmailChange = async (req, res) => {
     });
 
     res.json({ message: "Email updated successfully" });
+
   } catch (err) {
+
     console.error("VERIFY EMAIL CHANGE ERROR:", err);
     res.status(500).json({ message: "Failed to verify email change" });
+
   }
 };
 
@@ -373,7 +450,9 @@ export const verifyEmailChange = async (req, res) => {
  * =====================================================
  */
 export const getMe = async (req, res) => {
+
   try {
+
     const user = await User.findById(req.user.userId).select(
       "name email mobile roles"
     );
@@ -383,8 +462,11 @@ export const getMe = async (req, res) => {
     }
 
     res.json(user);
+
   } catch (err) {
+
     res.status(500).json({ message: "Failed to fetch profile" });
+
   }
 };
 
@@ -394,19 +476,34 @@ export const getMe = async (req, res) => {
  * =====================================================
  */
 export const logoutUser = async (req, res) => {
+
   try {
+
     const userId = req.user.userId;
     const { fcmToken } = req.body;
 
+    const user = await User.findById(userId);
+
     if (fcmToken) {
-      await User.findByIdAndUpdate(userId, {
-        $pull: { fcmTokens: fcmToken }
-      });
+
+      user.fcmTokens = user.fcmTokens.filter(
+        (token) => token !== fcmToken
+      );
+
     }
 
+    // 🔐 CLEAR SESSION
+    user.refreshToken = null;
+
+    await user.save();
+
     res.json({ message: "Logged out successfully" });
+
   } catch (error) {
+
     console.error("LOGOUT ERROR:", error);
+
     res.status(500).json({ message: "Logout failed" });
+
   }
 };

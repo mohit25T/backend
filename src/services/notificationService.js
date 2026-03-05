@@ -47,13 +47,36 @@ export async function sendPushNotificationToMany(
     return null;
   }
 
+  // 🔥 FORCE STRING VALUES (VERY IMPORTANT FOR WEB)
+  const stringifiedData = {};
+  Object.keys(data).forEach((key) => {
+    stringifiedData[key] = String(data[key]);
+  });
+
   const message = {
     tokens: uniqueTokens,
+
     notification: {
       title,
       body,
     },
-    data,
+
+    data: {
+      ...stringifiedData,
+      click_action: "FLUTTER_NOTIFICATION_CLICK",
+    },
+
+    android: {
+      priority: "high",
+    },
+
+    apns: {
+      payload: {
+        aps: {
+          sound: "default",
+        },
+      },
+    },
   };
 
   try {
@@ -64,20 +87,6 @@ export async function sendPushNotificationToMany(
       failureCount: response.failureCount,
     });
 
-    // Log failed tokens (very important for debugging)
-    if (response.failureCount > 0) {
-      response.responses.forEach((resp, idx) => {
-        if (!resp.success) {
-          console.error(
-            "❌ Failed token:",
-            uniqueTokens[idx],
-            resp.error?.message
-          );
-        }
-      });
-    }
-
-    // 🔥 THIS IS THE FIX
     return response;
 
   } catch (error) {

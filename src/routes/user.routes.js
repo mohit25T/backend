@@ -3,6 +3,7 @@ import { getUsersByRole, getMyProfile, getResidentVisitorHistory, getUsersBySoci
 import { requireAuth } from "../middlewares/auth.middleware.js";
 import { requireSuperAdmin, requireResident } from "../middlewares/role.middleware.js";
 import upload from "../middlewares/upload.middleware.js";
+
 const router = express.Router();
 
 router.get("/", requireAuth, requireSuperAdmin, getUsersByRole);
