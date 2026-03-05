@@ -75,6 +75,7 @@ export const sendOtpUser = async (req, res) => {
       });
     }
 
+    // 🔍 Find user
     const user = await User.findOne({ mobile });
 
     if (!user) {
@@ -210,15 +211,16 @@ export const verifyUserLogin = async (req, res) => {
 
     const { mobile, otp, fcmToken } = req.body;
 
-    const user = await User.findOne({ mobile });
+    const invite = await Invite.findOne({ mobile });
 
-    if (!user) {
+    // ❌ No user → No login
+    if (!User) {
       return res.status(403).json({
         message: "Account not approved yet. Please contact admin."
       });
     }
 
-    if (!user.email) {
+    if (!invite.email) {
       return res.status(400).json({
         message: "Email not found for OTP verification",
       });
@@ -226,7 +228,7 @@ export const verifyUserLogin = async (req, res) => {
 
     const isValid = verifyOtp({
       mobile,
-      email: user.email,
+      email: invite.email,
       otp
     });
 
@@ -236,31 +238,30 @@ export const verifyUserLogin = async (req, res) => {
       });
     }
 
+    // 🔥 Update FCM token
     if (fcmToken) {
-
-      if (!user.fcmTokens.includes(fcmToken)) {
-
-        user.fcmTokens.push(fcmToken);
-        user.fcmUpdatedAt = new Date();
-
+      if (!User.fcmTokens.includes(fcmToken)) {
+        User.fcmTokens.push(fcmToken);
+        User.fcmUpdatedAt = new Date();
+        await User.save();
       }
 
     }
 
     const token = signToken({
-      userId: user._id,
-      roles: user.roles,
-      societyId: user.societyId,
+      userId: User._id,
+      roles: User.roles,
+      societyId: User.societyId,
     });
 
     const refreshToken = signRefreshToken({
-      userId: user._id
+      userId: User._id
     });
 
     // 🔐 STORE REFRESH TOKEN
-    user.refreshToken = refreshToken;
+    User.refreshToken = refreshToken;
 
-    await user.save();
+    await User.save();
 
     const requiresProfilePhoto = !user.profileImage;
 
