@@ -17,7 +17,6 @@ const AppRouter = () => {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/login" element={<Login />} />
         <Route
           path="/"
           element={
@@ -26,6 +25,7 @@ const AppRouter = () => {
             </ProtectedRoute>
           }
         />
+        <Route path="/login" element={<Login />} />
         <Route
           path="/analysis"
           element={
