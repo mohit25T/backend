@@ -77,6 +77,23 @@ const maintenanceSchema = new mongoose.Schema(
       type: String,
     },
 
+    /* =====================================================
+       🔥 NEW FIELDS ADDED (DO NOT REMOVE EXISTING STRUCTURE)
+       Support for full year / multi month maintenance
+    ===================================================== */
+
+    paymentType: {
+      type: String,
+      enum: ["MONTHLY", "YEARLY"],
+      default: "MONTHLY",
+    },
+
+    // For yearly payments this will contain all months covered
+    coveredMonths: [
+      {
+        type: String,
+      },
+    ],
   },
   { timestamps: true }
 );

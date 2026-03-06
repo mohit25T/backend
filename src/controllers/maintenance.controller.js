@@ -53,7 +53,7 @@ export const generateMonthlyBills = async (req, res) => {
         for (const owner of owners) {
             if (!owner.flatNo) continue;
 
-            // 🔥 NEW: Skip if full year already paid
+            // 🔥 Skip if full year already paid
             if (owner.fullYearPaidYears?.includes(year)) continue;
 
             const paidCount = await Maintenance.countDocuments({
@@ -63,7 +63,6 @@ export const generateMonthlyBills = async (req, res) => {
                 status: "Paid",
             });
 
-            // Keep your original safety logic
             if (paidCount >= 12) continue;
 
             bills.push({
@@ -76,6 +75,7 @@ export const generateMonthlyBills = async (req, res) => {
                 dueDate,
                 status: "Pending",
                 reminderSent: false,
+                paymentType: "MONTHLY", // 🔥 ADDED
             });
         }
 
@@ -140,7 +140,6 @@ export const autoGenerateMonthlyMaintenance = async () => {
 
             for (const owner of owners) {
 
-                // 🔥 NEW: Skip if full year already paid
                 if (owner.fullYearPaidYears?.includes(year)) continue;
 
                 const paidCount = await Maintenance.countDocuments({
@@ -162,6 +161,7 @@ export const autoGenerateMonthlyMaintenance = async () => {
                     dueDate: new Date(year, today.getMonth(), 10),
                     status: "Pending",
                     reminderSent: false,
+                    paymentType: "MONTHLY", // 🔥 ADDED
                 });
             }
 
@@ -245,6 +245,9 @@ export const markBillAsPaid = async (req, res) => {
         bill.paidAt = new Date();
         bill.paidBy = req.user.userId;
         bill.reminderSent = true;
+
+        bill.paymentType = "MONTHLY"; // 🔥 ADDED
+        bill.coveredMonths = [bill.month]; // 🔥 ADDED
 
         await bill.save();
 
@@ -362,6 +365,11 @@ export const payFullYearMaintenance = async (req, res) => {
 
         const now = new Date();
 
+        const allMonths = [
+            "January", "February", "March", "April", "May", "June",
+            "July", "August", "September", "October", "November", "December"
+        ]; // 🔥 ADDED
+
         for (const bill of bills) {
             bill.status = "Paid";
             bill.paidAt = now;
@@ -371,10 +379,12 @@ export const payFullYearMaintenance = async (req, res) => {
                 paymentNote || "Full year payment marked by admin";
             bill.reminderSent = true;
 
+            bill.paymentType = "YEARLY"; // 🔥 ADDED
+            bill.coveredMonths = allMonths; // 🔥 ADDED
+
             await bill.save();
         }
 
-        // 🔥 NEW: Update user yearly flag
         await User.findByIdAndUpdate(residentId, {
             $addToSet: { fullYearPaidYears: parsedYear }
         });
@@ -402,6 +412,84 @@ export const payFullYearMaintenance = async (req, res) => {
         console.error("Full Year Payment Error:", error);
         return res.status(500).json({
             message: "Something went wrong while marking full year payment",
+        });
+    }
+};
+
+export const getMaintenanceDashboardStats = async (req, res) => {
+    try {
+
+        const societyId = req.user.societyId;
+
+        const today = new Date();
+        const currentMonth = today.toLocaleString("default", { month: "long" });
+        const year = today.getFullYear();
+        const monthString = `${currentMonth} ${year}`;
+
+        // Total flats
+        const totalFlats = await User.countDocuments({
+            societyId,
+            roles: { $in: ["OWNER"] }
+        });
+
+        // Paid this month
+        const paidThisMonth = await Maintenance.countDocuments({
+            societyId,
+            month: monthString,
+            status: "Paid"
+        });
+
+        // Pending this month
+        const pendingPayments = await Maintenance.countDocuments({
+            societyId,
+            month: monthString,
+            status: "Pending"
+        });
+
+        // Overdue
+        const overduePayments = await Maintenance.countDocuments({
+            societyId,
+            status: "Overdue"
+        });
+
+        // Full year payers
+        const fullYearPaid = await User.countDocuments({
+            societyId,
+            fullYearPaidYears: year
+        });
+
+        // Total collection
+        const collection = await Maintenance.aggregate([
+            {
+                $match: {
+                    societyId,
+                    year,
+                    status: "Paid"
+                }
+            },
+            {
+                $group: {
+                    _id: null,
+                    total: { $sum: "$amount" }
+                }
+            }
+        ]);
+
+        const totalCollection = collection[0]?.total || 0;
+
+        res.json({
+            totalFlats,
+            paidThisMonth,
+            pendingPayments,
+            overduePayments,
+            fullYearPaid,
+            totalCollection
+        });
+
+    } catch (error) {
+        console.error("Dashboard Stats Error:", error);
+        res.status(500).json({
+            message: "Error fetching dashboard stats"
         });
     }
 };

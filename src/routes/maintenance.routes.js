@@ -4,7 +4,8 @@ import {
   getResidentBills,
   markBillAsPaid,
   getAllSocietyBills,
-  payFullYearMaintenance
+  payFullYearMaintenance,
+  getMaintenanceDashboardStats // 🔥 ADDED
 } from "../controllers/maintenance.controller.js";
 
 import { requireAuth } from "../middlewares/auth.middleware.js";
@@ -28,7 +29,7 @@ router.post(
 router.get(
   "/my-bills",
   requireAuth,
-  requireResident, // 🔥 Added protection
+  requireResident,
   getResidentBills
 );
 
@@ -60,6 +61,16 @@ router.get(
   requireAuth,
   requireAdmin,
   getAllSocietyBills
+);
+
+/* =========================================================
+   🔹 Admin Maintenance Dashboard Stats
+========================================================= */
+router.get(
+  "/dashboard-stats",
+  requireAuth,
+  requireAdmin,
+  getMaintenanceDashboardStats
 );
 
 export default router;
