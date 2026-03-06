@@ -83,7 +83,7 @@ export default function HomePage() {
             <h3 className="text-lg font-semibold mb-3">Resident Management</h3>
 
             <p className="text-gray-600 text-sm">
-              Admins can manage owners, tenants and residents in one centralized
+              Admins can manage owners, tenants and Gguard in one centralized
               system.
             </p>
           </div>
