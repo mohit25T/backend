@@ -308,11 +308,22 @@ export const getResidentBills = async (req, res) => {
 ========================================================= */
 export const getAllSocietyBills = async (req, res) => {
     try {
+
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 20;
         const skip = (page - 1) * limit;
 
         const query = { societyId: req.user.societyId };
+
+        /* 🔥 NEW: STATUS FILTER */
+        if (req.query.status) {
+            query.status = req.query.status;
+        }
+
+        /* 🔥 NEW: PAYMENT TYPE FILTER (YEARLY / MONTHLY) */
+        if (req.query.type === "YEARLY") {
+            query.paymentType = "YEARLY";
+        }
 
         const total = await Maintenance.countDocuments(query);
 
