@@ -132,11 +132,6 @@ export default function HomePage() {
           <p>📍 Gujarat, India</p>
         </div>
       </section>
-
-      {/* Footer */}
-      <footer className="border-t border-gray-200 py-6 text-center text-gray-500 text-sm">
-        © 2026 Apex IT World. All rights reserved.
-      </footer>
     </div>
   );
 }
