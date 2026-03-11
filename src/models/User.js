@@ -78,8 +78,8 @@ const userSchema = new mongoose.Schema(
 
     /* =====================================================
        🔐 AUTH SESSION MANAGEMENT
-       Used for refresh token based login sessions
     ===================================================== */
+
     refreshToken: {
       type: String,
       default: null
@@ -88,9 +88,41 @@ const userSchema = new mongoose.Schema(
     /* =====================================================
        🔥 FULL YEAR MAINTENANCE TRACKING
     ===================================================== */
+
     fullYearPaidYears: {
       type: [Number],
       default: []
+    },
+
+    /* =====================================================
+       🛡️ GUARD SHIFT MANAGEMENT
+    ===================================================== */
+
+    shiftType: {
+      type: String,
+      enum: ["DAY", "NIGHT"],
+      required: function () {
+        return this.roles?.includes("GUARD");
+      }
+    },
+
+    shiftStartTime: {
+      type: String, // example: "08:00"
+      required: function () {
+        return this.roles?.includes("GUARD");
+      }
+    },
+
+    shiftEndTime: {
+      type: String, // example: "20:00"
+      required: function () {
+        return this.roles?.includes("GUARD");
+      }
+    },
+
+    isOnDuty: {
+      type: Boolean,
+      default: false
     }
 
   },
@@ -101,25 +133,15 @@ const userSchema = new mongoose.Schema(
    🔥 PRODUCTION OPTIMIZED INDEXES
 ===================================================== */
 
-// For society-based queries
 userSchema.index({ societyId: 1 });
-
-// For role filtering inside society
 userSchema.index({ societyId: 1, roles: 1 });
-
-// For flat owner lookup
 userSchema.index({ societyId: 1, flatNo: 1 });
-
-// For invited user tracking
 userSchema.index({ invitedBy: 1 });
-
-// For status filtering
 userSchema.index({ societyId: 1, status: 1 });
-
-// For role-only filtering (admin dashboard)
 userSchema.index({ roles: 1 });
-
-// 🔥 For full year payment lookup
 userSchema.index({ societyId: 1, fullYearPaidYears: 1 });
+
+// 🔥 Guard shift lookup
+userSchema.index({ societyId: 1, shiftType: 1 });
 
 export default mongoose.model("User", userSchema);

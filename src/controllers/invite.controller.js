@@ -338,11 +338,11 @@ export const inviteResident = async (req, res) => {
 
 export const inviteGuard = async (req, res) => {
   try {
-    const { name, mobile, email } = req.body;
+    const { name, mobile, email, shiftType, shiftStartTime, shiftEndTime } = req.body;
 
-    if (!name || !mobile || !email) {
+    if (!name || !mobile || !email || !shiftType || !shiftStartTime || !shiftEndTime) {
       return res.status(400).json({
-        message: "Name, mobile and email are required"
+        message: "Name, mobile, email and shift details are required"
       });
     }
 
@@ -376,17 +376,29 @@ export const inviteGuard = async (req, res) => {
       invite.status = "PENDING";
       invite.expiresAt = expiresAt;
       invite.invitedBy = admin._id;
-      invite.roles = ["GUARD"]; // 🔥 FIXED
+      invite.roles = ["GUARD"];
+
+      // 🔥 shift details
+      invite.shiftType = shiftType;
+      invite.shiftStartTime = shiftStartTime;
+      invite.shiftEndTime = shiftEndTime;
+
       await invite.save();
+
     } else {
       invite = await Invite.create({
         name,
         mobile,
         email,
-        roles: ["GUARD"], // 🔥 FIXED
+        roles: ["GUARD"],
         societyId: admin.societyId,
         invitedBy: admin._id,
-        expiresAt
+        expiresAt,
+
+        // 🔥 shift details
+        shiftType,
+        shiftStartTime,
+        shiftEndTime
       });
     }
 

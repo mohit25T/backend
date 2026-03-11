@@ -17,6 +17,7 @@ import {
     requireGuard,
     requireResident,
 } from "../middlewares/role.middleware.js";
+import { checkGuardShift } from "../middlewares/checkGuardShift.js";
 
 const router = express.Router();
 
@@ -31,6 +32,7 @@ router.post(
     "/create",
     requireAuth,
     requireGuard,
+    checkGuardShift,
     upload.any(), // ✅ NEW
     createVisitorEntry
 );
@@ -40,6 +42,7 @@ router.put(
     "/enter/:id",
     requireAuth,
     requireGuard,
+    checkGuardShift,
     markVisitorEntered
 );
 
@@ -48,6 +51,7 @@ router.put(
     "/exit/:id",
     requireAuth,
     requireGuard,
+    checkGuardShift,
     markVisitorExited
 );
 
@@ -109,6 +113,7 @@ router.post(
     "/verify-otp",
     requireAuth,
     requireGuard,
+    checkGuardShift,
     verifyGuestOtp
 );
 
@@ -116,6 +121,7 @@ router.put(
     "/otp-enter/:id",
     requireAuth,
     requireGuard,
+    checkGuardShift,
     allowOtpGuestEntry
 );
 
