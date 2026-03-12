@@ -2,6 +2,7 @@ import User from "../models/User.js";
 import Invite from "../models/Invite.js";
 import VisitorLog from "../models/VisitorLog.js";
 import cloudinary from "../config/cloudinary.js";
+import GuardLoginLog from "../models/GuardLoginLog.js";
 
 const normalizeFlatNo = (flatNo) =>
   flatNo?.trim().toUpperCase();
@@ -363,5 +364,64 @@ export const removeTenant = async (req, res) => {
     return res.status(500).json({
       message: "Failed to remove tenant"
     });
+  }
+};
+
+
+export const getGuardActivity = async (req, res) => {
+  try {
+
+    const societyId = req.user.societyId;
+
+    // Find guards of this society
+    const guards = await User.find({
+      societyId,
+      roles: "GUARD"
+    }).select("name shiftStartTime shiftEndTime shiftType");
+
+    const guardIds = guards.map(g => g._id);
+
+    // Get latest login for each guard
+    const logs = await GuardLoginLog.find({
+      guardId: { $in: guardIds }
+    })
+      .sort({ loginAt: -1 })
+      .populate("guardId", "name");
+
+    const result = guards.map((guard) => {
+
+      const log = logs.find(
+        (l) => l.guardId._id.toString() === guard._id.toString()
+      );
+
+      let status = "OFFLINE";
+
+      if (log && !log.logoutAt) {
+        status = "ACTIVE";
+      }
+
+      return {
+        guardId: guard._id,
+        name: guard.name,
+        shiftStartTime: guard.shiftStartTime,
+        shiftEndTime: guard.shiftEndTime,
+        shiftType: guard.shiftType,
+        loginAt: log?.loginAt || null,
+        logoutAt: log?.logoutAt || null,
+        status
+      };
+
+    });
+
+    res.json(result);
+
+  } catch (error) {
+
+    console.error("GET GUARD ACTIVITY ERROR:", error);
+
+    res.status(500).json({
+      message: "Failed to fetch guard activity"
+    });
+
   }
 };

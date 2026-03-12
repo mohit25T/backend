@@ -22,7 +22,7 @@ const Login = () => {
 
       await api.post("/auth/send-otp", {
         mobile,
-        email       // ✅ ADDED
+        email, // ✅ ADDED
       });
 
       setOtpSent(true);
@@ -40,12 +40,12 @@ const Login = () => {
 
       const res = await api.post("/auth/verify-otp", {
         mobile,
-        email,      // ✅ ADDED
-        otp
+        email, // ✅ ADDED
+        otp,
       });
 
       login(res.data.token);
-      navigate("/");
+      navigate("/analysis");
     } catch (err) {
       setError("Invalid OTP");
     } finally {
@@ -92,9 +92,7 @@ const Login = () => {
           />
         )}
 
-        {error && (
-          <p className="text-red-500 text-sm mb-3">{error}</p>
-        )}
+        {error && <p className="text-red-500 text-sm mb-3">{error}</p>}
 
         {!otpSent ? (
           <button

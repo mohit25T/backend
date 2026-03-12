@@ -1,6 +1,7 @@
 import Invite from "../models/Invite.js";
 import User from "../models/User.js";
 import Society from "../models/Society.js";
+import GuardLoginLog from "../models/GuardLoginLog.js";
 import EmailChangeRequest from "../models/EmailChangeRequest.js";
 import { signToken, signRefreshToken, verifyRefreshToken } from "../utils/jwt.js";
 import { saveOtp, verifyOtp } from "../utils/otpStore.js";
@@ -75,7 +76,6 @@ export const sendOtpUser = async (req, res) => {
       });
     }
 
-    // 🔍 Find user
     const user = await User.findOne({ mobile });
 
     if (!user) {
@@ -186,7 +186,6 @@ export const verifyOtpLogin = async (req, res) => {
       userId: user._id
     });
 
-    // 🔐 SAVE REFRESH TOKEN
     user.refreshToken = refreshToken;
     await user.save();
 
@@ -211,10 +210,8 @@ export const verifyUserLogin = async (req, res) => {
     const { mobile, otp, fcmToken } = req.body;
 
     const invite = await Invite.findOne({ mobile });
-
     const user = await User.findOne({ mobile });
 
-    // ❌ No user → No login
     if (!user) {
       return res.status(403).json({
         message: "Account not approved yet. Please contact admin."
@@ -239,7 +236,6 @@ export const verifyUserLogin = async (req, res) => {
       });
     }
 
-    // 🔥 Update FCM token
     if (fcmToken) {
 
       if (!user.fcmTokens) {
@@ -262,10 +258,21 @@ export const verifyUserLogin = async (req, res) => {
       userId: user._id
     });
 
-    // 🔐 Store refresh token
     user.refreshToken = refreshToken;
 
     await user.save();
+
+    /**
+     * GUARD LOGIN TRACKING
+     */
+    if (user.roles.includes("GUARD")) {
+
+      await GuardLoginLog.create({
+        guardId: user._id,
+        societyId: user.societyId
+      });
+
+    }
 
     const requiresProfilePhoto = !user.profileImage;
 
@@ -275,13 +282,18 @@ export const verifyUserLogin = async (req, res) => {
       roles: user.roles,
       societyId: user.societyId,
       requiresProfilePhoto,
+      shiftStartTime: user.shiftStartTime,
+      shiftEndTime: user.shiftEndTime,
+      shiftType: user.shiftType
     });
 
   } catch (err) {
 
     console.error("VERIFY USER LOGIN ERROR:", err);
 
-    return res.status(500).json({ message: "Login failed" });
+    return res.status(500).json({
+      message: "Login failed"
+    });
 
   }
 };
@@ -459,7 +471,7 @@ export const getMe = async (req, res) => {
   try {
 
     const user = await User.findById(req.user.userId).select(
-      "name email mobile roles"
+      "name email mobile roles shiftStartTime shiftEndTime shiftType"
     );
 
     if (!user) {
@@ -497,10 +509,26 @@ export const logoutUser = async (req, res) => {
 
     }
 
-    // 🔐 CLEAR SESSION
     user.refreshToken = null;
 
     await user.save();
+
+    /**
+     * GUARD LOGOUT TRACKING
+     */
+    if (user.roles.includes("GUARD")) {
+
+      await GuardLoginLog.findOneAndUpdate(
+        {
+          guardId: userId,
+          logoutAt: null
+        },
+        {
+          logoutAt: new Date()
+        }
+      );
+
+    }
 
     res.json({ message: "Logged out successfully" });
 
