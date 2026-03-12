@@ -204,26 +204,28 @@ export const verifyOtpLogin = async (req, res) => {
  * VERIFY OTP — USER LOGIN
  * =====================================================
  */
+
 export const verifyUserLogin = async (req, res) => {
   try {
 
     const { mobile, otp, fcmToken } = req.body;
 
+    // Find invite
     const invite = await Invite.findOne({ mobile });
-    const user = await Invite.findOne({ mobile });
 
-    if (!user) {
+    if (!invite) {
       return res.status(403).json({
-        message: "Account not approved yet. Please contact admin."
+        message: "You are not invited to this society."
       });
     }
 
-    if (!invite || !invite.email) {
+    if (!invite.email) {
       return res.status(400).json({
-        message: "Email not found for OTP verification",
+        message: "Email not found for OTP verification"
       });
     }
 
+    // Verify OTP
     const isValid = verifyOtp({
       mobile,
       email: invite.email,
@@ -236,6 +238,32 @@ export const verifyUserLogin = async (req, res) => {
       });
     }
 
+    // Check if user already exists
+    let user = await User.findOne({ mobile });
+
+    // If user doesn't exist → create from invite
+    if (!user) {
+
+      user = await User.create({
+        name: invite.name,
+        email: invite.email,
+        mobile: invite.mobile,
+        roles: invite.roles,
+        societyId: invite.societyId,
+        invitedBy: invite.invitedBy,
+
+        // Guard shift fields
+        shiftStartTime: invite.shiftStartTime,
+        shiftEndTime: invite.shiftEndTime,
+        shiftType: invite.shiftType
+      });
+
+      // Mark invite as used
+      invite.status = "USED";
+      await invite.save();
+    }
+
+    // Save FCM token
     if (fcmToken) {
 
       if (!user.fcmTokens) {
@@ -248,10 +276,11 @@ export const verifyUserLogin = async (req, res) => {
       }
     }
 
+    // Generate tokens
     const token = signToken({
       userId: user._id,
       roles: user.roles,
-      societyId: user.societyId,
+      societyId: user.societyId
     });
 
     const refreshToken = signRefreshToken({
@@ -282,6 +311,8 @@ export const verifyUserLogin = async (req, res) => {
       roles: user.roles,
       societyId: user.societyId,
       requiresProfilePhoto,
+
+      // Guard shift data
       shiftStartTime: user.shiftStartTime,
       shiftEndTime: user.shiftEndTime,
       shiftType: user.shiftType
@@ -297,6 +328,7 @@ export const verifyUserLogin = async (req, res) => {
 
   }
 };
+
 
 /**
  * =====================================================
