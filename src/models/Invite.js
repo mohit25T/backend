@@ -40,7 +40,38 @@ const inviteSchema = new mongoose.Schema(
     flatNo: {
       type: String,
       required: function () {
-        return this.role === "OWNER" || this.role === "TENANT";
+        return (
+          this.roles?.includes("OWNER") ||
+          this.roles?.includes("TENANT")
+        );
+      }
+    },
+
+    /**
+     * ===============================
+     * GUARD SHIFT DATA
+     * ===============================
+     */
+
+    shiftType: {
+      type: String,
+      enum: ["DAY", "NIGHT"],
+      required: function () {
+        return this.roles?.includes("GUARD");
+      }
+    },
+
+    shiftStartTime: {
+      type: String, // example: "08:00"
+      required: function () {
+        return this.roles?.includes("GUARD");
+      }
+    },
+
+    shiftEndTime: {
+      type: String, // example: "20:00"
+      required: function () {
+        return this.roles?.includes("GUARD");
       }
     },
 
@@ -62,21 +93,24 @@ const inviteSchema = new mongoose.Schema(
    🔥 PRODUCTION INDEXES
 ===================================================== */
 
-// 🔥 CRITICAL — for OTP verification
+// OTP verification lookup
 inviteSchema.index({
   mobile: 1,
-  role: 1,
+  roles: 1,
   status: 1,
   expiresAt: 1
 });
 
-// For society admin management
+// Society invite listing
 inviteSchema.index({ societyId: 1, createdAt: -1 });
 
-// For tracking invites sent by admin
+// Admin tracking
 inviteSchema.index({ invitedBy: 1 });
 
-// For cleanup jobs (optional future cron)
+// Expiry cleanup
 inviteSchema.index({ expiresAt: 1 });
+
+// Guard shift search
+inviteSchema.index({ societyId: 1, shiftType: 1 });
 
 export default mongoose.model("Invite", inviteSchema);
