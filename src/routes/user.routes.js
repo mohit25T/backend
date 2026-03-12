@@ -1,7 +1,7 @@
 import express from "express";
 import { getUsersByRole, getMyProfile, getResidentVisitorHistory, getUsersBySociety, uploadProfilePhoto, getResidentTenantDetails, removeTenant, getGuardActivity } from "../controllers/user.controller.js";
 import { requireAuth } from "../middlewares/auth.middleware.js";
-import { requireSuperAdmin, requireResident } from "../middlewares/role.middleware.js";
+import { requireSuperAdmin, requireAdmin, requireResident } from "../middlewares/role.middleware.js";
 import upload from "../middlewares/upload.middleware.js";
 
 const router = express.Router();
