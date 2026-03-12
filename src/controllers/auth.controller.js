@@ -210,7 +210,7 @@ export const verifyUserLogin = async (req, res) => {
     const { mobile, otp, fcmToken } = req.body;
 
     const invite = await Invite.findOne({ mobile });
-    const user = await User.findOne({ mobile });
+    const user = await Invite.findOne({ mobile });
 
     if (!user) {
       return res.status(403).json({
