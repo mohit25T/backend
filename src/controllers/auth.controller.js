@@ -76,7 +76,7 @@ export const sendOtpUser = async (req, res) => {
       });
     }
 
-    const user = await User.findOne({ mobile });
+    const user = await Invite.findOne({ mobile });
 
     if (!user) {
       return res.status(403).json({
