@@ -9,6 +9,7 @@ import VisitorLog from "../models/VisitorLog.js";
  * ================================
  */
 export const getOverviewAnalytics = async (req, res) => {
+
   const [
     totalSocieties,
     totalAdmins,
@@ -42,30 +43,71 @@ export const getOverviewAnalytics = async (req, res) => {
  * ================================
  */
 export const getSocietyAnalytics = async (req, res) => {
+
   const { societyId } = req.params;
+  const { wing } = req.query;
 
   const society = await Society.findById(societyId);
+
   if (!society) {
-    return res.status(404).json({ message: "Society not found" });
+    return res.status(404).json({
+      message: "Society not found"
+    });
   }
 
-  const [admins, owners, tenants, guards, visitors] = await Promise.all([
-    User.countDocuments({ societyId, roles: "ADMIN" }),
-    User.countDocuments({ societyId, roles: "OWNER" }),
-    User.countDocuments({ societyId, roles: "TENANT" }),
-    User.countDocuments({ societyId, roles: "GUARD" }),
-    VisitorLog.countDocuments({ societyId })
+  const userQuery = { societyId };
+
+  // Optional wing filter
+  if (wing) {
+    userQuery.wing = wing;
+  }
+
+  const [
+    admins,
+    owners,
+    tenants,
+    guards,
+    visitors
+  ] = await Promise.all([
+
+    User.countDocuments({
+      ...userQuery,
+      roles: "ADMIN"
+    }),
+
+    User.countDocuments({
+      ...userQuery,
+      roles: "OWNER"
+    }),
+
+    User.countDocuments({
+      ...userQuery,
+      roles: "TENANT"
+    }),
+
+    User.countDocuments({
+      ...userQuery,
+      roles: "GUARD"
+    }),
+
+    VisitorLog.countDocuments({
+      societyId,
+      ...(wing ? { wing } : {})
+    })
+
   ]);
 
   res.json({
     societyId,
     societyName: society.name,
+    wing: wing || "ALL",
     admins,
     owners,
     tenants,
     guards,
     visitors
   });
+
 };
 
 
@@ -75,24 +117,43 @@ export const getSocietyAnalytics = async (req, res) => {
  * ================================
  */
 export const getAdminAnalytics = async (req, res) => {
+
   const { adminId } = req.params;
 
   const admin = await User.findById(adminId);
+
   if (!admin || !admin.roles.includes("ADMIN")) {
-    return res.status(404).json({ message: "Admin not found" });
+    return res.status(404).json({
+      message: "Admin not found"
+    });
   }
 
   const [ownersAdded, tenantsAdded, guardsAdded] = await Promise.all([
-    User.countDocuments({ invitedBy: adminId, roles: "OWNER" }),
-    User.countDocuments({ invitedBy: adminId, roles: "TENANT" }),
-    User.countDocuments({ invitedBy: adminId, roles: "GUARD" })
+
+    User.countDocuments({
+      invitedBy: adminId,
+      roles: "OWNER"
+    }),
+
+    User.countDocuments({
+      invitedBy: adminId,
+      roles: "TENANT"
+    }),
+
+    User.countDocuments({
+      invitedBy: adminId,
+      roles: "GUARD"
+    })
+
   ]);
 
   res.json({
     adminId,
     adminName: admin.name,
+    adminWing: admin.wing || null,
     ownersAdded,
     tenantsAdded,
     guardsAdded
   });
+
 };

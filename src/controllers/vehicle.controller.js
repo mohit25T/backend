@@ -49,6 +49,7 @@ export const createVehicle = async (req, res) => {
         }
 
         const flatNo = resident.flatNo;
+        const wing = resident.wing; // ✅ ADDED
 
         /* =====================================================
            🔍 STEP 2: Get Society Vehicle Policy
@@ -67,7 +68,8 @@ export const createVehicle = async (req, res) => {
 
         const existingVehicles = await Vehicle.countDocuments({
             societyId,
-            flatNo
+            flatNo,
+            wing // ✅ ADDED
         });
 
         if (existingVehicles >= maxVehicles) {
@@ -99,6 +101,7 @@ export const createVehicle = async (req, res) => {
             societyId,
             residentId,
             flatNo,
+            wing, // ✅ ADDED
             vehicleNumber: normalizedVehicleNumber,
             vehicleType,
             parkingSlot
@@ -200,21 +203,12 @@ export const getAllVehicles = async (req, res) => {
 
         const societyId = req.user.societyId;
 
-        /* =====================================================
-           📄 PAGINATION PARAMETERS
-        ===================================================== */
-
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 20;
-
         const skip = (page - 1) * limit;
 
-        /* =====================================================
-           🔍 FETCH VEHICLES
-        ===================================================== */
-
         const vehicles = await Vehicle.find({ societyId })
-            .populate("residentId", "name flatNo mobile")
+            .populate("residentId", "name flatNo wing mobile") // ✅ ADDED wing
             .skip(skip)
             .limit(limit)
             .sort({ createdAt: -1 });
@@ -342,14 +336,10 @@ export const searchVehicle = async (req, res) => {
     const normalizedVehicleNumber =
       vehicleNumber.trim().toUpperCase();
 
-    /* =====================================================
-       🔍 STEP 1: Find Vehicle
-    ===================================================== */
-
     const vehicle = await Vehicle.findOne({
       societyId,
       vehicleNumber: normalizedVehicleNumber
-    }).populate("residentId", "name flatNo mobile");
+    }).populate("residentId", "name flatNo wing mobile"); // ✅ ADDED wing
 
     if (!vehicle) {
       return res.status(404).json({

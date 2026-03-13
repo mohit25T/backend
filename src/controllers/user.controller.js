@@ -7,7 +7,6 @@ import GuardLoginLog from "../models/GuardLoginLog.js";
 const normalizeFlatNo = (flatNo) =>
   flatNo?.trim().toUpperCase();
 
-
 /**
  * ==========================================
  * GET USERS BY ROLE (ADMIN / OWNER / TENANT / GUARD)
@@ -22,7 +21,7 @@ export const getUsersByRole = async (req, res) => {
 
   const users = await User.find({ roles: { $in: [role] } })
     .populate("societyId", "name city _id")
-    .select("name email mobile roles status societyId createdAt")
+    .select("name email mobile roles status societyId wing createdAt")
     .sort({ createdAt: -1 });
 
   res.json(users);
@@ -49,25 +48,23 @@ export const getMyProfile = async (req, res) => {
       });
     }
 
-    // ✅ NEW FLAG
     const requiresProfilePhoto = !user.profileImage;
 
     return res.status(200).json({
       success: true,
-      requiresProfilePhoto, // ✅ Added (does not break old frontend)
+      requiresProfilePhoto,
       user: {
         _id: user._id,
         name: user.name,
         email: user.email,
         mobile: user.mobile,
         roles: user.roles,
+        wing: user.wing, // ✅ ADDED
         flatNo: user.flatNo,
         status: user.status,
         society: user.societyId,
         invitedBy: user.invitedBy,
         createdAt: user.createdAt,
-
-        // ✅ NEW FIELD
         profileImage: user.profileImage || null
       }
     });
@@ -90,7 +87,6 @@ export const getResidentVisitorHistory = async (req, res) => {
   try {
     const { userId, societyId, roles } = req.user;
 
-    // ✅ Only OWNER or TENANT
     if (
       !roles ||
       (!roles.includes("OWNER") && !roles.includes("TENANT"))
@@ -108,7 +104,6 @@ export const getResidentVisitorHistory = async (req, res) => {
       });
     }
 
-    // 🔥 Fetch full user to get flatNo
     const user = await User.findById(userId);
 
     if (!user || !user.flatNo) {
@@ -126,26 +121,22 @@ export const getResidentVisitorHistory = async (req, res) => {
 
     const filter = {
       societyId,
-      flatNo
+      flatNo,
+      wing: user.wing // ✅ ADDED
     };
-
-    /* ===============================
-       🔐 Strict Date-Based Privacy
-    =============================== */
 
     const activeTenant = await User.findOne({
       societyId,
       flatNo,
+      wing: user.wing,
       roles: { $in: ["TENANT"] },
       status: "ACTIVE"
     });
 
     if (activeTenant) {
       if (roles.includes("TENANT")) {
-        // Tenant sees only after move-in
         filter.createdAt = { $gte: activeTenant.createdAt };
       } else if (roles.includes("OWNER")) {
-        // Owner sees only before tenant move-in
         filter.createdAt = { $lt: activeTenant.createdAt };
       }
     }
@@ -186,7 +177,7 @@ export const getResidentVisitorHistory = async (req, res) => {
 export const getUsersBySociety = async (req, res) => {
   try {
     const societyId = req.user.societyId;
-    const { role } = req.query;
+    const { role, wing } = req.query;
 
     if (!societyId) {
       return res.status(400).json({
@@ -201,14 +192,20 @@ export const getUsersBySociety = async (req, res) => {
       filter.roles = { $in: [role] };
     }
 
+    if (wing) {
+      filter.wing = wing; // ✅ NEW
+    }
+
     const users = await User.find(filter)
       .populate("societyId", "name city _id")
       .select(
-        "name email mobile roles status societyId createdAt profileImage"
+        "name email mobile roles status societyId wing createdAt profileImage"
       )
       .sort({ createdAt: -1 })
-      .lean(); // 🔥 Better performance
+      .lean();
+
     console.log("USERS BY SOCIETY:", users);
+
     return res.status(200).json({
       success: true,
       users
@@ -222,6 +219,7 @@ export const getUsersBySociety = async (req, res) => {
     });
   }
 };
+
 /**
  * =================================
  * UPLOAD PROFILE PHOTO
@@ -231,9 +229,6 @@ export const uploadProfilePhoto = async (req, res) => {
   try {
     const userId = req.user.userId;
 
-    /* ===============================
-       📸 Profile Photo (Already Uploaded by Middleware)
-    =============================== */
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({
         success: false,
@@ -241,12 +236,8 @@ export const uploadProfilePhoto = async (req, res) => {
       });
     }
 
-    // ✅ Cloudinary URL comes directly from multer-storage-cloudinary
     const profileImageUrl = req.files[0].path;
 
-    /* ===============================
-       📝 Update User
-    =============================== */
     const user = await User.findByIdAndUpdate(
       userId,
       {
@@ -281,10 +272,10 @@ export const getResidentTenantDetails = async (req, res) => {
       });
     }
 
-    // 1️⃣ Check ACTIVE tenant
     const activeTenant = await User.findOne({
       societyId: owner.societyId,
       flatNo: owner.flatNo,
+      wing: owner.wing, // ✅ ADDED
       roles: { $in: ["TENANT"] },
       status: "ACTIVE"
     });
@@ -297,11 +288,11 @@ export const getResidentTenantDetails = async (req, res) => {
       });
     }
 
-    // 2️⃣ Check PENDING invite for this flat
     const pendingTenant = await Invite.findOne({
       societyId: owner.societyId,
       flatNo: owner.flatNo,
-      role: "TENANT",
+      wing: owner.wing, // ✅ ADDED
+      roles: { $in: ["TENANT"] },
       status: "PENDING"
     });
 
@@ -338,6 +329,7 @@ export const removeTenant = async (req, res) => {
     const tenant = await User.findOne({
       societyId: owner.societyId,
       flatNo: owner.flatNo,
+      wing: owner.wing, // ✅ ADDED
       roles: { $in: ["TENANT"] },
       status: "ACTIVE"
     });
@@ -348,7 +340,6 @@ export const removeTenant = async (req, res) => {
       });
     }
 
-    // ✅ Mark tenant as left
     tenant.status = "INACTIVE";
     tenant.leftAt = new Date();
 
@@ -367,21 +358,18 @@ export const removeTenant = async (req, res) => {
   }
 };
 
-
 export const getGuardActivity = async (req, res) => {
   try {
 
     const societyId = req.user.societyId;
 
-    // Find guards of this society
     const guards = await User.find({
       societyId,
       roles: "GUARD"
-    }).select("name shiftStartTime shiftEndTime shiftType");
+    }).select("name wing shiftStartTime shiftEndTime shiftType");
 
     const guardIds = guards.map(g => g._id);
 
-    // Get latest login for each guard
     const logs = await GuardLoginLog.find({
       guardId: { $in: guardIds }
     })
@@ -403,6 +391,7 @@ export const getGuardActivity = async (req, res) => {
       return {
         guardId: guard._id,
         name: guard.name,
+        wing: guard.wing, // ✅ ADDED
         shiftStartTime: guard.shiftStartTime,
         shiftEndTime: guard.shiftEndTime,
         shiftType: guard.shiftType,

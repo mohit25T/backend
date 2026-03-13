@@ -4,7 +4,7 @@ import { updateAdminDetails } from "../../api/admin";
 const EditAdminModal = ({ admin, onClose, onUpdated }) => {
   const [name, setName] = useState(admin.name || "");
   const [mobile, setMobile] = useState(admin.mobile || "");
-  const [email, setEmail] = useState(admin.email || ""); // ✅ ADDED
+  const [email, setEmail] = useState(admin.email || "");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
 
@@ -18,7 +18,7 @@ const EditAdminModal = ({ admin, onClose, onUpdated }) => {
 
       if (name !== admin.name) payload.name = name;
       if (mobile !== admin.mobile) payload.mobile = mobile;
-      if (email !== admin.email) payload.email = email; // ✅ ADDED
+      if (email !== admin.email) payload.email = email;
 
       const res = await updateAdminDetails(admin._id, payload);
 
@@ -30,7 +30,8 @@ const EditAdminModal = ({ admin, onClose, onUpdated }) => {
         setMessage("Admin details updated successfully.");
       }
 
-      onUpdated(); // refresh admin list
+      onUpdated();
+
     } catch (err) {
       setMessage(
         err.response?.data?.message || "Update failed"
@@ -43,11 +44,14 @@ const EditAdminModal = ({ admin, onClose, onUpdated }) => {
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
       <div className="bg-white rounded-xl w-full max-w-md p-6">
+
         <h2 className="text-xl font-bold mb-4">
           Edit Admin
         </h2>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+
+          {/* ADMIN NAME */}
           <input
             type="text"
             placeholder="Admin Name"
@@ -56,6 +60,7 @@ const EditAdminModal = ({ admin, onClose, onUpdated }) => {
             className="w-full border p-2 rounded"
           />
 
+          {/* EMAIL */}
           <input
             type="email"
             placeholder="Email Address"
@@ -64,6 +69,7 @@ const EditAdminModal = ({ admin, onClose, onUpdated }) => {
             className="w-full border p-2 rounded"
           />
 
+          {/* MOBILE */}
           <input
             type="text"
             placeholder="Mobile Number"
@@ -72,6 +78,32 @@ const EditAdminModal = ({ admin, onClose, onUpdated }) => {
             className="w-full border p-2 rounded"
           />
 
+          {/* WING (READ ONLY) */}
+          <div>
+            <label className="text-sm text-gray-500">
+              Wing
+            </label>
+            <input
+              type="text"
+              value={admin.wing || "-"}
+              disabled
+              className="w-full border p-2 rounded bg-gray-100"
+            />
+          </div>
+
+          {/* FLAT (READ ONLY) */}
+          <div>
+            <label className="text-sm text-gray-500">
+              Flat Number
+            </label>
+            <input
+              type="text"
+              value={admin.flatNo || "-"}
+              disabled
+              className="w-full border p-2 rounded bg-gray-100"
+            />
+          </div>
+
           {message && (
             <p className="text-sm text-blue-600">
               {message}
@@ -79,6 +111,7 @@ const EditAdminModal = ({ admin, onClose, onUpdated }) => {
           )}
 
           <div className="flex justify-end gap-2">
+
             <button
               type="button"
               onClick={onClose}
@@ -94,7 +127,9 @@ const EditAdminModal = ({ admin, onClose, onUpdated }) => {
             >
               {loading ? "Saving..." : "Save"}
             </button>
+
           </div>
+
         </form>
       </div>
     </div>

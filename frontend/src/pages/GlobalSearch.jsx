@@ -26,6 +26,7 @@ const GlobalSearch = () => {
   return (
     <AppLayout>
       <PageWrapper>
+
         <h1 className="text-2xl font-bold mb-4">
           Global Search
         </h1>
@@ -41,18 +42,30 @@ const GlobalSearch = () => {
         {/* USERS */}
         {result.users.length > 0 && (
           <div className="mb-6">
+
             <h2 className="font-semibold mb-2">Users</h2>
+
             <ul className="bg-white rounded shadow divide-y">
+
               {result.users.map((u) => (
                 <li key={u._id} className="p-3">
+
                   <p className="font-medium">
                     {u.name || "—"} ({u.roles.join(", ")})
                   </p>
-                  <p className="text-sm text-gray-500">
-                    {u.email} • {u.mobile} • {u.societyId?.name || "-"}
+
+                  {/* NEW: Wing + Flat */}
+                  <p className="text-sm text-gray-600">
+                    {u.wing ? `Wing ${u.wing}` : "-"} • Flat {u.flatNo || "-"} • {u.societyId?.name || "-"}
                   </p>
+
+                  <p className="text-sm text-gray-500">
+                    {u.email} • {u.mobile}
+                  </p>
+
                 </li>
               ))}
+
             </ul>
           </div>
         )}
@@ -60,19 +73,30 @@ const GlobalSearch = () => {
         {/* SOCIETIES */}
         {result.societies.length > 0 && (
           <div>
+
             <h2 className="font-semibold mb-2">Societies</h2>
+
             <ul className="bg-white rounded shadow divide-y">
+
               {result.societies.map((s) => (
                 <li key={s._id} className="p-3">
-                  <p className="font-medium">{s.name}</p>
+
+                  <p className="font-medium">
+                    {s.name}
+                  </p>
+
                   <p className="text-sm text-gray-500">
                     {s.city} • {s.status}
                   </p>
+
                 </li>
               ))}
+
             </ul>
+
           </div>
         )}
+
       </PageWrapper>
     </AppLayout>
   );

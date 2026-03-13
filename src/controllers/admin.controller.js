@@ -1,6 +1,6 @@
 import User from "../models/User.js";
 import VisitorLog from "../models/VisitorLog.js";
-import { auditLogger } from "../utils/auditLogger.js"; // ✅ ADDED
+import { auditLogger } from "../utils/auditLogger.js";
 import Invite from "../models/Invite.js";
 
 /**
@@ -20,26 +20,22 @@ export const updateAdminDetails = async (req, res) => {
     return res.status(404).json({ message: "Admin not found" });
   }
 
-  // 🔹 Capture old values for audit description
   const oldName = admin.name;
   const oldMobile = admin.mobile;
 
-  // Name update (safe)
   if (name) {
     admin.name = name;
   }
 
-  // Mobile update (security-sensitive)
   if (mobile && mobile !== admin.mobile) {
     admin.mobile = mobile;
     admin.status = "PENDING_VERIFICATION";
-    admin.otp = null; // force re-verification
+    admin.otp = null;
     admin.otpExpiresAt = null;
   }
 
   await admin.save();
 
-  // ✅ AUDIT LOG (SAFE, EXPLICIT)
   await auditLogger({
     req,
     action: "UPDATE_ADMIN",
@@ -56,8 +52,13 @@ export const updateAdminDetails = async (req, res) => {
 };
 
 
+/**
+ * GET PENDING TENANT REQUESTS
+ * Admin can filter by wing
+ */
 export const getPendingTenantRequests = async (req, res) => {
   try {
+
     const admin = await User.findById(req.user.userId);
 
     if (!admin.roles.includes("ADMIN")) {
@@ -66,12 +67,21 @@ export const getPendingTenantRequests = async (req, res) => {
       });
     }
 
-    const pendingTenants = await Invite.find({
+    const { wing } = req.query;
+
+    const query = {
       societyId: admin.societyId,
-      role: "TENANT",
+      roles: "TENANT",
       status: "PENDING"
-    }).sort({ createdAt: -1 });
-    console.log("PENDING TENANTS:", pendingTenants);
+    };
+
+    if (wing) {
+      query.wing = wing;
+    }
+
+    const pendingTenants = await Invite.find(query)
+      .sort({ createdAt: -1 });
+
     return res.json({
       success: true,
       data: pendingTenants
@@ -84,13 +94,18 @@ export const getPendingTenantRequests = async (req, res) => {
   }
 };
 
+
+/**
+ * APPROVE TENANT
+ */
 export const approveTenant = async (req, res) => {
   try {
+
     const { inviteId } = req.params;
 
     const invite = await Invite.findById(inviteId);
 
-    if (!invite || invite.role !== "TENANT") {
+    if (!invite || !invite.roles.includes("TENANT")) {
       return res.status(400).json({
         message: "Invalid tenant invite"
       });
@@ -102,12 +117,13 @@ export const approveTenant = async (req, res) => {
       });
     }
 
-    // 🔥 Create Tenant User
+    // 🔥 Create Tenant User (WITH WING SUPPORT)
     const user = await User.create({
       name: invite.name,
       mobile: invite.mobile,
       email: invite.email,
       roles: ["TENANT"],
+      wing: invite.wing, // ✅ NEW
       flatNo: invite.flatNo,
       societyId: invite.societyId,
       invitedBy: invite.invitedBy,
@@ -116,7 +132,6 @@ export const approveTenant = async (req, res) => {
       isProfileComplete: false
     });
 
-    // 🔥 Mark invite used
     invite.status = "USED";
     await invite.save();
 
@@ -127,6 +142,7 @@ export const approveTenant = async (req, res) => {
 
   } catch (error) {
     console.error("APPROVE TENANT ERROR:", error);
+
     return res.status(500).json({
       message: "Failed to approve tenant"
     });

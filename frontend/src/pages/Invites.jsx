@@ -13,8 +13,15 @@ const Invites = () => {
   const [loading, setLoading] = useState(false);
 
   const loadInvites = async () => {
-    const res = await fetchInvites();
-    setInvites(res.data);
+    try {
+      const res = await fetchInvites();
+
+      // ensure safe data format
+      setInvites(res.data || []);
+
+    } catch (error) {
+      console.error("Failed to load invites:", error);
+    }
   };
 
   useEffect(() => {
@@ -22,23 +29,36 @@ const Invites = () => {
   }, []);
 
   const handleResend = async (id) => {
-    setLoading(true);
-    await resendInvite(id);
-    await loadInvites();
-    setLoading(false);
+    try {
+      setLoading(true);
+      await resendInvite(id);
+      await loadInvites();
+    } catch (error) {
+      console.error("Resend failed:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleCancel = async (id) => {
-    setLoading(true);
-    await cancelInvite(id);
-    await loadInvites();
-    setLoading(false);
+    try {
+      setLoading(true);
+      await cancelInvite(id);
+      await loadInvites();
+    } catch (error) {
+      console.error("Cancel failed:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <AppLayout>
       <PageWrapper>
-        <h1 className="text-2xl font-bold mb-6">Admin Invites</h1>
+
+        <h1 className="text-2xl font-bold mb-6">
+          Society Invites
+        </h1>
 
         {loading && (
           <p className="text-sm text-gray-500 mb-2">
@@ -51,6 +71,7 @@ const Invites = () => {
           onResend={handleResend}
           onCancel={handleCancel}
         />
+
       </PageWrapper>
     </AppLayout>
   );

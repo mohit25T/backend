@@ -5,7 +5,9 @@ import { auditLogger } from "../utils/auditLogger.js"; // ✅ ADDED
 /* -------- ADMIN -------- */
 export const blockUnblockUser = async (req, res) => {
   try {
+
     const { userId } = req.params;
+
     // ❌ Prevent self-block
     if (req.user.userId === userId) {
       return res.status(400).json({
@@ -18,6 +20,17 @@ export const blockUnblockUser = async (req, res) => {
     if (!user) {
       return res.status(404).json({
         message: "User not found"
+      });
+    }
+
+    // ❌ Prevent cross-society action
+    if (
+      req.user.societyId &&
+      user.societyId &&
+      req.user.societyId.toString() !== user.societyId.toString()
+    ) {
+      return res.status(403).json({
+        message: "You cannot modify users from another society"
       });
     }
 
@@ -47,29 +60,39 @@ export const blockUnblockUser = async (req, res) => {
       societyId: user.societyId,
       description: `User ${user.name} (${user.roles.join(
         ", "
-      )}) status changed from ${oldStatus} to ${user.status}`
+      )}) Wing ${user.wing || "-"} Flat ${user.flatNo || "-"} status changed from ${oldStatus} to ${user.status}`
     });
 
     return res.json({
       message: `User ${user.status.toLowerCase()} successfully`,
-      status: user.status
+      status: user.status,
+      wing: user.wing || null,
+      flatNo: user.flatNo || null
     });
+
   } catch (error) {
+
     console.error("BLOCK / UNBLOCK USER ERROR:", error);
+
     return res.status(500).json({
       message: "Failed to update user status"
     });
+
   }
 };
 
+
 /* -------- SOCIETY -------- */
 export const toggleSocietyStatus = async (req, res) => {
+
   const { societyId } = req.params;
 
   const society = await Society.findById(societyId);
 
   if (!society) {
-    return res.status(404).json({ message: "Society not found" });
+    return res.status(404).json({
+      message: "Society not found"
+    });
   }
 
   const oldStatus = society.status;

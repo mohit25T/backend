@@ -21,16 +21,14 @@ const normalizeFlatNo = (flatNo) =>
  */
 const getUserTokens = (user) => {
   if (!user) return [];
-  if (Array.isArray(user.fcmTokens)) return user.fcmTokens;
-  return [];
+  if (!Array.isArray(user.fcmTokens)) return [];
+  return user.fcmTokens.filter(Boolean);
 };
 
 /**
  * ===============================
  * 1️⃣ Guard creates visitor entry
  * ===============================
- * 🔔 Notify OWNER (flat owner)
- * 📸 Supports visitor photo
  */
 export const createVisitorEntry = async (req, res) => {
   try {
@@ -60,7 +58,6 @@ export const createVisitorEntry = async (req, res) => {
        🔍 STEP 1: Find Active Resident (Tenant Priority)
     ===================================================== */
 
-    // 1️⃣ Try to find active tenants first
     let targetResidents = await User.find({
       societyId,
       flatNo: normalizedFlatNo,
@@ -68,7 +65,6 @@ export const createVisitorEntry = async (req, res) => {
       status: "ACTIVE"
     });
 
-    // 2️⃣ If no tenant, fallback to owner
     if (targetResidents.length === 0) {
       targetResidents = await User.find({
         societyId,
@@ -84,7 +80,6 @@ export const createVisitorEntry = async (req, res) => {
       });
     }
 
-    // Assign first matched resident
     const resident = targetResidents[0];
 
     /* =====================================================
@@ -111,7 +106,7 @@ export const createVisitorEntry = async (req, res) => {
     let visitorPhotoUrl = null;
 
     if (req.files && req.files.length > 0) {
-      visitorPhotoUrl = req.files[0].path; // Cloudinary URL
+      visitorPhotoUrl = req.files[0].path;
     }
 
     /* =====================================================
@@ -120,7 +115,7 @@ export const createVisitorEntry = async (req, res) => {
 
     const visitor = await VisitorLog.create({
       societyId,
-      residentId: resident._id, // 🔥 Important
+      residentId: resident._id,
       personName,
       personMobile,
       purpose,
@@ -140,7 +135,7 @@ export const createVisitorEntry = async (req, res) => {
 
     try {
       const allTokens = targetResidents.flatMap(user =>
-        getUserTokens(user) || []
+        getUserTokens(user)
       );
 
       if (allTokens.length > 0) {
@@ -183,10 +178,6 @@ export const approveVisitor = async (req, res) => {
     const { id } = req.params;
     const { userId } = req.user;
 
-    /* ==========================================
-       1️⃣ Find Visitor
-    ========================================== */
-
     const visitor = await VisitorLog.findById(id);
 
     if (!visitor) {
@@ -203,10 +194,6 @@ export const approveVisitor = async (req, res) => {
       });
     }
 
-    /* ==========================================
-       2️⃣ Find Requesting User
-    ========================================== */
-
     const user = await User.findById(userId);
 
     if (!user) {
@@ -215,11 +202,6 @@ export const approveVisitor = async (req, res) => {
         message: "User not found"
       });
     }
-
-    /* ==========================================
-       3️⃣ Flat-Based Authorization
-       (Tenant or Owner of Same Flat Can Approve)
-    ========================================== */
 
     if (!user.flatNo) {
       return res.status(403).json({
@@ -237,25 +219,17 @@ export const approveVisitor = async (req, res) => {
       });
     }
 
-    /* ==========================================
-       4️⃣ Approve Visitor
-    ========================================== */
-
     visitor.status = "APPROVED";
     visitor.approvedBy = userId;
     visitor.approvedAt = new Date();
 
     await visitor.save();
 
-    /* ==========================================
-       5️⃣ Notify Guard
-    ========================================== */
-
     try {
       const guard = await User.findById(visitor.guardId);
 
       if (guard) {
-        const tokens = getUserTokens(guard) || [];
+        const tokens = getUserTokens(guard);
 
         if (tokens.length > 0) {
           await sendPushNotificationToMany(
@@ -272,10 +246,6 @@ export const approveVisitor = async (req, res) => {
     } catch (pushError) {
       console.error("Push Notification Error:", pushError);
     }
-
-    /* ==========================================
-       6️⃣ Response
-    ========================================== */
 
     return res.json({
       success: true,
@@ -319,15 +289,17 @@ export const rejectVisitor = async (req, res) => {
 
     const guard = await User.findById(visitor.guardId);
 
-    await sendPushNotificationToMany(
-      getUserTokens(guard),
-      "Visitor Rejected ❌",
-      `Visitor rejected for Flat ${visitor.flatNo}`,
-      {
-        type: "VISITOR_REJECTED",
-        visitorId: visitor._id.toString()
-      }
-    );
+    if (guard) {
+      await sendPushNotificationToMany(
+        getUserTokens(guard),
+        "Visitor Rejected ❌",
+        `Visitor rejected for Flat ${visitor.flatNo}`,
+        {
+          type: "VISITOR_REJECTED",
+          visitorId: visitor._id.toString()
+        }
+      );
+    }
 
     res.json({ message: "Visitor rejected", visitor });
 
@@ -336,7 +308,6 @@ export const rejectVisitor = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
-
 
 /**
  * ===============================
@@ -360,18 +331,22 @@ export const markVisitorEntered = async (req, res) => {
 
     const guard = await User.findById(visitor.guardId);
 
-    await sendPushNotificationToMany(
-      [
-        ...getUserTokens(visitor.residentId),
-        ...getUserTokens(guard)
-      ],
-      "Visitor Entered ✅",
-      `${visitor.personName} has entered the society`,
-      {
-        type: "VISITOR_ENTERED",
-        visitorId: visitor._id.toString()
-      }
-    );
+    const tokens = [
+      ...getUserTokens(visitor.residentId),
+      ...getUserTokens(guard)
+    ];
+
+    if (tokens.length > 0) {
+      await sendPushNotificationToMany(
+        tokens,
+        "Visitor Entered ✅",
+        `${visitor.personName} has entered the society`,
+        {
+          type: "VISITOR_ENTERED",
+          visitorId: visitor._id.toString()
+        }
+      );
+    }
 
     res.json({ message: "Visitor entered successfully", visitor });
 
@@ -380,7 +355,6 @@ export const markVisitorEntered = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
-
 
 /**
  * ===============================
@@ -404,18 +378,22 @@ export const markVisitorExited = async (req, res) => {
 
     const guard = await User.findById(visitor.guardId);
 
-    await sendPushNotificationToMany(
-      [
-        ...getUserTokens(visitor.residentId),
-        ...getUserTokens(guard)
-      ],
-      "Visitor Exited 🚶",
-      `${visitor.personName} has exited the society`,
-      {
-        type: "VISITOR_EXITED",
-        visitorId: visitor._id.toString()
-      }
-    );
+    const tokens = [
+      ...getUserTokens(visitor.residentId),
+      ...getUserTokens(guard)
+    ];
+
+    if (tokens.length > 0) {
+      await sendPushNotificationToMany(
+        tokens,
+        "Visitor Exited 🚶",
+        `${visitor.personName} has exited the society`,
+        {
+          type: "VISITOR_EXITED",
+          visitorId: visitor._id.toString()
+        }
+      );
+    }
 
     res.json({ message: "Visitor exited successfully", visitor });
 
@@ -424,7 +402,6 @@ export const markVisitorExited = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
-
 
 /**
  * ===============================
@@ -451,13 +428,8 @@ export const getVisitors = async (req, res) => {
 
     let filter = { societyId };
 
-    /* ===============================
-       🔐 ROLE BASED FILTER
-    =============================== */
-
     if (roles.includes("TENANT") || roles.includes("OWNER")) {
-      const flatNo = normalizeFlatNo(user.flatNo);
-      filter.flatNo = flatNo;
+      filter.flatNo = normalizeFlatNo(user.flatNo);
     }
 
     if (roles.includes("GUARD")) {
@@ -495,7 +467,6 @@ export const getVisitors = async (req, res) => {
   }
 };
 
-
 /**
  * ===============================
  * 7️⃣ Get society flats
@@ -507,13 +478,17 @@ export const getSocietyFlats = async (req, res) => {
 
     const owners = await User.find(
       { societyId, roles: { $in: ["OWNER"] } },
-      { flatNo: 1, name: 1 }
-    ).sort({ flatNo: 1 });
+      { flatNo: 1, wing: 1, name: 1 }
+    ).sort({ wing: 1, flatNo: 1 });
 
     res.json(
       owners
         .filter(o => o.flatNo)
-        .map(o => ({ flatNo: o.flatNo, ownerName: o.name }))
+        .map(o => ({
+          wing: o.wing,
+          flatNo: o.flatNo,
+          ownerName: o.name
+        }))
     );
 
   } catch (error) {
@@ -544,6 +519,7 @@ export const createPreApprovedGuest = async (req, res) => {
     const visitor = await VisitorLog.create({
       societyId: resident.societyId,
       residentId: resident._id,
+      wing: resident.wing,        // ✅ added
       flatNo: resident.flatNo,
       personName: guestName,
       personMobile: guestMobile,
@@ -608,6 +584,7 @@ export const verifyGuestOtp = async (req, res) => {
       visitor: {
         id: visitor._id,
         guestName: visitor.personName,
+        wing: visitor.wing,          // ✅ added
         flatNo: visitor.flatNo,
         residentName: visitor.residentId.name
       }

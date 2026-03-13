@@ -34,6 +34,17 @@ const vehicleSchema = new mongoose.Schema(
       required: true
     },
 
+    /* =====================================================
+       🏢 WING + FLAT INFO
+    ===================================================== */
+
+    wing: {
+      type: String,
+      required: true,
+      uppercase: true,
+      trim: true
+    },
+
     flatNo: {
       type: String,
       required: true
@@ -84,7 +95,7 @@ vehicleSchema.index({ societyId: 1, vehicleNumber: 1 });
 vehicleSchema.index({ residentId: 1 });
 
 // Vehicles per flat
-vehicleSchema.index({ societyId: 1, flatNo: 1 });
+vehicleSchema.index({ societyId: 1, wing: 1, flatNo: 1 });
 
 // Admin vehicle list
 vehicleSchema.index({ societyId: 1, status: 1 });

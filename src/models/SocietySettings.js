@@ -59,9 +59,32 @@ const societySettingsSchema = new mongoose.Schema(
       sosCooldownMinutes: {
         type: Number,
         default: 5
+      },
+
+      // 🔔 Notify neighbors
+      notifyNeighbors: {
+        type: Boolean,
+        default: true
+      },
+
+      // 📏 How many nearby flats should get alert
+      neighborRange: {
+        type: Number,
+        default: 2
+      },
+
+      // 👮 Notify guards
+      notifyGuards: {
+        type: Boolean,
+        default: true
+      },
+
+      // 🏢 Notify wing admin
+      notifyWingAdmin: {
+        type: Boolean,
+        default: true
       }
     }
-
   },
   { timestamps: true }
 );

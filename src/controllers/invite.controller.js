@@ -10,11 +10,12 @@ const INVITE_EXPIRY_HOURS = 24;
  */
 export const inviteAdmin = async (req, res) => {
   try {
-    const { name, mobile, email, societyId, flatNo } = req.body;
+    const { name, mobile, email, societyId, flatNo, wing } = req.body;
 
-    if (!name || !mobile || !email || !societyId || !flatNo) {
+    if (!name || !mobile || !email || !societyId || !flatNo || !wing) {
       return res.status(400).json({
-        message: "Name, mobile, email, societyId and flat number are required"
+        message:
+          "Name, mobile, email, societyId, wing and flat number are required"
       });
     }
 
@@ -28,13 +29,14 @@ export const inviteAdmin = async (req, res) => {
     ============================== */
     const flatExists = await Invite.findOne({
       societyId,
+      wing,
       flatNo,
       status: { $in: ["PENDING", "USED"] }
     });
 
     if (flatExists) {
       return res.status(409).json({
-        message: `Flat ${flatNo} already assigned`
+        message: `Flat ${wing}-${flatNo} already assigned`
       });
     }
 
@@ -42,14 +44,10 @@ export const inviteAdmin = async (req, res) => {
       Date.now() + INVITE_EXPIRY_HOURS * 60 * 60 * 1000
     );
 
-    /* ==============================
-       🔎 Find existing admin invite
-       (roles is now ARRAY)
-    ============================== */
     let invite = await Invite.findOne({
       mobile,
       societyId,
-      roles: { $in: ["ADMIN"] } // 🔥 FIXED for array
+      roles: { $in: ["ADMIN"] }
     });
 
     if (invite && invite.status === "USED") {
@@ -58,18 +56,14 @@ export const inviteAdmin = async (req, res) => {
       });
     }
 
-    /* ==============================
-       🔁 Update existing invite
-    ============================== */
     if (invite) {
       invite.name = name;
       invite.email = email;
       invite.flatNo = flatNo;
+      invite.wing = wing;
       invite.status = "PENDING";
       invite.expiresAt = expiresAt;
       invite.invitedBy = req.user.userId;
-
-      // Ensure correct role structure
       invite.roles = ["ADMIN", "OWNER"];
 
       await invite.save();
@@ -80,7 +74,7 @@ export const inviteAdmin = async (req, res) => {
         targetType: "INVITE",
         targetId: invite._id,
         societyId,
-        description: `Admin invite updated | Flat ${flatNo}`
+        description: `Admin invite updated | Wing ${wing} Flat ${flatNo}`
       });
 
       return res.json({
@@ -89,19 +83,16 @@ export const inviteAdmin = async (req, res) => {
       });
     }
 
-    /* ==============================
-       🆕 Create new admin invite
-    ============================== */
     invite = await Invite.create({
       name,
       mobile,
       email,
+      wing,
       flatNo,
-      roles: ["ADMIN", "OWNER"], // 🔥 FIXED
+      roles: ["ADMIN", "OWNER"],
       societyId,
       invitedBy: req.user.userId,
-      expiresAt,
-      fcmTokens: [] // 🔥 ensure no undefined issues
+      expiresAt
     });
 
     await auditLogger({
@@ -110,7 +101,7 @@ export const inviteAdmin = async (req, res) => {
       targetType: "INVITE",
       targetId: invite._id,
       societyId,
-      description: `Admin invited | Flat ${flatNo}`
+      description: `Admin invited | Wing ${wing} Flat ${flatNo}`
     });
 
     return res.status(201).json({
@@ -193,13 +184,10 @@ export const cancelInvite = async (req, res) => {
 
 /**
  * INVITE RESIDENT
- * ADMIN → can invite OWNER
- * OWNER → can invite TENANT (only for their own flat)
- * TENANT → cannot invite
  */
 export const inviteResident = async (req, res) => {
   try {
-    const { name, mobile, email, flatNo, role } = req.body;
+    const { name, mobile, email, flatNo, wing, role } = req.body;
 
     const userRole = role?.toUpperCase();
 
@@ -209,7 +197,7 @@ export const inviteResident = async (req, res) => {
       });
     }
 
-    if (!name || !mobile || !email || !flatNo) {
+    if (!name || !mobile || !email || !flatNo || !wing) {
       return res.status(400).json({
         message: "All fields are required"
       });
@@ -223,18 +211,14 @@ export const inviteResident = async (req, res) => {
       });
     }
 
-    /* ===============================
-       🔐 ROLE PERMISSION CHECK
-    =============================== */
-
     const isAdminInvitingOwner =
-      inviter.roles.includes("ADMIN") &&
-      userRole === "OWNER";
+      inviter.roles.includes("ADMIN") && userRole === "OWNER";
 
     const isOwnerInvitingTenant =
       inviter.roles.includes("OWNER") &&
       userRole === "TENANT" &&
-      inviter.flatNo === flatNo;
+      inviter.flatNo === flatNo &&
+      inviter.wing === wing;
 
     if (!isAdminInvitingOwner && !isOwnerInvitingTenant) {
       return res.status(403).json({
@@ -242,12 +226,9 @@ export const inviteResident = async (req, res) => {
       });
     }
 
-    /* ===============================
-       👤 EXISTING USER CHECK
-    =============================== */
-
     const existingUser = await User.findOne({
       societyId: inviter.societyId,
+      wing,
       flatNo,
       roles: { $in: [userRole] }
     });
@@ -258,12 +239,9 @@ export const inviteResident = async (req, res) => {
       });
     }
 
-    /* ===============================
-       📩 DUPLICATE INVITE CHECK
-    =============================== */
-
     const flatExists = await Invite.findOne({
       societyId: inviter.societyId,
+      wing,
       flatNo,
       roles: { $in: [userRole] },
       status: { $in: ["PENDING", "USED"] }
@@ -295,18 +273,20 @@ export const inviteResident = async (req, res) => {
       invite.name = name;
       invite.email = email;
       invite.flatNo = flatNo;
+      invite.wing = wing;
       invite.status = "PENDING";
       invite.expiresAt = expiresAt;
       invite.invitedBy = inviter._id;
-      invite.roles = [userRole]; // 🔥 FIXED
+      invite.roles = [userRole];
       await invite.save();
     } else {
       invite = await Invite.create({
         name,
         mobile,
         email,
+        wing,
         flatNo,
-        roles: [userRole], // 🔥 FIXED
+        roles: [userRole],
         societyId: inviter.societyId,
         invitedBy: inviter._id,
         expiresAt
@@ -319,7 +299,7 @@ export const inviteResident = async (req, res) => {
       targetType: "INVITE",
       targetId: invite._id,
       societyId: inviter.societyId,
-      description: `${userRole} invited: ${name} (${mobile}) | Flat ${flatNo}`
+      description: `${userRole} invited: ${name} (${mobile}) | Wing ${wing} Flat ${flatNo}`
     });
 
     return res.json({
@@ -336,9 +316,13 @@ export const inviteResident = async (req, res) => {
   }
 };
 
+/**
+ * INVITE GUARD
+ */
 export const inviteGuard = async (req, res) => {
   try {
-    const { name, mobile, email, shiftType, shiftStartTime, shiftEndTime } = req.body;
+    const { name, mobile, email, shiftType, shiftStartTime, shiftEndTime } =
+      req.body;
 
     if (!name || !mobile || !email || !shiftType || !shiftStartTime || !shiftEndTime) {
       return res.status(400).json({
@@ -377,14 +361,10 @@ export const inviteGuard = async (req, res) => {
       invite.expiresAt = expiresAt;
       invite.invitedBy = admin._id;
       invite.roles = ["GUARD"];
-
-      // 🔥 shift details
       invite.shiftType = shiftType;
       invite.shiftStartTime = shiftStartTime;
       invite.shiftEndTime = shiftEndTime;
-
       await invite.save();
-
     } else {
       invite = await Invite.create({
         name,
@@ -394,8 +374,6 @@ export const inviteGuard = async (req, res) => {
         societyId: admin.societyId,
         invitedBy: admin._id,
         expiresAt,
-
-        // 🔥 shift details
         shiftType,
         shiftStartTime,
         shiftEndTime

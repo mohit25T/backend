@@ -60,6 +60,7 @@ export const sendOtp = async (req, res) => {
   }
 };
 
+
 /**
  * =====================================================
  * SEND OTP FOR MOBILE USERS
@@ -143,6 +144,7 @@ export const sendOtpUser = async (req, res) => {
   }
 };
 
+
 /**
  * =====================================================
  * VERIFY OTP — SUPER ADMIN LOGIN
@@ -180,6 +182,7 @@ export const verifyOtpLogin = async (req, res) => {
     const token = signToken({
       userId: user._id,
       role: "SUPER_ADMIN",
+      wing: user.wing || null
     });
 
     const refreshToken = signRefreshToken({
@@ -199,6 +202,7 @@ export const verifyOtpLogin = async (req, res) => {
   }
 };
 
+
 /**
  * =====================================================
  * VERIFY OTP — USER LOGIN
@@ -210,7 +214,6 @@ export const verifyUserLogin = async (req, res) => {
 
     const { mobile, otp, fcmToken } = req.body;
 
-    // Find invite
     const invite = await Invite.findOne({ mobile });
 
     if (!invite) {
@@ -225,7 +228,6 @@ export const verifyUserLogin = async (req, res) => {
       });
     }
 
-    // Verify OTP
     const isValid = verifyOtp({
       mobile,
       email: invite.email,
@@ -238,10 +240,8 @@ export const verifyUserLogin = async (req, res) => {
       });
     }
 
-    // Check if user already exists
     let user = await User.findOne({ mobile });
 
-    // If user doesn't exist → create from invite
     if (!user) {
 
       user = await User.create({
@@ -252,18 +252,19 @@ export const verifyUserLogin = async (req, res) => {
         societyId: invite.societyId,
         invitedBy: invite.invitedBy,
 
-        // Guard shift fields
+        // Wing support added
+        wing: invite.wing,
+        flatNo: invite.flatNo,
+
         shiftStartTime: invite.shiftStartTime,
         shiftEndTime: invite.shiftEndTime,
         shiftType: invite.shiftType
       });
 
-      // Mark invite as used
       invite.status = "USED";
       await invite.save();
     }
 
-    // Save FCM token
     if (fcmToken) {
 
       if (!user.fcmTokens) {
@@ -276,11 +277,11 @@ export const verifyUserLogin = async (req, res) => {
       }
     }
 
-    // Generate tokens
     const token = signToken({
       userId: user._id,
       roles: user.roles,
-      societyId: user.societyId
+      societyId: user.societyId,
+      wing: user.wing
     });
 
     const refreshToken = signRefreshToken({
@@ -291,14 +292,12 @@ export const verifyUserLogin = async (req, res) => {
 
     await user.save();
 
-    /**
-     * GUARD LOGIN TRACKING
-     */
     if (user.roles.includes("GUARD")) {
 
       await GuardLoginLog.create({
         guardId: user._id,
-        societyId: user.societyId
+        societyId: user.societyId,
+        wing: user.wing || null
       });
 
     }
@@ -310,9 +309,12 @@ export const verifyUserLogin = async (req, res) => {
       refreshToken,
       roles: user.roles,
       societyId: user.societyId,
+
+      wing: user.wing,
+      flatNo: user.flatNo,
+
       requiresProfilePhoto,
 
-      // Guard shift data
       shiftStartTime: user.shiftStartTime,
       shiftEndTime: user.shiftEndTime,
       shiftType: user.shiftType
@@ -349,7 +351,7 @@ export const refreshAccessToken = async (req, res) => {
 
     const decoded = verifyRefreshToken(refreshToken);
 
-    const user = await User.findById(decoded.userId).select("refreshToken roles societyId status");
+    const user = await User.findById(decoded.userId).select("refreshToken roles societyId status wing flatNo");
 
     if (!user || user.refreshToken !== refreshToken) {
       return res.status(401).json({
@@ -360,7 +362,8 @@ export const refreshAccessToken = async (req, res) => {
     const token = signToken({
       userId: decoded.userId,
       roles: user.roles,
-      societyId: user.societyId
+      societyId: user.societyId,
+      wing: user.wing
     });
 
     res.json({ token });
@@ -373,6 +376,7 @@ export const refreshAccessToken = async (req, res) => {
 
   }
 };
+
 
 /**
  * =====================================================
@@ -435,6 +439,7 @@ export const requestEmailChange = async (req, res) => {
   }
 };
 
+
 /**
  * =====================================================
  * VERIFY EMAIL CHANGE
@@ -493,6 +498,7 @@ export const verifyEmailChange = async (req, res) => {
   }
 };
 
+
 /**
  * =====================================================
  * GET CURRENT USER PROFILE
@@ -503,7 +509,7 @@ export const getMe = async (req, res) => {
   try {
 
     const user = await User.findById(req.user.userId).select(
-      "name email mobile roles shiftStartTime shiftEndTime shiftType"
+      "name email mobile roles wing flatNo shiftStartTime shiftEndTime shiftType"
     );
 
     if (!user) {
@@ -518,6 +524,7 @@ export const getMe = async (req, res) => {
 
   }
 };
+
 
 /**
  * =====================================================
@@ -545,9 +552,6 @@ export const logoutUser = async (req, res) => {
 
     await user.save();
 
-    /**
-     * GUARD LOGOUT TRACKING
-     */
     if (user.roles.includes("GUARD")) {
 
       await GuardLoginLog.findOneAndUpdate(

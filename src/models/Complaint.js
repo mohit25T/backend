@@ -16,6 +16,18 @@ const complaintSchema = new mongoose.Schema(
             index: true
         },
 
+        /* =====================================================
+           🏢 WING + FLAT INFO
+        ===================================================== */
+
+        wing: {
+            type: String,
+            required: true,
+            uppercase: true,
+            trim: true,
+            index: true
+        },
+
         flatNo: {
             type: String,
             required: true,
@@ -78,5 +90,8 @@ complaintSchema.index({ societyId: 1, createdAt: -1 });
 
 // Priority filtering
 complaintSchema.index({ societyId: 1, priority: 1 });
+
+// 🔥 Wing based complaints (important)
+complaintSchema.index({ societyId: 1, wing: 1, flatNo: 1 });
 
 export default mongoose.model("Complaint", complaintSchema);

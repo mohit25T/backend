@@ -4,11 +4,13 @@ const societySchema = new mongoose.Schema(
   {
     name: {
       type: String,
-      required: true
+      required: true,
+      trim: true
     },
 
     city: {
-      type: String
+      type: String,
+      trim: true
     },
 
     createdBy: {
@@ -30,16 +32,19 @@ const societySchema = new mongoose.Schema(
    🔥 PRODUCTION INDEXES
 ===================================================== */
 
-// 🔥 For dashboard active societies count
+// Dashboard active societies
 societySchema.index({ status: 1 });
 
-// 🔥 For filtering societies created by Super Admin
+// Societies created by super admin
 societySchema.index({ createdBy: 1 });
 
-// 🔥 Optional (if future search by city)
+// City filtering
 societySchema.index({ city: 1 });
 
-// 🔥 Optional (if you add society name search later)
+// Society search
 societySchema.index({ name: 1 });
+
+// Optional compound index
+societySchema.index({ city: 1, status: 1 });
 
 export default mongoose.model("Society", societySchema);

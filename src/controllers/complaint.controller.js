@@ -38,15 +38,11 @@ export const createComplaint = async (req, res) => {
 
         /* ===============================
            📸 Handle Multiple Images
-           (Cloudinary URLs)
         =============================== */
         let complaintImages = [];
 
         if (req.files && req.files.length > 0) {
             console.log("Uploaded Files:", req.files);
-
-            // Since Cloudinary already stores only images,
-            // we directly map the secure URLs
             complaintImages = req.files.map(file => file.path);
         }
 
@@ -56,6 +52,7 @@ export const createComplaint = async (req, res) => {
         const complaint = await Complaint.create({
             societyId: user.societyId,
             userId: user._id,
+            wing: user.wing,          // ✅ Added
             flatNo: user.flatNo,
             category,
             priority,
@@ -83,7 +80,7 @@ export const createComplaint = async (req, res) => {
                 await sendPushNotificationToMany(
                     allTokens,
                     "New Complaint 📢",
-                    `${title} - Flat ${user.flatNo}`,
+                    `${title} - Wing ${user.wing} Flat ${user.flatNo}`, // ✅ Improved message
                     {
                         type: "COMPLAINT_CREATED",
                         complaintId: complaint._id.toString()
@@ -144,6 +141,7 @@ export const getMyComplaints = async (req, res) => {
 
 /* ===============================
    3️⃣ ADMIN → ALL COMPLAINTS
+   🔎 Supports wing filtering
 =============================== */
 export const getAllComplaints = async (req, res) => {
     try {
@@ -155,10 +153,19 @@ export const getAllComplaints = async (req, res) => {
             });
         }
 
-        const complaints = await Complaint.find({
+        const { wing } = req.query;
+
+        const query = {
             societyId: admin.societyId
-        })
-            .populate("userId", "name flatNo")
+        };
+
+        // ✅ Optional wing filter
+        if (wing) {
+            query.wing = wing;
+        }
+
+        const complaints = await Complaint.find(query)
+            .populate("userId", "name wing flatNo")
             .sort({ createdAt: -1 });
 
         return res.json({
@@ -242,7 +249,7 @@ export const updateComplaintStatus = async (req, res) => {
                 await sendPushNotificationToMany(
                     tokens,
                     "Complaint Updated 🔄",
-                    `Your complaint is now ${complaint.status}`,
+                    `Your complaint from Wing ${complaint.wing} Flat ${complaint.flatNo} is now ${complaint.status}`,
                     {
                         type: "COMPLAINT_UPDATED",
                         complaintId: complaint._id.toString()

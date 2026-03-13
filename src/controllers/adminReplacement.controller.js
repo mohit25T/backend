@@ -9,6 +9,7 @@ import { auditLogger } from "../utils/auditLogger.js";
  * - Admin must belong to same society
  * - New admin must be OWNER or TENANT
  * - Flat number must exist
+ * - Wing must exist
  */
 export const replaceAdmin = async (req, res) => {
   try {
@@ -53,18 +54,24 @@ export const replaceAdmin = async (req, res) => {
       });
     }
 
+    if (!newAdmin.wing) {
+      return res.status(400).json({
+        message: "Wing not assigned to selected user"
+      });
+    }
+
     /* ====================================================
        🔁 ROLE SWITCH LOGIC
     ==================================================== */
 
-    // ⛔ Remove ADMIN role from old admin
+    // Remove ADMIN role from old admin
     oldAdmin.roles = oldAdmin.roles.filter(
       role => role !== "ADMIN"
     );
 
     await oldAdmin.save();
 
-    // ✅ Promote new user → add ADMIN role
+    // Promote new user → add ADMIN role
     if (!newAdmin.roles.includes("ADMIN")) {
       newAdmin.roles.push("ADMIN");
       await newAdmin.save();
@@ -73,30 +80,35 @@ export const replaceAdmin = async (req, res) => {
     /* ====================================================
        ✅ AUDIT LOG
     ==================================================== */
+
     await auditLogger({
       req,
       action: "REPLACE_ADMIN",
       targetType: "USER",
       targetId: newAdmin._id,
       societyId: oldAdmin.societyId,
-      description: `Admin replaced: ${oldAdmin.name} → ${newAdmin.name} | Flat ${newAdmin.flatNo}`
+      description: `Admin replaced: ${oldAdmin.name} → ${newAdmin.name} | Wing ${newAdmin.wing} | Flat ${newAdmin.flatNo}`
     });
 
     res.json({
       message: "Admin replaced successfully",
+
       oldAdmin: {
         id: oldAdmin._id,
         roles: oldAdmin.roles
       },
+
       newAdmin: {
         id: newAdmin._id,
         roles: newAdmin.roles,
+        wing: newAdmin.wing,
         flatNo: newAdmin.flatNo
       }
     });
 
   } catch (err) {
     console.error("REPLACE ADMIN ERROR:", err);
+
     res.status(500).json({
       message: "Failed to replace admin"
     });

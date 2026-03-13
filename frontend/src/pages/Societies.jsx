@@ -12,8 +12,12 @@ const Societies = () => {
   const [loading, setLoading] = useState(false);
 
   const loadSocieties = async () => {
-    const res = await fetchSocieties();
-    setSocieties(res.data);
+    try {
+      const res = await fetchSocieties();
+      setSocieties(res.data || []);
+    } catch (error) {
+      console.error("Failed to fetch societies:", error);
+    }
   };
 
   useEffect(() => {
@@ -23,9 +27,22 @@ const Societies = () => {
   const handleCreate = async (data) => {
     try {
       setLoading(true);
+
+      /*
+        data can now include:
+        {
+          name,
+          city,
+          wings: ["A","B","C"]
+        }
+      */
+
       await createSociety(data);
+
       setOpen(false);
       loadSocieties();
+    } catch (error) {
+      console.error("Create society failed:", error);
     } finally {
       setLoading(false);
     }
@@ -34,21 +51,38 @@ const Societies = () => {
   return (
     <AppLayout>
       <PageWrapper>
+
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold">Societies</h1>
+
+          <h1 className="text-2xl font-bold">
+            Societies
+          </h1>
+
           <button
             onClick={() => setOpen(true)}
             className="bg-black text-white px-4 py-2 rounded hover:bg-gray-800 transition"
           >
             + Create Society
           </button>
+
         </div>
 
-        <SocietyTable societies={societies} reloadSocieties={loadSocieties} />
+        {/* Society List */}
+        <SocietyTable
+          societies={societies}
+          reloadSocieties={loadSocieties}
+        />
 
+        {/* Create Society Modal */}
         <Modal open={open} onClose={() => setOpen(false)}>
-          <CreateSocietyForm onSubmit={handleCreate} loading={loading} />
+
+          <CreateSocietyForm
+            onSubmit={handleCreate}
+            loading={loading}
+          />
+
         </Modal>
+
       </PageWrapper>
     </AppLayout>
   );

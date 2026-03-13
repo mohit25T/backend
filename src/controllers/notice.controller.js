@@ -17,7 +17,7 @@ const getUserTokens = (user) => {
 
 /* ===============================
    1️⃣ CREATE NOTICE
-   🔔 Notify Entire Society
+   🔔 Notify Entire Society / Wing
 =============================== */
 export const createNotice = async (req, res) => {
     try {
@@ -29,7 +29,7 @@ export const createNotice = async (req, res) => {
             });
         }
 
-        const { title, message, priority, expiresAt } = req.body;
+        const { title, message, priority, expiresAt, wing } = req.body;
 
         if (!title || !message) {
             return res.status(400).json({
@@ -40,6 +40,7 @@ export const createNotice = async (req, res) => {
         const notice = await Notice.create({
             societyId: admin.societyId,
             createdBy: admin._id,
+            wing: wing || null, // ✅ NEW
             title,
             message,
             priority: priority || "MEDIUM",
@@ -47,15 +48,22 @@ export const createNotice = async (req, res) => {
         });
 
         /* ===============================
-           🔔 Notify All Active Users
+           🔔 Notify Users
         =============================== */
         try {
-            const users = await User.find({
+
+            const userQuery = {
                 societyId: admin.societyId,
                 status: "ACTIVE"
-            });
+            };
 
-            // Collect & Deduplicate Tokens
+            // 🔥 Wing specific notice
+            if (wing) {
+                userQuery.wing = wing;
+            }
+
+            const users = await User.find(userQuery);
+
             const tokenSet = new Set();
 
             users.forEach(user => {
@@ -68,7 +76,7 @@ export const createNotice = async (req, res) => {
             if (allTokens.length > 0) {
                 await sendPushNotificationToMany(
                     allTokens,
-                    "New Notice 📢",
+                    wing ? `New Notice (Wing ${wing}) 📢` : "New Notice 📢",
                     title,
                     {
                         type: "NOTICE_CREATED",
@@ -111,10 +119,22 @@ export const getNotices = async (req, res) => {
 
         const notices = await Notice.find({
             societyId: user.societyId,
+
+            // 🔥 Wing logic
             $or: [
-                { expiresAt: null },
-                { expiresAt: { $gt: new Date() } }
+                { wing: null },
+                { wing: user.wing }
+            ],
+
+            $and: [
+                {
+                    $or: [
+                        { expiresAt: null },
+                        { expiresAt: { $gt: new Date() } }
+                    ]
+                }
             ]
+
         }).sort({ createdAt: -1 });
 
         return res.json({

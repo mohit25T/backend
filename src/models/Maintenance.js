@@ -14,6 +14,17 @@ const maintenanceSchema = new mongoose.Schema(
       required: true,
     },
 
+    /* =====================================================
+       🏢 WING + FLAT INFO
+    ===================================================== */
+
+    wing: {
+      type: String,
+      required: true,
+      uppercase: true,
+      trim: true,
+    },
+
     flatNumber: {
       type: String,
       required: true,
@@ -102,25 +113,25 @@ const maintenanceSchema = new mongoose.Schema(
    🔥 PRODUCTION OPTIMIZED INDEXES
 ===================================================== */
 
-// 🔥 For resident bill listing (MOST IMPORTANT)
+// Resident bill listing
 maintenanceSchema.index({ residentId: 1, createdAt: -1 });
 
-// 🔥 For society-wide listing (Admin view)
+// Society-wide listing (Admin)
 maintenanceSchema.index({ societyId: 1, createdAt: -1 });
 
-// 🔥 For filtering by status inside society
+// Filtering by status
 maintenanceSchema.index({ societyId: 1, status: 1 });
 
-// 🔥 For flat-specific queries
-maintenanceSchema.index({ societyId: 1, flatNumber: 1 });
+// 🔥 Wing + flat queries
+maintenanceSchema.index({ societyId: 1, wing: 1, flatNumber: 1 });
 
-// 🔥 For monthly reports
+// Monthly reports
 maintenanceSchema.index({ societyId: 1, month: 1 });
 
-// 🔥 For yearly bulk updates (important for full-year payment)
+// Yearly payment lookup
 maintenanceSchema.index({ societyId: 1, residentId: 1, year: 1 });
 
-// 🔥 For overdue detection cron jobs
+// Overdue cron jobs
 maintenanceSchema.index({ dueDate: 1, status: 1 });
 
 export default mongoose.model("Maintenance", maintenanceSchema);

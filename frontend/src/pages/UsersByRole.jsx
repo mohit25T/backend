@@ -29,6 +29,7 @@ const UsersByRole = () => {
   useEffect(() => {
     api.get("/users?role=ADMIN").then((res) => {
       setAdmins(res.data);
+
       setCounts((p) => ({
         ...p,
         admins: res.data.length,
@@ -40,8 +41,11 @@ const UsersByRole = () => {
   const loadUsersByAdmin = async (role) => {
     const res = await api.get(`/users?role=${role}`);
 
+    /* 🔥 FILTER BY SOCIETY + WING */
     const filtered = res.data.filter(
-      (u) => u.societyId?._id === selectedAdmin?.societyId?._id,
+      (u) =>
+        u.societyId?._id === selectedAdmin?.societyId?._id &&
+        u.wing === selectedAdmin?.wing,
     );
 
     setUsers(filtered);
@@ -86,7 +90,7 @@ const UsersByRole = () => {
 
             {view === "OWNER" && (
               <>
-                Owners of {selectedAdmin?.name}
+                Owners of {selectedAdmin?.name} (Wing {selectedAdmin?.wing})
                 <span className="px-2 py-1 text-sm bg-green-100 text-green-700 rounded">
                   {counts.owners}
                 </span>
@@ -95,7 +99,7 @@ const UsersByRole = () => {
 
             {view === "TENANT" && (
               <>
-                Tenants of {selectedAdmin?.name}
+                Tenants of {selectedAdmin?.name} (Wing {selectedAdmin?.wing})
                 <span className="px-2 py-1 text-sm bg-yellow-100 text-yellow-700 rounded">
                   {counts.tenants}
                 </span>
@@ -104,7 +108,7 @@ const UsersByRole = () => {
 
             {view === "GUARD" && (
               <>
-                Guards of {selectedAdmin?.name}
+                Guards of {selectedAdmin?.name} (Wing {selectedAdmin?.wing})
                 <span className="px-2 py-1 text-sm bg-purple-100 text-purple-700 rounded">
                   {counts.guards}
                 </span>
@@ -203,7 +207,8 @@ const UsersByRole = () => {
           <UserTable users={users} view={view} />
         )}
 
-        {/* MODALS (unchanged) */}
+        {/* MODALS */}
+
         {editingAdmin && (
           <EditAdminModal
             admin={editingAdmin}

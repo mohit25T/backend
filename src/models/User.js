@@ -56,6 +56,22 @@ const userSchema = new mongoose.Schema(
       default: false
     },
 
+    /* =====================================================
+       🏢 WING SUPPORT
+    ===================================================== */
+
+    wing: {
+      type: String,
+      uppercase: true,
+      trim: true,
+      required: function () {
+        return (
+          this.roles?.includes("OWNER") ||
+          this.roles?.includes("TENANT")
+        );
+      }
+    },
+
     flatNo: {
       type: String,
       required: function () {
@@ -107,14 +123,14 @@ const userSchema = new mongoose.Schema(
     },
 
     shiftStartTime: {
-      type: String, // example: "08:00"
+      type: String,
       required: function () {
         return this.roles?.includes("GUARD");
       }
     },
 
     shiftEndTime: {
-      type: String, // example: "20:00"
+      type: String,
       required: function () {
         return this.roles?.includes("GUARD");
       }
@@ -124,7 +140,6 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false
     }
-
   },
   { timestamps: true }
 );
@@ -141,7 +156,11 @@ userSchema.index({ societyId: 1, status: 1 });
 userSchema.index({ roles: 1 });
 userSchema.index({ societyId: 1, fullYearPaidYears: 1 });
 
-// 🔥 Guard shift lookup
+// Guard shift lookup
 userSchema.index({ societyId: 1, shiftType: 1 });
+
+// 🔥 Wing based queries (very important)
+userSchema.index({ societyId: 1, wing: 1 });
+userSchema.index({ societyId: 1, wing: 1, flatNo: 1 });
 
 export default mongoose.model("User", userSchema);

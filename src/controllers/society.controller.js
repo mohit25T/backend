@@ -6,7 +6,7 @@ import { auditLogger } from "../utils/auditLogger.js";
  * CREATE SOCIETY
  */
 export const createSociety = async (req, res) => {
-  const { name, city } = req.body;
+  const { name, city, wings } = req.body;
 
   if (!name) {
     return res.status(400).json({ message: "Society name required" });
@@ -15,6 +15,7 @@ export const createSociety = async (req, res) => {
   const society = await Society.create({
     name,
     city,
+    wings: wings || [], // ✅ NEW (optional wing list)
     createdBy: req.user.userId
   });
 
@@ -72,6 +73,8 @@ export const getSocietySummary = async (req, res) => {
   res.json({
     societyId: id,
     societyName: society.name,
+    city: society.city,
+    wings: society.wings || [], // ✅ NEW
     admins,
     owners,
     tenants,

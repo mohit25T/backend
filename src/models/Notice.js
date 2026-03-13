@@ -15,6 +15,18 @@ const noticeSchema = new mongoose.Schema(
       required: true
     },
 
+    /* =====================================================
+       🏢 WING TARGETING (OPTIONAL)
+    ===================================================== */
+
+    targetWing: {
+      type: String,
+      uppercase: true,
+      trim: true,
+      default: null, // null = whole society
+      index: true
+    },
+
     title: {
       type: String,
       required: true
@@ -50,5 +62,8 @@ noticeSchema.index({ societyId: 1, expiresAt: 1 });
 
 // Priority filtering
 noticeSchema.index({ societyId: 1, priority: 1 });
+
+// Wing based notices
+noticeSchema.index({ societyId: 1, targetWing: 1 });
 
 export default mongoose.model("Notice", noticeSchema);

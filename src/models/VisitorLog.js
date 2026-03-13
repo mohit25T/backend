@@ -23,17 +23,29 @@ const visitorLogSchema = new mongoose.Schema(
     purpose: String,
     vehicleNo: String,
 
-    // 🏠 Flat info (CORE LINK)
+    /* =====================================================
+       🏢 WING + FLAT INFO
+    ===================================================== */
+
+    wing: {
+      type: String,
+      required: true,
+      uppercase: true,
+      trim: true
+    },
+
     flatNo: {
       type: String,
       required: true
     },
+
     residentId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
       index: true
     },
+
     // 👮 Guard
     guardId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -58,11 +70,6 @@ const visitorLogSchema = new mongoose.Schema(
       default: "PENDING"
     },
 
-    approvedBy: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User"
-    },
-
     checkInAt: Date,
     checkOutAt: Date,
 
@@ -75,7 +82,10 @@ const visitorLogSchema = new mongoose.Schema(
     deliveryCompany: String,
     parcelType: String,
 
-    // 🔐 OTP system
+    /* =====================================================
+       🔐 OTP SYSTEM
+    ===================================================== */
+
     otp: String,
 
     otpStatus: {
@@ -90,23 +100,22 @@ const visitorLogSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User"
     }
-
   },
   { timestamps: true }
 );
 
 /* =====================================================
-   🔥 PRODUCTION OPTIMIZED INDEXES (FLAT-BASED)
+   🔥 PRODUCTION OPTIMIZED INDEXES
 ===================================================== */
 
-// Main society listing
+// Society visitor listing
 visitorLogSchema.index({ societyId: 1, createdAt: -1 });
 
 // Status filtering
 visitorLogSchema.index({ societyId: 1, status: 1 });
 
-// Flat-based pending list (VERY IMPORTANT)
-visitorLogSchema.index({ societyId: 1, flatNo: 1, status: 1 });
+// Wing + Flat pending visitors
+visitorLogSchema.index({ societyId: 1, wing: 1, flatNo: 1, status: 1 });
 
 // Guard logs
 visitorLogSchema.index({ guardId: 1, createdAt: -1 });

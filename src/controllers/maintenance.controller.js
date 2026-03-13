@@ -53,7 +53,6 @@ export const generateMonthlyBills = async (req, res) => {
         for (const owner of owners) {
             if (!owner.flatNo) continue;
 
-            // 🔥 Skip if full year already paid
             if (owner.fullYearPaidYears?.includes(year)) continue;
 
             const paidCount = await Maintenance.countDocuments({
@@ -68,6 +67,7 @@ export const generateMonthlyBills = async (req, res) => {
             bills.push({
                 societyId,
                 residentId: owner._id,
+                wing: owner.wing, // ✅ ADDED
                 flatNumber: owner.flatNo,
                 month,
                 year,
@@ -75,7 +75,7 @@ export const generateMonthlyBills = async (req, res) => {
                 dueDate,
                 status: "Pending",
                 reminderSent: false,
-                paymentType: "MONTHLY", // 🔥 ADDED
+                paymentType: "MONTHLY",
             });
         }
 
@@ -154,6 +154,7 @@ export const autoGenerateMonthlyMaintenance = async () => {
                 bills.push({
                     societyId,
                     residentId: owner._id,
+                    wing: owner.wing, // ✅ ADDED
                     flatNumber: owner.flatNo,
                     month: monthString,
                     year,
@@ -161,7 +162,7 @@ export const autoGenerateMonthlyMaintenance = async () => {
                     dueDate: new Date(year, today.getMonth(), 10),
                     status: "Pending",
                     reminderSent: false,
-                    paymentType: "MONTHLY", // 🔥 ADDED
+                    paymentType: "MONTHLY",
                 });
             }
 
@@ -246,8 +247,8 @@ export const markBillAsPaid = async (req, res) => {
         bill.paidBy = req.user.userId;
         bill.reminderSent = true;
 
-        bill.paymentType = "MONTHLY"; // 🔥 ADDED
-        bill.coveredMonths = [bill.month]; // 🔥 ADDED
+        bill.paymentType = "MONTHLY";
+        bill.coveredMonths = [bill.month];
 
         await bill.save();
 
@@ -315,20 +316,22 @@ export const getAllSocietyBills = async (req, res) => {
 
         const query = { societyId: req.user.societyId };
 
-        /* 🔥 NEW: STATUS FILTER */
         if (req.query.status) {
             query.status = req.query.status;
         }
 
-        /* 🔥 NEW: PAYMENT TYPE FILTER (YEARLY / MONTHLY) */
         if (req.query.type === "YEARLY") {
             query.paymentType = "YEARLY";
+        }
+
+        if (req.query.wing) { // ✅ ADDED
+            query.wing = req.query.wing;
         }
 
         const total = await Maintenance.countDocuments(query);
 
         const bills = await Maintenance.find(query)
-            .populate("residentId", "name flatNo roles")
+            .populate("residentId", "name flatNo wing roles") // ✅ ADDED wing
             .sort({ createdAt: -1 })
             .skip(skip)
             .limit(limit);

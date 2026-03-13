@@ -37,6 +37,24 @@ const inviteSchema = new mongoose.Schema(
       required: true
     },
 
+    /**
+     * ===============================
+     * 🏢 WING SUPPORT
+     * ===============================
+     */
+
+    wing: {
+      type: String,
+      required: function () {
+        return (
+          this.roles?.includes("OWNER") ||
+          this.roles?.includes("TENANT")
+        );
+      },
+      uppercase: true,
+      trim: true
+    },
+
     flatNo: {
       type: String,
       required: function () {
@@ -112,5 +130,8 @@ inviteSchema.index({ expiresAt: 1 });
 
 // Guard shift search
 inviteSchema.index({ societyId: 1, shiftType: 1 });
+
+// 🔥 Wing-based resident search
+inviteSchema.index({ societyId: 1, wing: 1, flatNo: 1 });
 
 export default mongoose.model("Invite", inviteSchema);
