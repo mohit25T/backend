@@ -4,6 +4,7 @@ import PageWrapper from "../components/layout/PageWrapper";
 import api from "../api/axios";
 
 const AddAdminWithSociety = () => {
+
   const [mode, setMode] = useState("single");
 
   const [societies, setSocieties] = useState([]);
@@ -41,19 +42,20 @@ const AddAdminWithSociety = () => {
   ============================= */
 
   const handleSocietyChange = (e) => {
+
     const value = e.target.value;
 
     setSocietyId(value);
     setIsNewSociety(value === "OTHER");
 
     if (value !== "OTHER") {
+
       const society = societies.find((s) => s._id === value);
 
-      // 🔥 fallback wings if backend didn't send
       const wingsData =
         society?.wings && society.wings.length > 0
           ? society.wings
-          : ["A", "B", "C", "D"];
+          : ["A", "B", "C", "D"]; // fallback wings
 
       setWings(wingsData);
 
@@ -63,18 +65,20 @@ const AddAdminWithSociety = () => {
           name: "",
           email: "",
           mobile: "",
-          flatNo: "",
-        })),
+          flatNo: ""
+        }))
       );
     }
   };
 
   /* =============================
-     BULK ADMIN CHANGE
+     BULK CHANGE
   ============================= */
 
   const handleBulkChange = (index, field, value) => {
+
     const updated = [...admins];
+
     updated[index][field] = value;
 
     setAdmins(updated);
@@ -85,20 +89,23 @@ const AddAdminWithSociety = () => {
   ============================= */
 
   const handleSubmit = async (e) => {
+
     e.preventDefault();
 
     setMsg("");
     setLoading(true);
 
     try {
+
       let finalSocietyId = societyId;
 
       /* CREATE SOCIETY */
 
       if (isNewSociety) {
+
         const res = await api.post("/societies", {
           name: societyName,
-          city,
+          city
         });
 
         finalSocietyId = res.data._id;
@@ -107,13 +114,14 @@ const AddAdminWithSociety = () => {
       /* SINGLE ADMIN */
 
       if (mode === "single") {
+
         await api.post("/invites/admin", {
           name,
           mobile,
           email,
           wing,
           flatNo,
-          societyId: finalSocietyId,
+          societyId: finalSocietyId
         });
 
         setMsg("Admin invited successfully");
@@ -123,11 +131,14 @@ const AddAdminWithSociety = () => {
         setEmail("");
         setWing("");
         setFlatNo("");
-      } else {
+      }
 
       /* BULK ADMINS */
+
+      else {
+
         const payload = admins.filter(
-          (a) => a.name && a.mobile && a.email && a.flatNo,
+          (a) => a.name && a.mobile && a.email && a.flatNo
         );
 
         if (payload.length === 0) {
@@ -138,7 +149,7 @@ const AddAdminWithSociety = () => {
 
         await api.post("/invites/admin/bulk", {
           societyId: finalSocietyId,
-          admins: payload,
+          admins: payload
         });
 
         setMsg("Wing admins invited successfully");
@@ -149,49 +160,67 @@ const AddAdminWithSociety = () => {
             name: "",
             email: "",
             mobile: "",
-            flatNo: "",
-          })),
+            flatNo: ""
+          }))
         );
       }
+
     } catch (err) {
+
       setMsg(err.response?.data?.message || "Operation failed");
+
     } finally {
+
       setLoading(false);
+
     }
   };
 
   return (
     <AppLayout>
       <PageWrapper>
+
         <div className="max-w-4xl mx-auto">
-          <h1 className="text-3xl font-bold mb-6">Add Admin</h1>
+
+          <h1 className="text-3xl font-bold mb-6">
+            Add Admin
+          </h1>
 
           {/* MODE SWITCH */}
 
           <div className="flex gap-4 mb-6">
+
             <button
+              type="button"
               onClick={() => setMode("single")}
               className={`px-4 py-2 rounded ${
-                mode === "single" ? "bg-black text-white" : "border"
+                mode === "single"
+                  ? "bg-black text-white"
+                  : "border"
               }`}
             >
               Single Admin
             </button>
 
             <button
+              type="button"
               onClick={() => setMode("bulk")}
               className={`px-4 py-2 rounded ${
-                mode === "bulk" ? "bg-black text-white" : "border"
+                mode === "bulk"
+                  ? "bg-black text-white"
+                  : "border"
               }`}
             >
               Wing-wise Setup
             </button>
+
           </div>
 
           <form
             onSubmit={handleSubmit}
             className="bg-white p-8 rounded-xl shadow space-y-6"
           >
+
             {/* SOCIETY SELECT */}
 
             <select
@@ -200,7 +229,9 @@ const AddAdminWithSociety = () => {
               required
               className="w-full border p-3 rounded"
             >
-              <option value="">Select Society</option>
+              <option value="">
+                Select Society
+              </option>
 
               {societies.map((s) => (
                 <option key={s._id} value={s._id}>
@@ -208,13 +239,41 @@ const AddAdminWithSociety = () => {
                 </option>
               ))}
 
-              <option value="OTHER">➕ Other (Create New Society)</option>
+              <option value="OTHER">
+                ➕ Other (Create New Society)
+              </option>
             </select>
+
+            {/* NEW SOCIETY */}
+
+            {isNewSociety && (
+
+              <div className="grid md:grid-cols-2 gap-4">
+
+                <input
+                  placeholder="Society Name"
+                  value={societyName}
+                  onChange={(e) => setSocietyName(e.target.value)}
+                  required
+                  className="border p-3 rounded"
+                />
+
+                <input
+                  placeholder="City"
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                  className="border p-3 rounded"
+                />
+
+              </div>
+            )}
 
             {/* SINGLE ADMIN */}
 
             {mode === "single" && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+              <div className="grid md:grid-cols-2 gap-4">
+
                 <input
                   type="text"
                   placeholder="Admin Name"
@@ -245,16 +304,21 @@ const AddAdminWithSociety = () => {
                 <select
                   value={wing}
                   onChange={(e) => setWing(e.target.value)}
+                  disabled={!societyId}
                   required
                   className="border p-3 rounded"
                 >
-                  <option value="">Select Wing</option>
+
+                  <option value="">
+                    Select Wing
+                  </option>
 
                   {wings.map((w) => (
                     <option key={w} value={w}>
                       Wing {w}
                     </option>
                   ))}
+
                 </select>
 
                 <input
@@ -265,18 +329,24 @@ const AddAdminWithSociety = () => {
                   required
                   className="border p-3 rounded"
                 />
+
               </div>
+
             )}
 
             {/* BULK MODE */}
 
             {mode === "bulk" && admins.length > 0 && (
+
               <div className="grid md:grid-cols-2 gap-6">
+
                 {admins.map((a, index) => (
+
                   <div
                     key={a.wing}
                     className="border rounded-lg p-5 bg-gray-50"
                   >
+
                     <h3 className="font-semibold mb-3 text-lg">
                       Wing {a.wing}
                     </h3>
@@ -316,9 +386,13 @@ const AddAdminWithSociety = () => {
                       }
                       className="w-full border p-2 rounded"
                     />
+
                   </div>
+
                 ))}
+
               </div>
+
             )}
 
             <button
@@ -329,12 +403,19 @@ const AddAdminWithSociety = () => {
               {loading ? "Processing..." : "Submit"}
             </button>
 
-            {msg && <p className="text-center text-sm text-blue-600">{msg}</p>}
+            {msg && (
+              <p className="text-center text-sm text-blue-600">
+                {msg}
+              </p>
+            )}
+
           </form>
+
         </div>
+
       </PageWrapper>
     </AppLayout>
   );
-};;
+};
 
 export default AddAdminWithSociety;
