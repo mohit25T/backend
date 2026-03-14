@@ -65,7 +65,7 @@ export const getAllSocieties = async (req, res) => {
 
     const societies = await Society.find()
       .sort({ createdAt: -1 });
-    console.log(societies);
+
     res.json(societies);
 
   } catch (error) {

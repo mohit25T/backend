@@ -57,15 +57,16 @@ const AddAdminWithSociety = () => {
 
     setSocietyId(value);
 
+    // reset previous data
+    setWings([]);
+    setAdmins([]);
+    setWing("");
+
     const society = societies.find((s) => s._id === value);
 
-    // fallback wings
-    const wingsData =
-      society?.wings && society.wings.length > 0
-        ? society.wings
-        : ["A", "B", "C", "D"];
+    const wingsData = society?.wings || [];
 
-    setWings([...wingsData]);
+    setWings(wingsData);
 
     setAdmins(
       wingsData.map((w) => ({
@@ -76,7 +77,6 @@ const AddAdminWithSociety = () => {
         flatNo: ""
       }))
     );
-
   };
 
   /* =============================
@@ -95,12 +95,9 @@ const AddAdminWithSociety = () => {
 
       setSocietyId(newSociety._id);
 
-      const wingsData =
-        newSociety.wings && newSociety.wings.length > 0
-          ? newSociety.wings
-          : ["A", "B", "C", "D"];
+      const wingsData = newSociety.wings || [];
 
-      setWings([...wingsData]);
+      setWings(wingsData);
 
       setAdmins(
         wingsData.map((w) => ({
@@ -121,7 +118,7 @@ const AddAdminWithSociety = () => {
   };
 
   /* =============================
-     BULK CHANGE
+     BULK ADMIN FIELD CHANGE
   ============================= */
 
   const handleBulkChange = (index, field, value) => {
@@ -314,11 +311,14 @@ const AddAdminWithSociety = () => {
               <select
                 value={wing}
                 onChange={(e)=>setWing(e.target.value)}
+                disabled={!societyId || wings.length === 0}
                 className="border p-3 rounded"
               >
-                <option value="">Select Wing</option>
+                <option value="">
+                  Select Wing
+                </option>
 
-                {(wings.length > 0 ? wings : ["A","B","C","D"]).map((w)=>(
+                {wings.map((w)=>(
                   <option key={w} value={w}>
                     Wing {w}
                   </option>
