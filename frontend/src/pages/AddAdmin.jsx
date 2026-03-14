@@ -39,6 +39,7 @@ const AddAdminWithSociety = () => {
 
     if (value !== "OTHER") {
       const society = societies.find((s) => s._id === value);
+
       const wingsData = society?.wings || [];
 
       setWings(wingsData);
@@ -72,6 +73,7 @@ const AddAdminWithSociety = () => {
       let finalSocietyId = societyId;
 
       if (isNewSociety) {
+
         const res = await api.post("/societies", {
           name: societyName,
           city
@@ -93,13 +95,23 @@ const AddAdminWithSociety = () => {
 
         setMsg("Admin invited successfully");
 
+        setName("");
+        setMobile("");
+        setEmail("");
+        setWing("");
+        setFlatNo("");
+
       } else {
 
-        const payload = admins
-          .filter((a) => a.name && a.mobile && a.email && a.flatNo)
-          .map((a) => ({
-            ...a
-          }));
+        const payload = admins.filter(
+          (a) => a.name && a.mobile && a.email && a.flatNo
+        );
+
+        if (payload.length === 0) {
+          setMsg("Please fill at least one wing admin");
+          setLoading(false);
+          return;
+        }
 
         await api.post("/invites/admin/bulk", {
           societyId: finalSocietyId,
@@ -107,6 +119,16 @@ const AddAdminWithSociety = () => {
         });
 
         setMsg("Wing admins invited successfully");
+
+        setAdmins(
+          admins.map((a) => ({
+            ...a,
+            name: "",
+            email: "",
+            mobile: "",
+            flatNo: ""
+          }))
+        );
       }
 
     } catch (err) {
@@ -124,9 +146,9 @@ const AddAdminWithSociety = () => {
     <AppLayout>
       <PageWrapper>
 
-        <div className="max-w-xl mx-auto">
+        <div className="max-w-4xl mx-auto">
 
-          <h1 className="text-2xl font-bold mb-4">
+          <h1 className="text-3xl font-bold mb-6">
             Add Admin
           </h1>
 
@@ -136,8 +158,10 @@ const AddAdminWithSociety = () => {
 
             <button
               onClick={() => setMode("single")}
-              className={`px-3 py-1 rounded ${
-                mode === "single" ? "bg-black text-white" : "border"
+              className={`px-4 py-2 rounded ${
+                mode === "single"
+                  ? "bg-black text-white"
+                  : "border"
               }`}
             >
               Single Admin
@@ -145,8 +169,10 @@ const AddAdminWithSociety = () => {
 
             <button
               onClick={() => setMode("bulk")}
-              className={`px-3 py-1 rounded ${
-                mode === "bulk" ? "bg-black text-white" : "border"
+              className={`px-4 py-2 rounded ${
+                mode === "bulk"
+                  ? "bg-black text-white"
+                  : "border"
               }`}
             >
               Wing-wise Setup
@@ -156,7 +182,7 @@ const AddAdminWithSociety = () => {
 
           <form
             onSubmit={handleSubmit}
-            className="bg-white p-6 rounded-xl shadow space-y-4"
+            className="bg-white p-8 rounded-xl shadow space-y-6"
           >
 
             {/* SOCIETY */}
@@ -165,7 +191,7 @@ const AddAdminWithSociety = () => {
               value={societyId}
               onChange={handleSocietyChange}
               required
-              className="w-full border p-2 rounded"
+              className="w-full border p-3 rounded"
             >
               <option value="">Select Society</option>
 
@@ -181,16 +207,19 @@ const AddAdminWithSociety = () => {
 
             </select>
 
+            {/* SINGLE ADMIN MODE */}
+
             {mode === "single" && (
 
-              <>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
                 <input
                   type="text"
                   placeholder="Admin Name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   required
-                  className="w-full border p-2 rounded"
+                  className="border p-3 rounded"
                 />
 
                 <input
@@ -199,7 +228,7 @@ const AddAdminWithSociety = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  className="w-full border p-2 rounded"
+                  className="border p-3 rounded"
                 />
 
                 <input
@@ -208,14 +237,14 @@ const AddAdminWithSociety = () => {
                   value={mobile}
                   onChange={(e) => setMobile(e.target.value)}
                   required
-                  className="w-full border p-2 rounded"
+                  className="border p-3 rounded"
                 />
 
                 <select
                   value={wing}
                   onChange={(e) => setWing(e.target.value)}
                   required
-                  className="w-full border p-2 rounded"
+                  className="border p-3 rounded"
                 >
                   <option value="">Select Wing</option>
 
@@ -233,21 +262,27 @@ const AddAdminWithSociety = () => {
                   value={flatNo}
                   onChange={(e) => setFlatNo(e.target.value)}
                   required
-                  className="w-full border p-2 rounded"
+                  className="border p-3 rounded"
                 />
 
-              </>
+              </div>
+
             )}
 
-            {mode === "bulk" && (
+            {/* BULK MODE */}
 
-              <div className="space-y-6">
+            {mode === "bulk" && admins.length > 0 && (
+
+              <div className="grid md:grid-cols-2 gap-6">
 
                 {admins.map((a, index) => (
 
-                  <div key={a.wing} className="border p-4 rounded">
+                  <div
+                    key={a.wing}
+                    className="border rounded-lg p-5 bg-gray-50"
+                  >
 
-                    <h3 className="font-semibold mb-2">
+                    <h3 className="font-semibold mb-3 text-lg">
                       Wing {a.wing}
                     </h3>
 
@@ -292,12 +327,13 @@ const AddAdminWithSociety = () => {
                 ))}
 
               </div>
+
             )}
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-black text-white py-2 rounded"
+              className="w-full bg-black text-white py-3 rounded-lg"
             >
               {loading ? "Processing..." : "Submit"}
             </button>
