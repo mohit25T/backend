@@ -55,7 +55,7 @@ const AddAdminWithSociety = () => {
       const wingsData =
         society?.wings && society.wings.length > 0
           ? society.wings
-          : ["A", "B", "C", "D"]; // fallback wings
+          : ["A", "B", "C", "D"];
 
       setWings(wingsData);
 
@@ -82,6 +82,20 @@ const AddAdminWithSociety = () => {
     updated[index][field] = value;
 
     setAdmins(updated);
+  };
+
+  /* =============================
+     SINGLE ADMIN WING INPUT
+  ============================= */
+
+  const handleWingInput = (value) => {
+
+    const cleaned = value
+      .replace(/[^A-Za-z]/g, "")
+      .toUpperCase()
+      .slice(0, 1);
+
+    setWing(cleaned);
   };
 
   /* =============================
@@ -142,6 +156,7 @@ const AddAdminWithSociety = () => {
         );
 
         if (payload.length === 0) {
+
           setMsg("Please fill at least one wing admin");
           setLoading(false);
           return;
@@ -177,6 +192,7 @@ const AddAdminWithSociety = () => {
   };
 
   return (
+
     <AppLayout>
       <PageWrapper>
 
@@ -229,6 +245,7 @@ const AddAdminWithSociety = () => {
               required
               className="w-full border p-3 rounded"
             >
+
               <option value="">
                 Select Society
               </option>
@@ -242,6 +259,7 @@ const AddAdminWithSociety = () => {
               <option value="OTHER">
                 ➕ Other (Create New Society)
               </option>
+
             </select>
 
             {/* NEW SOCIETY */}
@@ -301,25 +319,17 @@ const AddAdminWithSociety = () => {
                   className="border p-3 rounded"
                 />
 
-                <select
+                {/* WING INPUT */}
+
+                <input
+                  type="text"
+                  placeholder="Wing (A/B/C)"
                   value={wing}
-                  onChange={(e) => setWing(e.target.value)}
-                  disabled={!societyId}
+                  onChange={(e) => handleWingInput(e.target.value)}
+                  maxLength={1}
                   required
                   className="border p-3 rounded"
-                >
-
-                  <option value="">
-                    Select Wing
-                  </option>
-
-                  {wings.map((w) => (
-                    <option key={w} value={w}>
-                      Wing {w}
-                    </option>
-                  ))}
-
-                </select>
+                />
 
                 <input
                   type="text"
