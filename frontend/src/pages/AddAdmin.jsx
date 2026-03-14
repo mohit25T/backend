@@ -4,7 +4,6 @@ import PageWrapper from "../components/layout/PageWrapper";
 import api from "../api/axios";
 
 const AddAdminWithSociety = () => {
-
   const [mode, setMode] = useState("single");
 
   const [societies, setSocieties] = useState([]);
@@ -27,9 +26,19 @@ const AddAdminWithSociety = () => {
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState("");
 
+  /* =============================
+     LOAD SOCIETIES
+  ============================= */
+
   useEffect(() => {
-    api.get("/societies").then((res) => setSocieties(res.data));
+    api.get("/societies").then((res) => {
+      setSocieties(res.data);
+    });
   }, []);
+
+  /* =============================
+     SOCIETY SELECT
+  ============================= */
 
   const handleSocietyChange = (e) => {
     const value = e.target.value;
@@ -40,7 +49,11 @@ const AddAdminWithSociety = () => {
     if (value !== "OTHER") {
       const society = societies.find((s) => s._id === value);
 
-      const wingsData = society?.wings || [];
+      // 🔥 fallback wings if backend didn't send
+      const wingsData =
+        society?.wings && society.wings.length > 0
+          ? society.wings
+          : ["A", "B", "C", "D"];
 
       setWings(wingsData);
 
@@ -50,17 +63,26 @@ const AddAdminWithSociety = () => {
           name: "",
           email: "",
           mobile: "",
-          flatNo: ""
-        }))
+          flatNo: "",
+        })),
       );
     }
   };
 
+  /* =============================
+     BULK ADMIN CHANGE
+  ============================= */
+
   const handleBulkChange = (index, field, value) => {
     const updated = [...admins];
     updated[index][field] = value;
+
     setAdmins(updated);
   };
+
+  /* =============================
+     SUBMIT
+  ============================= */
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -71,6 +93,8 @@ const AddAdminWithSociety = () => {
     try {
       let finalSocietyId = societyId;
 
+      /* CREATE SOCIETY */
+
       if (isNewSociety) {
         const res = await api.post("/societies", {
           name: societyName,
@@ -79,6 +103,8 @@ const AddAdminWithSociety = () => {
 
         finalSocietyId = res.data._id;
       }
+
+      /* SINGLE ADMIN */
 
       if (mode === "single") {
         await api.post("/invites/admin", {
@@ -98,6 +124,8 @@ const AddAdminWithSociety = () => {
         setWing("");
         setFlatNo("");
       } else {
+
+      /* BULK ADMINS */
         const payload = admins.filter(
           (a) => a.name && a.mobile && a.email && a.flatNo,
         );
@@ -164,7 +192,7 @@ const AddAdminWithSociety = () => {
             onSubmit={handleSubmit}
             className="bg-white p-8 rounded-xl shadow space-y-6"
           >
-            {/* SOCIETY */}
+            {/* SOCIETY SELECT */}
 
             <select
               value={societyId}
@@ -183,7 +211,7 @@ const AddAdminWithSociety = () => {
               <option value="OTHER">➕ Other (Create New Society)</option>
             </select>
 
-            {/* SINGLE ADMIN MODE */}
+            {/* SINGLE ADMIN */}
 
             {mode === "single" && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -307,6 +335,6 @@ const AddAdminWithSociety = () => {
       </PageWrapper>
     </AppLayout>
   );
-};
+};;
 
 export default AddAdminWithSociety;
