@@ -177,7 +177,7 @@ export const getResidentVisitorHistory = async (req, res) => {
 export const getUsersBySociety = async (req, res) => {
   try {
     const societyId = req.user.societyId;
-    const { role, wing } = req.query;
+    const { role, wing, flatNo } = req.query; // ✅ include flatNo
 
     if (!societyId) {
       return res.status(400).json({
@@ -188,18 +188,38 @@ export const getUsersBySociety = async (req, res) => {
 
     const filter = { societyId };
 
+    /* ==========================
+       FILTER BY ROLE
+    ========================== */
+
     if (role) {
       filter.roles = { $in: [role] };
     }
 
+    /* ==========================
+       FILTER BY WING
+    ========================== */
+
     if (wing) {
-      filter.wing = wing; // ✅ NEW
+      filter.wing = wing.toUpperCase();
     }
+
+    /* ==========================
+       FILTER BY FLAT
+    ========================== */
+
+    if (flatNo) {
+      filter.flatNo = flatNo.trim();
+    }
+
+    /* ==========================
+       FETCH USERS
+    ========================== */
 
     const users = await User.find(filter)
       .populate("societyId", "name city _id")
       .select(
-        "name email mobile roles status societyId wing createdAt profileImage"
+        "name email mobile roles status societyId wing flatNo createdAt profileImage"
       )
       .sort({ createdAt: -1 })
       .lean();
