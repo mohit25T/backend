@@ -5,7 +5,8 @@ import {
   resendInvite,
   cancelInvite,
   inviteResident,
-  inviteGuard
+  inviteGuard,
+  inviteAdminsBulk
 } from "../controllers/invite.controller.js";
 
 import { requireAuth } from "../middlewares/auth.middleware.js";
@@ -17,6 +18,7 @@ const router = express.Router();
 
 router.get("/", requireAuth, requireSuperAdmin, getAllInvites);
 router.post("/admin", requireAuth, requireSuperAdmin, inviteAdmin);
+router.post("/admin/bulk", requireAuth, requireSuperAdmin, inviteAdminsBulk);
 router.post("/:id/resend", requireAuth, requireSuperAdmin, resendInvite);
 router.post("/:id/cancel", requireAuth, requireSuperAdmin, cancelInvite);
 router.post("/invite-resident", requireAuth, inviteResident);
