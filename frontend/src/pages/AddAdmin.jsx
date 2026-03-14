@@ -58,7 +58,7 @@ const AddAdminWithSociety = () => {
     const wingsData =
       society?.wings && society.wings.length > 0
         ? society.wings
-        : ["A","B","C","D"];
+        : ["A", "B", "C", "D"];
 
     setWings(wingsData);
 
@@ -106,20 +106,7 @@ const AddAdminWithSociety = () => {
     } catch (err) {
       console.error(err);
     }
-  };
 
-  /* =============================
-     WING INPUT
-  ============================= */
-
-  const handleWingInput = (value) => {
-
-    const cleaned = value
-      .replace(/[^A-Za-z]/g, "")
-      .toUpperCase()
-      .slice(0,1);
-
-    setWing(cleaned);
   };
 
   /* =============================
@@ -133,6 +120,7 @@ const AddAdminWithSociety = () => {
     updated[index][field] = value;
 
     setAdmins(updated);
+
   };
 
   /* =============================
@@ -185,6 +173,7 @@ const AddAdminWithSociety = () => {
       setLoading(false);
 
     }
+
   };
 
   return (
@@ -204,16 +193,16 @@ const AddAdminWithSociety = () => {
 
             <button
               type="button"
-              onClick={()=>setMode("single")}
-              className={`px-4 py-2 rounded ${mode==="single" ? "bg-black text-white":"border"}`}
+              onClick={() => setMode("single")}
+              className={`px-4 py-2 rounded ${mode === "single" ? "bg-black text-white" : "border"}`}
             >
               Single Admin
             </button>
 
             <button
               type="button"
-              onClick={()=>setMode("bulk")}
-              className={`px-4 py-2 rounded ${mode==="bulk" ? "bg-black text-white":"border"}`}
+              onClick={() => setMode("bulk")}
+              className={`px-4 py-2 rounded ${mode === "bulk" ? "bg-black text-white" : "border"}`}
             >
               Wing-wise Setup
             </button>
@@ -232,7 +221,7 @@ const AddAdminWithSociety = () => {
               Select Society
             </option>
 
-            {societies.map((s)=>(
+            {societies.map((s) => (
               <option key={s._id} value={s._id}>
                 {s.name} ({s.city})
               </option>
@@ -244,7 +233,9 @@ const AddAdminWithSociety = () => {
 
           </select>
 
-          {/* SINGLE ADMIN */}
+          {/* =============================
+             SINGLE ADMIN MODE
+          ============================= */}
 
           {mode === "single" && (
 
@@ -271,12 +262,22 @@ const AddAdminWithSociety = () => {
                 className="border p-3 rounded"
               />
 
-              <input
-                placeholder="Wing (A)"
+              {/* WING DROPDOWN */}
+
+              <select
                 value={wing}
-                onChange={(e)=>handleWingInput(e.target.value)}
+                onChange={(e)=>setWing(e.target.value)}
                 className="border p-3 rounded"
-              />
+              >
+                <option value="">Select Wing</option>
+
+                {wings.map((w)=>(
+                  <option key={w} value={w}>
+                    Wing {w}
+                  </option>
+                ))}
+
+              </select>
 
               <input
                 placeholder="Flat Number"
@@ -290,6 +291,65 @@ const AddAdminWithSociety = () => {
                 className="bg-black text-white py-3 rounded col-span-2"
               >
                 Invite Admin
+              </button>
+
+            </form>
+
+          )}
+
+          {/* =============================
+             BULK ADMIN MODE
+          ============================= */}
+
+          {mode === "bulk" && admins.length > 0 && (
+
+            <form onSubmit={handleSubmit} className="grid md:grid-cols-2 gap-6">
+
+              {admins.map((a,index)=>(
+
+                <div key={a.wing} className="border rounded-lg p-5 bg-gray-50">
+
+                  <h3 className="font-semibold mb-3 text-lg">
+                    Wing {a.wing}
+                  </h3>
+
+                  <input
+                    placeholder="Admin Name"
+                    value={a.name}
+                    onChange={(e)=>handleBulkChange(index,"name",e.target.value)}
+                    className="w-full border p-2 rounded mb-2"
+                  />
+
+                  <input
+                    placeholder="Email"
+                    value={a.email}
+                    onChange={(e)=>handleBulkChange(index,"email",e.target.value)}
+                    className="w-full border p-2 rounded mb-2"
+                  />
+
+                  <input
+                    placeholder="Mobile"
+                    value={a.mobile}
+                    onChange={(e)=>handleBulkChange(index,"mobile",e.target.value)}
+                    className="w-full border p-2 rounded mb-2"
+                  />
+
+                  <input
+                    placeholder="Flat Number"
+                    value={a.flatNo}
+                    onChange={(e)=>handleBulkChange(index,"flatNo",e.target.value)}
+                    className="w-full border p-2 rounded"
+                  />
+
+                </div>
+
+              ))}
+
+              <button
+                type="submit"
+                className="bg-black text-white py-3 rounded col-span-2"
+              >
+                Create Wing Admins
               </button>
 
             </form>
