@@ -449,7 +449,8 @@ export const getVisitors = async (req, res) => {
       .skip(skip)
       .limit(limitNumber)
       .lean();
-
+    console.log("VISITORS FETCHED:", visitors.length, "TOTAL:", total);
+    console.log("visitors", visitors);
     res.json({
       success: true,
       data: visitors,
