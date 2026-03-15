@@ -474,28 +474,59 @@ export const getVisitors = async (req, res) => {
  */
 export const getSocietyFlats = async (req, res) => {
   try {
+
     const societyId = req.user.societyId;
+    const { wing } = req.query;
+
+    /* =========================
+       IF WING NOT PROVIDED
+       RETURN AVAILABLE WINGS
+    ========================= */
+
+    if (!wing) {
+
+      const wings = await User.distinct("wing", {
+        societyId,
+        roles: { $in: ["OWNER"] },
+        wing: { $ne: null }
+      });
+
+      wings.sort();
+
+      return res.json({
+        type: "WINGS",
+        data: wings.map(w => ({ wing: w }))
+      });
+    }
+
+    /* =========================
+       IF WING PROVIDED
+       RETURN FLATS OF THAT WING
+    ========================= */
 
     const owners = await User.find(
-      { societyId, roles: { $in: ["OWNER"] } },
+      {
+        societyId,
+        wing,
+        roles: { $in: ["OWNER"] },
+        flatNo: { $ne: null }
+      },
       { flatNo: 1, wing: 1, name: 1 }
-    ).sort({ wing: 1, flatNo: 1 });
+    ).sort({ flatNo: 1 });
 
-    res.json(
-      owners
-        .filter(o => o.flatNo)
-        .map(o => ({
-          wing: o.wing,
-          flatNo: o.flatNo,
-          ownerName: o.name
-        }))
-    );
+    return res.json({
+      type: "FLATS",
+      data: owners.map(o => ({
+        wing: o.wing,
+        flatNo: o.flatNo,
+        ownerName: o.name
+      }))
+    });
 
   } catch (error) {
-    res.status(500).json({ message: "Failed to fetch flats" });
+    res.status(500).json({ message: "Failed to fetch data" });
   }
 };
-
 
 /**
  * =================================
