@@ -35,8 +35,8 @@ export const checkGuardShift = (req, res, next) => {
 
       if (!isAllowed) {
           return res.status(403).json({
-          success: false,
-          message: "You can use this feature only during your shift"
+              success: false,
+              message: "You can use this feature only during your shift"
       });
     }
 
@@ -45,8 +45,8 @@ export const checkGuardShift = (req, res, next) => {
   } catch (error) {
       console.error("Shift check error:", error);
       res.status(500).json({
-        success: false,
-        message: "Shift validation failed"
+          success: false,
+          message: "Shift validation failed"
     });
   }
 };
