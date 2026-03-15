@@ -2,41 +2,51 @@ export const checkGuardShift = (req, res, next) => {
     try {
         const user = req.user;
 
-        if (!user.roles.includes("GUARD")) {
-            return next();
-        }
+      // Only apply shift check for guards
+      if (!user.roles?.includes("GUARD")) {
+          return next();
+      }
 
-        const now = new Date();
-        const currentTime = now.getHours() * 60 + now.getMinutes();
+      // If shift times are missing, skip check (prevents crash)
+      if (!user.shiftStartTime || !user.shiftEndTime) {
+          console.warn("Guard shift not configured for:", user._id);
+          return next();
+      }
 
-        const [startHour, startMin] = user.shiftStartTime.split(":").map(Number);
-        const [endHour, endMin] = user.shiftEndTime.split(":").map(Number);
+      const now = new Date();
+      const currentTime = now.getHours() * 60 + now.getMinutes();
 
-        const startTime = startHour * 60 + startMin;
-        const endTime = endHour * 60 + endMin;
+      const [startHour, startMin] = user.shiftStartTime.split(":").map(Number);
+      const [endHour, endMin] = user.shiftEndTime.split(":").map(Number);
 
-        let isAllowed = false;
+      const startTime = startHour * 60 + startMin;
+      const endTime = endHour * 60 + endMin;
 
-        // Normal shift
-        if (startTime < endTime) {
-            isAllowed = currentTime >= startTime && currentTime <= endTime;
-        }
-        // Night shift (cross midnight)
-        else {
-            isAllowed = currentTime >= startTime || currentTime <= endTime;
-        }
+      let isAllowed = false;
 
-        if (!isAllowed) {
-            return res.status(403).json({
-                message: "You can use this feature only during your shift"
-            });
-        }
+      // Normal shift
+      if (startTime < endTime) {
+          isAllowed = currentTime >= startTime && currentTime <= endTime;
+      }
+      // Night shift (cross midnight)
+      else {
+          isAllowed = currentTime >= startTime || currentTime <= endTime;
+      }
 
-        next();
-    } catch (error) {
-        console.error("Shift check error:", error);
-        res.status(500).json({
-            message: "Shift validation failed"
-        });
+      if (!isAllowed) {
+          return res.status(403).json({
+          success: false,
+          message: "You can use this feature only during your shift"
+      });
     }
+
+      next();
+
+  } catch (error) {
+      console.error("Shift check error:", error);
+      res.status(500).json({
+        success: false,
+        message: "Shift validation failed"
+    });
+  }
 };
