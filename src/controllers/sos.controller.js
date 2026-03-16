@@ -21,9 +21,6 @@ const getUserTokens = (user) => {
 export const triggerSOS = async (req, res) => {
   try {
 
-    console.log("SOS REQUEST BODY:", req.body);
-    console.log("AUTH USER:", req.user);
-
     const { wing, flatNo, emergencyType } = req.body;
 
     const userId = req.user.userId;
