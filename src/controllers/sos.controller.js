@@ -1,19 +1,18 @@
 import SOS from "../models/SOS.js";
+import User from "../models/User.js";
+import { sendPushNotificationToMany } from "../utils/pushNotification.js";
+import { getUserTokens } from "../utils/getUserTokens.js";
 
 
 // 🚨 Trigger SOS
 export const triggerSOS = async (req, res) => {
   try {
-
-    console.log("SOS REQUEST BODY:", req.body);
-    console.log("AUTH USER:", req.user);
-
+    
     const { wing, flatNo, emergencyType } = req.body;
 
     const userId = req.user.userId;
     const societyId = req.user.societyId;
 
-    // Validate required fields
     if (!wing || !flatNo) {
       return res.status(400).json({
         success: false,
@@ -31,6 +30,65 @@ export const triggerSOS = async (req, res) => {
 
     console.log("New SOS Triggered:", sos);
 
+      /* =====================================
+         SEND NOTIFICATIONS
+      ===================================== */
+
+      // 1️⃣ Notify Guards
+      const guards = await User.find({
+          societyId,
+          roles: "GUARD"
+      });
+
+      if (guards.length > 0) {
+          await sendPushNotificationToMany(
+              getUserTokens(guards),
+              "🚨 SOS Emergency",
+              `Emergency at Wing ${wing} Flat ${flatNo}`,
+              {
+                  type: "SOS_ALERT",
+                  sosId: sos._id.toString()
+              }
+          );
+      }
+
+      // 2️⃣ Notify Admins
+      const admins = await User.find({
+          societyId,
+          roles: "ADMIN"
+      });
+
+      if (admins.length > 0) {
+          await sendPushNotificationToMany(
+              getUserTokens(admins),
+              "🚨 SOS Alert",
+              `Resident triggered SOS at Wing ${wing} Flat ${flatNo}`,
+              {
+                  type: "SOS_ALERT",
+                  sosId: sos._id.toString()
+              }
+          );
+      }
+
+      // 3️⃣ Notify Neighbours (same wing residents)
+      const neighbours = await User.find({
+          societyId,
+          wing,
+          roles: { $in: ["OWNER", "TENANT"] }
+      });
+
+      if (neighbours.length > 0) {
+          await sendPushNotificationToMany(
+              getUserTokens(neighbours),
+              "⚠ Emergency Nearby",
+              `Flat ${flatNo} triggered SOS in your wing`,
+              {
+                  type: "NEIGHBOUR_SOS_ALERT",
+                  sosId: sos._id.toString()
+              }
+          );
+      }
+
     res.status(201).json({
       success: true,
       message: "SOS triggered successfully",
@@ -41,7 +99,6 @@ export const triggerSOS = async (req, res) => {
 
     console.error("SOS ERROR:", error);
 
-    // Handle unique index error
     if (error.code === 11000) {
       return res.status(400).json({
         success: false,
@@ -94,7 +151,7 @@ export const respondSOS = async (req, res) => {
 
     const { id } = req.params;
 
-    const sos = await SOS.findById(id);
+      const sos = await SOS.findById(id).populate("userId");
 
     if (!sos) {
       return res.status(404).json({
@@ -106,6 +163,45 @@ export const respondSOS = async (req, res) => {
     sos.respondedBy = req.user.userId;
 
     await sos.save();
+
+      /* =============================
+         SEND NOTIFICATION
+      ============================= */
+
+      const resident = await User.findById(sos.userId._id);
+
+      const admins = await User.find({
+          societyId: sos.societyId,
+          roles: "ADMIN"
+      });
+
+      const guard = await User.findById(req.user.userId);
+
+      // Notify resident
+      if (resident) {
+          await sendPushNotificationToMany(
+              getUserTokens([resident]),
+              "👮 Guard Responding",
+              `Guard ${guard.name} is responding to your SOS`,
+              {
+                  type: "SOS_RESPONDING",
+                  sosId: sos._id.toString()
+              }
+          );
+      }
+
+      // Notify admins
+      if (admins.length > 0) {
+          await sendPushNotificationToMany(
+              getUserTokens(admins),
+              "👮 Guard Responding",
+              `Guard ${guard.name} responding to SOS at Wing ${sos.wing} Flat ${sos.flatNo}`,
+              {
+                  type: "SOS_RESPONDING",
+                  sosId: sos._id.toString()
+              }
+          );
+      }
 
     res.json({
       success: true,
@@ -129,7 +225,7 @@ export const resolveSOS = async (req, res) => {
 
     const { id } = req.params;
 
-    const sos = await SOS.findById(id);
+    const sos = await SOS.findById(id).populate("userId");
 
     if (!sos) {
       return res.status(404).json({
@@ -141,6 +237,62 @@ export const resolveSOS = async (req, res) => {
     sos.resolvedAt = new Date();
 
     await sos.save();
+
+    /* =============================
+       SEND NOTIFICATION
+    ============================= */
+
+    const resident = await User.findById(sos.userId._id);
+
+    const admins = await User.find({
+      societyId: sos.societyId,
+      roles: "ADMIN"
+    });
+
+    const neighbours = await User.find({
+      societyId: sos.societyId,
+      wing: sos.wing,
+      roles: { $in: ["OWNER", "TENANT"] }
+    });
+
+    // Notify resident
+    if (resident) {
+      await sendPushNotificationToMany(
+        getUserTokens([resident]),
+        "✅ SOS Resolved",
+        `Your SOS request has been resolved`,
+        {
+          type: "SOS_RESOLVED",
+          sosId: sos._id.toString()
+        }
+      );
+    }
+
+    // Notify admins
+    if (admins.length > 0) {
+      await sendPushNotificationToMany(
+        getUserTokens(admins),
+        "✅ SOS Resolved",
+        `SOS at Wing ${sos.wing} Flat ${sos.flatNo} has been resolved`,
+        {
+          type: "SOS_RESOLVED",
+          sosId: sos._id.toString()
+        }
+      );
+    }
+
+    // Notify neighbours
+    if (neighbours.length > 0) {
+      await sendPushNotificationToMany(
+        getUserTokens(neighbours),
+        "✅ Emergency Cleared",
+        `SOS from Flat ${sos.flatNo} has been resolved`,
+        {
+          type: "SOS_RESOLVED",
+          sosId: sos._id.toString()
+        }
+      );
+    }
 
     res.json({
       success: true,
