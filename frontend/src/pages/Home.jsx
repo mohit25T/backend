@@ -1,6 +1,16 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { ShieldCheck, MessageSquare, Users, Settings, Bell, Lock } from "lucide-react";
+import {
+  ShieldCheck,
+  MessageSquare,
+  Users,
+  Settings,
+  Bell,
+  MapPin,
+  Phone,
+  Mail,
+  Lock,
+} from "lucide-react";
 
 export default function HomePage() {
   return (
