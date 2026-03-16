@@ -37,6 +37,7 @@ export const createVisitorEntry = async (req, res) => {
       personMobile,
       purpose,
       vehicleNo,
+      wing,
       flatNo,
       entryType,
       deliveryCompany,
@@ -83,6 +84,23 @@ export const createVisitorEntry = async (req, res) => {
     const resident = targetResidents[0];
 
     /* =====================================================
+       🏢 STEP 1.5: Resolve Wing
+    ===================================================== */
+
+    let visitorWing = wing;
+
+    // If frontend didn't send wing, use resident's wing
+    if (!visitorWing) {
+      visitorWing = resident.wing;
+    }
+
+    if (!visitorWing) {
+      return res.status(400).json({
+        message: "Wing is required"
+      });
+    }
+
+    /* =====================================================
        🚫 STEP 2: Prevent Duplicate Pending Visitors
     ===================================================== */
 
@@ -120,6 +138,7 @@ export const createVisitorEntry = async (req, res) => {
       personMobile,
       purpose,
       vehicleNo,
+      wing: visitorWing,   // ✅ FIXED
       flatNo: normalizedFlatNo,
       entryType,
       deliveryCompany,
@@ -142,7 +161,7 @@ export const createVisitorEntry = async (req, res) => {
         await sendPushNotificationToMany(
           allTokens,
           "Visitor Arrived 🚪",
-          `${personName} is waiting at the gate for Flat ${normalizedFlatNo}`,
+          `${personName} is waiting at the gate for Flat ${visitorWing}-${normalizedFlatNo}`,
           {
             type: "VISITOR_ARRIVED",
             visitorId: visitor._id.toString()
@@ -167,6 +186,7 @@ export const createVisitorEntry = async (req, res) => {
     });
   }
 };
+
 
 /**
  * =================================
