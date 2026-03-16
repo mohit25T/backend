@@ -94,6 +94,7 @@ export const triggerSOS = async (req, res) => {
           {
             type: "SOS_ALERT",
             sosId: sos._id.toString()
+            sound:"sos_alarm"
           }
         );
       }
