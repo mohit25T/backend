@@ -17,7 +17,7 @@ export const triggerSOS = async (req, res) => {
       flatNo,
       emergencyType
     });
-    conso
+      console.log("New SOS Triggered:", sos);
 
     res.status(201).json({
       success: true,
