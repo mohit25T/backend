@@ -5,12 +5,10 @@ import SOS from "../models/SOS.js";
 export const triggerSOS = async (req, res) => {
   try {
 
-      const { emergencyType } = req.body;
-      const userId = req.user.userId;
-      const societyId = req.user.societyId;
-      const wing = req.user.wing;
-      const flatNo = req.user.flatNo;
-console.log("Triggering SOS with data:", { wing, flatNo, emergencyType });
+    const { wing, flatNo, emergencyType } = req.body;
+
+    const userId = req.user.userId;
+    const societyId = req.user.societyId;
 
     const sos = await SOS.create({
       userId,
