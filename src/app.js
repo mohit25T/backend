@@ -23,7 +23,7 @@ import maintenanceRoutes from "./routes/maintenance.routes.js";
 import complaintRoutes from "./routes/complaint.routes.js";
 import noticeRoutes from "./routes/notice.routes.js";
 import vehicleRoutes from "./routes/vehicle.routes.js";
-
+import sosRoutes from "./routes/sos.routes.js";
 import {
   autoGenerateMonthlyMaintenance,
   sendMaintenanceDueReminders
@@ -150,6 +150,7 @@ app.use("/api/maintenance", maintenanceRoutes);
 app.use("/api/complaints", complaintRoutes);
 app.use("/api/notices", noticeRoutes);
 app.use("/api/vehicles", vehicleRoutes);
+app.use("/api/sos", sosRoutes);
 
 /* =========================================
    🔥 MAINTENANCE CRON JOBS
