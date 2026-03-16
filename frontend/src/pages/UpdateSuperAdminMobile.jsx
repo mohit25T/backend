@@ -4,6 +4,7 @@ import AppLayout from "../components/layout/AppLayout";
 import PageWrapper from "../components/layout/PageWrapper";
 import { useAuth } from "../context/AuthContext";
 import { updateSuperAdminMobile } from "../api/updateSuperadminnumber";
+import { Phone, PhoneCall } from "lucide-react";
 
 const UpdateSuperAdmin = () => {
   const [mobile, setMobile] = useState("");
@@ -20,7 +21,7 @@ const UpdateSuperAdmin = () => {
     setMessage("");
 
     if (!/^[6-9]\d{9}$/.test(mobile)) {
-      setError("Enter valid 10-digit mobile number");
+      setError("Enter a valid 10-digit mobile number");
       return;
     }
 
@@ -34,7 +35,7 @@ const UpdateSuperAdmin = () => {
       setTimeout(() => {
         logout();
         navigate("/login");
-      }, 1500);
+      }, 2000);
     } catch (err) {
       setError(err.response?.data?.message || "Update failed");
     } finally {
@@ -45,31 +46,64 @@ const UpdateSuperAdmin = () => {
   return (
     <AppLayout>
       <PageWrapper>
-        <div className="max-w-md mx-auto mt-10 bg-white p-6 rounded shadow">
-          <h2 className="text-xl font-semibold mb-4">
-            Update Super Admin Mobile
-          </h2>
+        <div className="max-w-md mx-auto mt-12 sm:mt-20">
 
-          <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-            <input
-              type="tel"
-              value={mobile}
-              onChange={(e) => setMobile(e.target.value)}
-              placeholder="New mobile number"
-              maxLength={10}
-              className="border px-3 py-2 rounded"
-            />
+          <div className="mb-8 text-center">
+            <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-tr from-cyan-500 to-blue-500 flex items-center justify-center shadow-lg shadow-cyan-500/30 mb-6">
+              <PhoneCall className="w-8 h-8 text-white" />
+            </div>
+            <h2 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-100 to-gray-400 tracking-tight">
+              Update Mobile Number
+            </h2>
+            <p className="text-gray-400 mt-2 text-sm">Update your secure recovery and contact number.</p>
+          </div>
 
-            <button
-              disabled={loading}
-              className="bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
-            >
-              {loading ? "Updating..." : "Update"}
-            </button>
-          </form>
+          <div className="glass-panel p-6 sm:p-8 rounded-2xl shadow-xl relative mt-4">
 
-          {message && <p className="text-green-600 mt-3">{message}</p>}
-          {error && <p className="text-red-600 mt-3">{error}</p>}
+            {error && (
+              <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm text-center">
+                {error}
+              </div>
+            )}
+            {message && (
+              <div className="mb-6 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm text-center">
+                {message}
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-6">
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  New Mobile Number
+                </label>
+                <div className="relative group">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-medium">+91</span>
+                  <div className="absolute left-14 top-1/2 -translate-y-1/2 w-px h-5 bg-white/10" />
+                  <input
+                    type="tel"
+                    value={mobile}
+                    onChange={(e) => setMobile(e.target.value)}
+                    placeholder="Enter 10-digit number"
+                    maxLength={10}
+                    className="glass-input pl-20 font-medium tracking-wide"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="pt-2 border-t border-white/5">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="btn-primary"
+                >
+                  {loading ? "Updating Details..." : "Save Mobile Number"}
+                </button>
+              </div>
+
+            </form>
+          </div>
         </div>
       </PageWrapper>
     </AppLayout>

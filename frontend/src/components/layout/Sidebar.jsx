@@ -13,13 +13,13 @@ import {
 } from "lucide-react";
 
 const navItems = [
-  { name: "Dashboard", path: "/", icon: LayoutDashboard },
+  { name: "Dashboard", path: "/Dashboard", icon: LayoutDashboard },
   { name: "Add Admin", path: "/admins/add", icon: UserPlus },
   { name: "Societies", path: "/societies", icon: Building2 },
   { name: "Admin Invites", path: "/invites", icon: MailOpen },
   { name: "Users", path: "/users", icon: Users },
   { name: "Search", path: "/search", icon: Search },
-  { name: "Audit Logs", path: "/audit-logs", icon: History }
+  { name: "Audit Logs", path: "/audit-logs", icon: History },
 ];
 
 const Sidebar = ({ open, setOpen }) => {

@@ -3,7 +3,7 @@ import { pageTransition } from "../../animation/motionVariants";
 
 const PageWrapper = ({ children }) => {
   return (
-    <motion.div {...pageTransition}>
+    <motion.div {...pageTransition} className="w-full">
       {children}
     </motion.div>
   );
