@@ -4,7 +4,7 @@ import {
     sendPushNotification,
     sendPushNotificationToMany
 } from "../services/notificationService.js";
-import { getUserTokens } from "../utils/getUserTokens.js";
+// import { getUserTokens } from "../utils/getUserTokens.js";
 
 
 // 🚨 Trigger SOS
