@@ -6,11 +6,11 @@ export const triggerSOS = async (req, res) => {
   try {
 
       const { emergencyType } = req.body;
-      const wing = req.body.wing || req.user.wing;
-      const flatNo = req.body.flatNo || req.user.flatNo;
+      const userId = req.user.userId;
+      const societyId = req.user.societyId;
+      const wing = req.user.wing;
+      const flatNo = req.user.flatNo;
 console.log("Triggering SOS with data:", { wing, flatNo, emergencyType });
-    const userId = req.user.userId;
-    const societyId = req.user.societyId;
 
     const sos = await SOS.create({
       userId,
