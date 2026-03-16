@@ -5,10 +5,21 @@ import SOS from "../models/SOS.js";
 export const triggerSOS = async (req, res) => {
   try {
 
+    console.log("SOS REQUEST BODY:", req.body);
+    console.log("AUTH USER:", req.user);
+
     const { wing, flatNo, emergencyType } = req.body;
 
     const userId = req.user.userId;
     const societyId = req.user.societyId;
+
+    // Validate required fields
+    if (!wing || !flatNo) {
+      return res.status(400).json({
+        success: false,
+        message: "Wing and flat number are required"
+      });
+    }
 
     const sos = await SOS.create({
       userId,
@@ -17,7 +28,8 @@ export const triggerSOS = async (req, res) => {
       flatNo,
       emergencyType
     });
-      console.log("New SOS Triggered:", sos);
+
+    console.log("New SOS Triggered:", sos);
 
     res.status(201).json({
       success: true,
@@ -27,8 +39,12 @@ export const triggerSOS = async (req, res) => {
 
   } catch (error) {
 
+    console.error("SOS ERROR:", error);
+
+    // Handle unique index error
     if (error.code === 11000) {
       return res.status(400).json({
+        success: false,
         message: "You already have an active SOS request"
       });
     }
