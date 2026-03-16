@@ -1,13 +1,16 @@
 import SOS from "../models/SOS.js";
 import User from "../models/User.js";
-import { sendPushNotificationToMany } from "../utils/pushNotification.js";
+import {
+    sendPushNotification,
+    sendPushNotificationToMany
+} from "../services/notificationService.js";
 import { getUserTokens } from "../utils/getUserTokens.js";
 
 
 // 🚨 Trigger SOS
 export const triggerSOS = async (req, res) => {
   try {
-    
+
     const { wing, flatNo, emergencyType } = req.body;
 
     const userId = req.user.userId;
