@@ -93,7 +93,7 @@ export const triggerSOS = async (req, res) => {
           `SOS triggered at Wing ${wing} Flat ${flatNo}`,
           {
             type: "SOS_ALERT",
-            sosId: sos._id.toString()
+            sosId: sos._id.toString(),
             sound:"sos_alarm"
           }
         );
