@@ -3,12 +3,6 @@ import AppLayout from "../components/layout/AppLayout";
 import PageWrapper from "../components/layout/PageWrapper";
 import CreateSocietyForm from "../components/societies/CreateSocietyForm";
 import api from "../api/axios";
-
-import { useEffect, useState } from "react";
-import AppLayout from "../components/layout/AppLayout";
-import PageWrapper from "../components/layout/PageWrapper";
-import CreateSocietyForm from "../components/societies/CreateSocietyForm";
-import api from "../api/axios";
 import { UserPlus, Building, Mail, Phone, Hash, Layers } from "lucide-react";
 
 const AddAdminWithSociety = () => {
