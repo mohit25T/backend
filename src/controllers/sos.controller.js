@@ -1,15 +1,28 @@
 import SOS from "../models/SOS.js";
 import User from "../models/User.js";
-import {
-    sendPushNotification,
-    sendPushNotificationToMany
-} from "../services/notificationService.js";
-// import { getUserTokens } from "../utils/getUserTokens.js";
+import { sendPushNotificationToMany } from "../services/notificationService.js";
 
+/**
+ * =====================================================
+ * 🔧 Helper: Get valid FCM tokens from user
+ * =====================================================
+ */
+const getUserTokens = (user) => {
+  if (!user) return [];
+  if (!Array.isArray(user.fcmTokens)) return [];
+  return user.fcmTokens.filter(Boolean);
+};
 
-// 🚨 Trigger SOS
+/**
+ * =====================================================
+ * 🚨 Trigger SOS
+ * =====================================================
+ */
 export const triggerSOS = async (req, res) => {
   try {
+
+    console.log("SOS REQUEST BODY:", req.body);
+    console.log("AUTH USER:", req.user);
 
     const { wing, flatNo, emergencyType } = req.body;
 
@@ -33,64 +46,93 @@ export const triggerSOS = async (req, res) => {
 
     console.log("New SOS Triggered:", sos);
 
-      /* =====================================
-         SEND NOTIFICATIONS
-      ===================================== */
+    /* =====================================================
+       📲 Notify Guards
+    ===================================================== */
 
-      // 1️⃣ Notify Guards
-      const guards = await User.find({
-          societyId,
-          roles: "GUARD"
-      });
+    const guards = await User.find({
+      societyId,
+      roles: "GUARD"
+    });
 
-      if (guards.length > 0) {
-          await sendPushNotificationToMany(
-              getUserTokens(guards),
-              "🚨 SOS Emergency",
-              `Emergency at Wing ${wing} Flat ${flatNo}`,
-              {
-                  type: "SOS_ALERT",
-                  sosId: sos._id.toString()
-              }
-          );
+    try {
+      const guardTokens = guards.flatMap(user =>
+        getUserTokens(user)
+      );
+
+      if (guardTokens.length > 0) {
+        await sendPushNotificationToMany(
+          guardTokens,
+          "🚨 SOS Emergency",
+          `Emergency at Wing ${wing} Flat ${flatNo}`,
+          {
+            type: "SOS_ALERT",
+            sosId: sos._id.toString()
+          }
+        );
       }
+    } catch (error) {
+      console.error("Guard Notification Error:", error);
+    }
 
-      // 2️⃣ Notify Admins
-      const admins = await User.find({
-          societyId,
-          roles: "ADMIN"
-      });
+    /* =====================================================
+       📲 Notify Admins
+    ===================================================== */
 
-      if (admins.length > 0) {
-          await sendPushNotificationToMany(
-              getUserTokens(admins),
-              "🚨 SOS Alert",
-              `Resident triggered SOS at Wing ${wing} Flat ${flatNo}`,
-              {
-                  type: "SOS_ALERT",
-                  sosId: sos._id.toString()
-              }
-          );
+    const admins = await User.find({
+      societyId,
+      roles: "ADMIN"
+    });
+
+    try {
+      const adminTokens = admins.flatMap(user =>
+        getUserTokens(user)
+      );
+
+      if (adminTokens.length > 0) {
+        await sendPushNotificationToMany(
+          adminTokens,
+          "🚨 SOS Alert",
+          `SOS triggered at Wing ${wing} Flat ${flatNo}`,
+          {
+            type: "SOS_ALERT",
+            sosId: sos._id.toString()
+          }
+        );
       }
+    } catch (error) {
+      console.error("Admin Notification Error:", error);
+    }
 
-      // 3️⃣ Notify Neighbours (same wing residents)
-      const neighbours = await User.find({
-          societyId,
-          wing,
-          roles: { $in: ["OWNER", "TENANT"] }
-      });
+    /* =====================================================
+       📲 Notify Neighbours (Same Wing)
+    ===================================================== */
 
-      if (neighbours.length > 0) {
-          await sendPushNotificationToMany(
-              getUserTokens(neighbours),
-              "⚠ Emergency Nearby",
-              `Flat ${flatNo} triggered SOS in your wing`,
-              {
-                  type: "NEIGHBOUR_SOS_ALERT",
-                  sosId: sos._id.toString()
-              }
-          );
+    const neighbours = await User.find({
+      societyId,
+      wing,
+      roles: { $in: ["OWNER", "TENANT"] }
+    });
+
+    try {
+      const neighbourTokens = neighbours.flatMap(user =>
+        getUserTokens(user)
+      );
+
+      if (neighbourTokens.length > 0) {
+        await sendPushNotificationToMany(
+          neighbourTokens,
+          "⚠ Emergency Nearby",
+          `SOS triggered in Wing ${wing} Flat ${flatNo}`,
+          {
+            type: "NEIGHBOUR_SOS_ALERT",
+            sosId: sos._id.toString()
+          }
+        );
       }
+    } catch (error) {
+      console.error("Neighbour Notification Error:", error);
+    }
 
     res.status(201).json({
       success: true,
@@ -117,8 +159,11 @@ export const triggerSOS = async (req, res) => {
 };
 
 
-
-// 🚨 Get Active SOS (Guard Dashboard)
+/**
+ * =====================================================
+ * 🚨 Get Active SOS (Guard Dashboard)
+ * =====================================================
+ */
 export const getActiveSOS = async (req, res) => {
   try {
 
@@ -147,14 +192,17 @@ export const getActiveSOS = async (req, res) => {
 };
 
 
-
-// 🛡 Guard Respond
+/**
+ * =====================================================
+ * 🛡 Guard Respond
+ * =====================================================
+ */
 export const respondSOS = async (req, res) => {
   try {
 
     const { id } = req.params;
 
-      const sos = await SOS.findById(id).populate("userId");
+    const sos = await SOS.findById(id).populate("userId");
 
     if (!sos) {
       return res.status(404).json({
@@ -167,44 +215,54 @@ export const respondSOS = async (req, res) => {
 
     await sos.save();
 
-      /* =============================
-         SEND NOTIFICATION
-      ============================= */
+    const guard = await User.findById(req.user.userId);
 
-      const resident = await User.findById(sos.userId._id);
+    /* =====================================================
+       📲 Notify Resident
+    ===================================================== */
 
-      const admins = await User.find({
-          societyId: sos.societyId,
-          roles: "ADMIN"
-      });
+    const resident = await User.findById(sos.userId._id);
 
-      const guard = await User.findById(req.user.userId);
+    if (resident) {
+      const tokens = getUserTokens(resident);
 
-      // Notify resident
-      if (resident) {
-          await sendPushNotificationToMany(
-              getUserTokens([resident]),
-              "👮 Guard Responding",
-              `Guard ${guard.name} is responding to your SOS`,
-              {
-                  type: "SOS_RESPONDING",
-                  sosId: sos._id.toString()
-              }
-          );
+      if (tokens.length > 0) {
+        await sendPushNotificationToMany(
+          tokens,
+          "👮 Guard Responding",
+          `Guard ${guard.name} is responding to your SOS`,
+          {
+            type: "SOS_RESPONDING",
+            sosId: sos._id.toString()
+          }
+        );
       }
+    }
 
-      // Notify admins
-      if (admins.length > 0) {
-          await sendPushNotificationToMany(
-              getUserTokens(admins),
-              "👮 Guard Responding",
-              `Guard ${guard.name} responding to SOS at Wing ${sos.wing} Flat ${sos.flatNo}`,
-              {
-                  type: "SOS_RESPONDING",
-                  sosId: sos._id.toString()
-              }
-          );
-      }
+    /* =====================================================
+       📲 Notify Admins
+    ===================================================== */
+
+    const admins = await User.find({
+      societyId: sos.societyId,
+      roles: "ADMIN"
+    });
+
+    const adminTokens = admins.flatMap(user =>
+      getUserTokens(user)
+    );
+
+    if (adminTokens.length > 0) {
+      await sendPushNotificationToMany(
+        adminTokens,
+        "👮 Guard Responding",
+        `Guard ${guard.name} responding to SOS at Wing ${sos.wing} Flat ${sos.flatNo}`,
+        {
+          type: "SOS_RESPONDING",
+          sosId: sos._id.toString()
+        }
+      );
+    }
 
     res.json({
       success: true,
@@ -221,8 +279,11 @@ export const respondSOS = async (req, res) => {
 };
 
 
-
-// ✅ Resolve SOS
+/**
+ * =====================================================
+ * ✅ Resolve SOS
+ * =====================================================
+ */
 export const resolveSOS = async (req, res) => {
   try {
 
@@ -241,40 +302,44 @@ export const resolveSOS = async (req, res) => {
 
     await sos.save();
 
-    /* =============================
-       SEND NOTIFICATION
-    ============================= */
+    /* =====================================================
+       📲 Notify Resident
+    ===================================================== */
 
     const resident = await User.findById(sos.userId._id);
+
+    if (resident) {
+      const tokens = getUserTokens(resident);
+
+      if (tokens.length > 0) {
+        await sendPushNotificationToMany(
+          tokens,
+          "✅ SOS Resolved",
+          "Your SOS request has been resolved",
+          {
+            type: "SOS_RESOLVED",
+            sosId: sos._id.toString()
+          }
+        );
+      }
+    }
+
+    /* =====================================================
+       📲 Notify Admins
+    ===================================================== */
 
     const admins = await User.find({
       societyId: sos.societyId,
       roles: "ADMIN"
     });
 
-    const neighbours = await User.find({
-      societyId: sos.societyId,
-      wing: sos.wing,
-      roles: { $in: ["OWNER", "TENANT"] }
-    });
+    const adminTokens = admins.flatMap(user =>
+      getUserTokens(user)
+    );
 
-    // Notify resident
-    if (resident) {
+    if (adminTokens.length > 0) {
       await sendPushNotificationToMany(
-        getUserTokens([resident]),
-        "✅ SOS Resolved",
-        `Your SOS request has been resolved`,
-        {
-          type: "SOS_RESOLVED",
-          sosId: sos._id.toString()
-        }
-      );
-    }
-
-    // Notify admins
-    if (admins.length > 0) {
-      await sendPushNotificationToMany(
-        getUserTokens(admins),
+        adminTokens,
         "✅ SOS Resolved",
         `SOS at Wing ${sos.wing} Flat ${sos.flatNo} has been resolved`,
         {
@@ -284,10 +349,23 @@ export const resolveSOS = async (req, res) => {
       );
     }
 
-    // Notify neighbours
-    if (neighbours.length > 0) {
+    /* =====================================================
+       📲 Notify Neighbours
+    ===================================================== */
+
+    const neighbours = await User.find({
+      societyId: sos.societyId,
+      wing: sos.wing,
+      roles: { $in: ["OWNER", "TENANT"] }
+    });
+
+    const neighbourTokens = neighbours.flatMap(user =>
+      getUserTokens(user)
+    );
+
+    if (neighbourTokens.length > 0) {
       await sendPushNotificationToMany(
-        getUserTokens(neighbours),
+        neighbourTokens,
         "✅ Emergency Cleared",
         `SOS from Flat ${sos.flatNo} has been resolved`,
         {
@@ -312,8 +390,11 @@ export const resolveSOS = async (req, res) => {
 };
 
 
-
-// 📊 SOS History (Admin Panel)
+/**
+ * =====================================================
+ * 📊 SOS History (Admin Panel)
+ * =====================================================
+ */
 export const getSOSHistory = async (req, res) => {
   try {
 
