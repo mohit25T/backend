@@ -157,6 +157,7 @@ export const getMySubscription = async (req, res) => {
         message: "No active subscription found",
       });
     }
+    console.log(subscription);
 
     res.status(200).json({ subscription });
 
