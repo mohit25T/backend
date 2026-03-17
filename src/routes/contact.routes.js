@@ -8,18 +8,17 @@ import {
 } from "../controllers/contact.controller.js";
 
 import { requireAuth } from "../middlewares/auth.middleware.js";
-
-import {
-  requireAdmin,
-} from "../middlewares/role.middleware.js";
+import { requireAdmin } from "../middlewares/role.middleware.js";
+import { checkSubscriptionStatus } from "../middlewares/subscription.middleware.js";
 
 const router = express.Router();
+
+router.use(requireAuth, checkSubscriptionStatus); // 🔥 Global subscription check for all contact routes
 
 
 // ➕ Admin creates contact
 router.post(
   "/",
-  requireAuth,
   requireAdmin,
   createContact
 );
@@ -28,7 +27,6 @@ router.post(
 // 📋 Get contacts (Resident + Guard + Admin)
 router.get(
   "/",
-  requireAuth,
   getContacts
 );
 
@@ -36,7 +34,6 @@ router.get(
 // ✏️ Update contact (Admin only)
 router.patch(
   "/:id",
-  requireAuth,
   requireAdmin,
   updateContact
 );
@@ -45,7 +42,6 @@ router.patch(
 // ❌ Delete contact (Admin only)
 router.delete(
   "/:id",
-  requireAuth,
   requireAdmin,
   deleteContact
 );

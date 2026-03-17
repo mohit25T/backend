@@ -10,15 +10,16 @@ import {
 
 import { requireAuth } from "../middlewares/auth.middleware.js";
 import { requireAdmin, requireResident } from "../middlewares/role.middleware.js";
+import { checkSubscriptionStatus } from "../middlewares/subscription.middleware.js";
 
 const router = express.Router();
+router.use(requireAuth, checkSubscriptionStatus); // 🔥 Global subscription check for all maintenance routes
 
 /* =========================================================
    🔹 Admin generates monthly bills
 ========================================================= */
 router.post(
   "/generate",
-  requireAuth,
   requireAdmin,
   generateMonthlyBills
 );
@@ -28,7 +29,6 @@ router.post(
 ========================================================= */
 router.get(
   "/my-bills",
-  requireAuth,
   requireResident,
   getResidentBills
 );
@@ -38,7 +38,6 @@ router.get(
 ========================================================= */
 router.put(
   "/pay/:id",
-  requireAuth,
   requireAdmin,
   markBillAsPaid
 );
@@ -48,7 +47,6 @@ router.put(
 ========================================================= */
 router.post(
   "/pay-full-year",
-  requireAuth,
   requireAdmin,
   payFullYearMaintenance
 );
@@ -58,7 +56,6 @@ router.post(
 ========================================================= */
 router.get(
   "/all",
-  requireAuth,
   requireAdmin,
   getAllSocietyBills
 );
@@ -68,7 +65,6 @@ router.get(
 ========================================================= */
 router.get(
   "/dashboard-stats",
-  requireAuth,
   requireAdmin,
   getMaintenanceDashboardStats
 );

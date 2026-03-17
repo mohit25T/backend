@@ -16,9 +16,11 @@ import {
     requireAdmin,
     requireGuard
 } from "../middlewares/role.middleware.js";
+import { checkSubscriptionStatus } from "../middlewares/subscription.middleware.js";
 
 const router = express.Router();
 
+router.use(requireAuth, checkSubscriptionStatus); // 🔥 Global subscription check for all vehicle routes
 /**
  * =========================
  * 🧍 RESIDENT ROUTES
@@ -27,28 +29,24 @@ const router = express.Router();
 
 router.post(
     "/create",
-    requireAuth,
     requireResident,
     createVehicle
 );
 
 router.get(
     "/my",
-    requireAuth,
     requireResident,
     getMyVehicles
 );
 
 router.put(
     "/update/:id",
-    requireAuth,
     requireResident,
     updateVehicle
 );
 
 router.delete(
     "/delete/:id",
-    requireAuth,
     requireResident,
     deleteVehicle
 );
@@ -62,15 +60,13 @@ router.delete(
 // Guard view vehicle list
 router.get(
     "/list",
-    requireAuth,
-    requireGuard,
+   requireGuard,
     getAllVehicles
 );
 
 // Guard search vehicle by number plate
 router.get(
     "/search",
-    requireAuth,
     requireGuard,
     searchVehicle
 );
@@ -83,8 +79,7 @@ router.get(
 
 router.get(
     "/all",
-    requireAuth,
-    requireAdmin,
+   requireAdmin,
     getAllVehicles
 );
 

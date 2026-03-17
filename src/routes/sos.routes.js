@@ -15,14 +15,16 @@ import {
   requireResident,
   requireGuard
 } from "../middlewares/role.middleware.js";
+import { checkSubscriptionStatus } from "../middlewares/subscription.middleware.js";
 
 const router = express.Router();
+
+router.use(requireAuth, checkSubscriptionStatus); // 🔥 Global subscription check for all SOS routes
 
 
 // 🚨 Resident triggers SOS
 router.post(
   "/trigger",
-  requireAuth,
   requireResident,
   triggerSOS
 );
@@ -31,7 +33,6 @@ router.post(
 // 🛡 Guards see active SOS alerts
 router.get(
   "/active",
-  requireAuth,
   requireGuard,
   getActiveSOS
 );
@@ -40,7 +41,6 @@ router.get(
 // 🛡 Guard responding to SOS
 router.patch(
   "/respond/:id",
-  requireAuth,
   requireGuard,
   respondSOS
 );
@@ -49,7 +49,6 @@ router.patch(
 // ✅ Guard resolves SOS
 router.patch(
   "/resolve/:id",
-  requireAuth,
   requireGuard,
   resolveSOS
 );
@@ -58,7 +57,6 @@ router.patch(
 // 📊 Admin sees SOS history
 router.get(
   "/history",
-  requireAuth,
   requireAdmin,
   getSOSHistory
 );

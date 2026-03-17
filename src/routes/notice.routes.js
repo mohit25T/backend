@@ -6,15 +6,17 @@ import {
     getNotices,
     deleteNotice
 } from "../controllers/notice.controller.js";
+import { checkSubscriptionStatus } from "../middlewares/subscription.middleware.js";
 
 const router = express.Router();
+
+router.use(requireAuth, checkSubscriptionStatus); // 🔥 Global subscription check for all notice routes
 
 /* ================= ADMIN ================= */
 
 // Create Notice (Admin Only - role check inside controller)
 router.post(
     "/",
-    requireAuth,
     requireResident, // ✅ Only residents can create notices, but inside controller we will check if they are admin
     createNotice
 );
@@ -22,7 +24,6 @@ router.post(
 // Delete Notice (Admin Only)
 router.delete(
     "/:id",
-    requireAuth,
     requireAdmin,
     deleteNotice
 );
@@ -32,7 +33,6 @@ router.delete(
 // Get Society Notices (Resident + Guard)
 router.get(
     "/",
-    requireAuth,
     getNotices
 );
 

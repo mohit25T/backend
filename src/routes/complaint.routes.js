@@ -8,15 +8,16 @@ import {
     getAllComplaints,
     updateComplaintStatus
 } from "../controllers/complaint.controller.js";
+import { checkSubscriptionStatus } from "../middlewares/subscription.middleware.js";
 
 const router = express.Router();
+router.use(requireAuth, checkSubscriptionStatus); // 🔥 Global subscription check for all complaint routes
 
 /* ================= RESIDENT ================= */
 
 // Create complaint with image upload
 router.post(
     "/create",
-    requireAuth,
     requireResident,
     upload.array("images", 5), // 🔥 important
     createComplaint
@@ -25,7 +26,6 @@ router.post(
 // Resident → My complaints
 router.get(
     "/my",
-    requireAuth,
     requireResident,
     getMyComplaints
 );
@@ -35,7 +35,6 @@ router.get(
 // Admin → Get all complaints
 router.get(
     "/",
-    requireAuth,
     requireAdmin,
     getAllComplaints
 );
@@ -43,7 +42,6 @@ router.get(
 // Admin → Update complaint
 router.patch(
     "/:id",
-    requireAuth,
     requireAdmin,
     updateComplaintStatus
 );

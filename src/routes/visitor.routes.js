@@ -18,6 +18,7 @@ import {
     requireResident,
 } from "../middlewares/role.middleware.js";
 import { checkGuardShift } from "../middlewares/checkGuardShift.js";
+import { checkSubscriptionStatus } from "../middlewares/subscription.middleware.js";
 
 const router = express.Router();
 
@@ -27,10 +28,11 @@ const router = express.Router();
  * =========================
  */
 
+router.use(requireAuth,checkSubscriptionStatus); // 🔥 Global subscription check for all visitor routes
+
 // Guard creates visitor entry
 router.post(
     "/create",
-    requireAuth,
     requireGuard,
     checkGuardShift,
     upload.any(), // ✅ NEW
@@ -40,7 +42,6 @@ router.post(
 // Guard allows entry
 router.put(
     "/enter/:id",
-    requireAuth,
     requireGuard,
     checkGuardShift,
     markVisitorEntered
@@ -49,7 +50,6 @@ router.put(
 // Guard marks exit
 router.put(
     "/exit/:id",
-    requireAuth,
     requireGuard,
     checkGuardShift,
     markVisitorExited
@@ -65,7 +65,6 @@ router.put(
 // Resident approves visitor
 router.put(
     "/approve/:id",
-    requireAuth,
     requireResident,
     approveVisitor
 );
@@ -73,7 +72,6 @@ router.put(
 // Resident rejects visitor
 router.put(
     "/reject/:id",
-    requireAuth,
     requireResident,
     rejectVisitor
 );
@@ -88,14 +86,12 @@ router.put(
 // Admin / Secretary / Super Admin can view logs
 router.get(
     "/",
-    requireAuth,
     getVisitors
 );
 
 // Get flats list (for guard)
 router.get(
     "/flats",
-    requireAuth,
     requireGuard,
     getSocietyFlats
 );
@@ -103,7 +99,6 @@ router.get(
 // resident
 router.post(
     "/preapprove",
-    requireAuth,
     requireResident,
     createPreApprovedGuest
 );
@@ -111,7 +106,6 @@ router.post(
 // guard
 router.post(
     "/verify-otp",
-    requireAuth,
     requireGuard,
     checkGuardShift,
     verifyGuestOtp
@@ -119,7 +113,6 @@ router.post(
 
 router.put(
     "/otp-enter/:id",
-    requireAuth,
     requireGuard,
     checkGuardShift,
     allowOtpGuestEntry

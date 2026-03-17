@@ -25,6 +25,7 @@ import noticeRoutes from "./routes/notice.routes.js";
 import vehicleRoutes from "./routes/vehicle.routes.js";
 import sosRoutes from "./routes/sos.routes.js";
 import contactRoutes from "./routes/contact.routes.js"; 
+import subscriptions from "./routes/subscription.routes.js";
 
 import {
   autoGenerateMonthlyMaintenance,
@@ -154,6 +155,7 @@ app.use("/api/notices", noticeRoutes);
 app.use("/api/vehicles", vehicleRoutes);
 app.use("/api/sos", sosRoutes);
 app.use("/api/contacts", contactRoutes);
+app.use("/api/subscriptions", subscriptions);
 
 /* =========================================
    🔥 MAINTENANCE CRON JOBS
