@@ -38,7 +38,8 @@ export async function sendPushNotificationToMany(
   tokens = [],
   title,
   body,
-  data = {}
+  data = {},
+  sound = "default" // ✅ ADD THIS
 ) {
   const uniqueTokens = [...new Set(tokens)].filter(Boolean);
 
@@ -47,7 +48,7 @@ export async function sendPushNotificationToMany(
     return null;
   }
 
-  // 🔥 FORCE STRING VALUES (VERY IMPORTANT FOR WEB)
+  // 🔥 FORCE STRING VALUES
   const stringifiedData = {};
   Object.keys(data).forEach((key) => {
     stringifiedData[key] = String(data[key]);
@@ -68,12 +69,16 @@ export async function sendPushNotificationToMany(
 
     android: {
       priority: "high",
+      notification: {
+        sound: sound, // ✅ IMPORTANT
+        channelId: "sos_channel", // must match Flutter
+      },
     },
 
     apns: {
       payload: {
         aps: {
-          sound: "default",
+          sound: sound === "default" ? "default" : `${sound}.mp3`, // ✅ iOS
         },
       },
     },
