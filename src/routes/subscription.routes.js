@@ -33,6 +33,7 @@ router.post(
 // 📊 Get Active Subscription
 router.get(
   "/my",
+  console.log("my API Featched"),
   getMySubscription
 );
 
