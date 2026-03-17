@@ -70,8 +70,8 @@ export async function sendPushNotificationToMany(
     android: {
       priority: "high",
       notification: {
-        sound: "sos_alarm", // ✅ IMPORTANT
         channelId: "sos_channel", // must match Flutter
+        sound: "sos_alarm", // ✅ IMPORTANT
       },
     },
 
