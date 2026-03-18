@@ -178,7 +178,7 @@ export const getSubscriptionPreview = async (req, res) => {
     const { plan = "monthly" } = req.query;
 
     const totalFlats = await Flat.countDocuments({ societyId });
-
+console.log("Total Flats:", totalFlats);
     let pricePerFlat = 20;
 
     if (plan === "yearly") {
