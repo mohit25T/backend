@@ -50,7 +50,7 @@ export const createOrder = async (req, res) => {
     };
 
     const order = await razorpay.orders.create(options);
-
+console.log("Razorpay Order Created:", order);
     res.status(200).json({
       order,
       totalFlats,
