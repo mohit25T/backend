@@ -14,7 +14,7 @@ export const createOrder = async (req, res) => {
 
     // 🔥 Count flats
     const totalFlats = await Flat.countDocuments({ societyId });
-      console.log(totalFlats);
+      console.log(societyId);
     if (totalFlats === 0) {
       return res.status(400).json({
         message: "No flats found for this society",
