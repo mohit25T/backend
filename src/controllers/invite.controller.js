@@ -51,15 +51,32 @@ export const inviteAdmin = async (req, res) => {
     }
 
     /* =====================================================
+       🔥 CREATE OR GET FLAT
+    ===================================================== */
+
+    let flat = await Flat.findOne({
+      societyId,
+      wing: normalizedWing,
+      flatNo: normalizedFlatNo
+    });
+
+    if (!flat) {
+      flat = await Flat.create({
+        societyId,
+        wing: normalizedWing,
+        flatNo: normalizedFlatNo
+      });
+    }
+
+    /* =====================================================
        🚫 PREVENT DUPLICATE FLAT ASSIGNMENT
     ===================================================== */
 
     const flatExists = await Invite.findOne({
       societyId,
-      wing: normalizedWing,
-      flatNo: normalizedFlatNo,
+      flatId: flat._id,
       status: { $in: ["PENDING", "USED"] },
-      roles: { $in: ["ADMIN"] } // ✅ only admin check
+      roles: { $in: ["ADMIN"] }
     });
 
     if (flatExists) {
@@ -101,10 +118,11 @@ export const inviteAdmin = async (req, res) => {
       invite.email = email;
       invite.flatNo = normalizedFlatNo;
       invite.wing = normalizedWing;
+      invite.flatId = flat._id; // ✅ ADDED
       invite.status = "PENDING";
       invite.expiresAt = expiresAt;
       invite.invitedBy = req.user.userId;
-      invite.roles = ["ADMIN"]; // ✅ FIXED
+      invite.roles = ["ADMIN"];
 
       await invite.save();
 
@@ -133,7 +151,8 @@ export const inviteAdmin = async (req, res) => {
       email,
       wing: normalizedWing,
       flatNo: normalizedFlatNo,
-      roles: ["ADMIN"], // ✅ FIXED
+      flatId: flat._id, // ✅ ADDED
+      roles: ["ADMIN"],
       societyId,
       invitedBy: req.user.userId,
       expiresAt
@@ -465,10 +484,6 @@ export const inviteAdminsBulk = async (req, res) => {
   try {
     const { societyId, admins } = req.body;
 
-    /* =====================================================
-       🧾 VALIDATION
-    ===================================================== */
-
     if (!societyId || !Array.isArray(admins) || admins.length === 0) {
       return res.status(400).json({
         message: "societyId and admins array required"
@@ -492,18 +507,11 @@ export const inviteAdminsBulk = async (req, res) => {
     const createdInvites = [];
     const errors = [];
 
-    /* =====================================================
-       🔁 PROCESS ADMINS
-    ===================================================== */
-
     for (const admin of admins) {
       try {
         let { name, mobile, email, wing, flatNo } = admin;
 
-        /* =========================
-           🧹 NORMALIZATION
-        ========================= */
-
+        // 🧹 Normalize
         name = name?.trim();
         mobile = mobile?.trim();
         email = email?.trim();
@@ -511,23 +519,32 @@ export const inviteAdminsBulk = async (req, res) => {
         flatNo = flatNo?.trim();
 
         if (!name || !mobile || !email || !wing || !flatNo) {
-          errors.push({
-            mobile,
-            message: "Missing required fields"
-          });
+          errors.push({ mobile, message: "Missing required fields" });
           continue;
         }
 
         /* =========================
-           🚫 PREVENT DUPLICATE FLAT ASSIGNMENT
+           🔥 CREATE OR GET FLAT
+        ========================= */
+
+        let flat = await Flat.findOne({ societyId, wing, flatNo });
+
+        if (!flat) {
+          flat = await Flat.create({
+            societyId,
+            wing,
+            flatNo
+          });
+        }
+
+        /* =========================
+           🚫 DUPLICATE CHECK
         ========================= */
 
         const flatExists = await Invite.findOne({
           societyId,
-          wing,
-          flatNo,
-          status: { $in: ["PENDING", "USED"] },
-          roles: { $in: ["ADMIN"] } // ✅ only admin
+          flatId: flat._id,
+          status: { $in: ["PENDING", "USED"] }
         });
 
         if (flatExists) {
@@ -538,17 +555,9 @@ export const inviteAdminsBulk = async (req, res) => {
           continue;
         }
 
-        /* =========================
-           ⏳ EXPIRY
-        ========================= */
-
         const expiresAt = new Date(
           Date.now() + INVITE_EXPIRY_HOURS * 60 * 60 * 1000
         );
-
-        /* =========================
-           🔍 EXISTING INVITE
-        ========================= */
 
         let invite = await Invite.findOne({
           mobile,
@@ -564,19 +573,16 @@ export const inviteAdminsBulk = async (req, res) => {
           continue;
         }
 
-        /* =========================
-           🔄 UPDATE OR CREATE
-        ========================= */
-
         if (invite) {
           invite.name = name;
           invite.email = email;
           invite.flatNo = flatNo;
           invite.wing = wing;
+          invite.flatId = flat._id; // ✅ NOW VALID
           invite.status = "PENDING";
           invite.expiresAt = expiresAt;
           invite.invitedBy = req.user.userId;
-          invite.roles = ["ADMIN"]; // ✅ FIXED
+          invite.roles = ["ADMIN"];
 
           await invite.save();
 
@@ -588,17 +594,14 @@ export const inviteAdminsBulk = async (req, res) => {
             email,
             wing,
             flatNo,
-            roles: ["ADMIN"], // ✅ FIXED
+            flatId: flat._id, // ✅ NOW VALID
+            roles: ["ADMIN"],
             societyId,
             invitedBy: req.user.userId,
             expiresAt
           });
 
         }
-
-        /* =========================
-           📝 AUDIT LOG
-        ========================= */
 
         await auditLogger({
           req,
@@ -619,15 +622,6 @@ export const inviteAdminsBulk = async (req, res) => {
       }
     }
 
-    /* =====================================================
-       ✅ RESPONSE
-    ===================================================== */
-
-    console.log(
-      `Bulk invite completed: ${createdInvites.length} created, ${errors.length} errors`
-    );
-    console.log("Errors:", errors);
-
     return res.status(201).json({
       success: true,
       created: createdInvites.length,
@@ -636,12 +630,10 @@ export const inviteAdminsBulk = async (req, res) => {
     });
 
   } catch (error) {
-
     console.error("BULK ADMIN INVITE ERROR:", error);
 
     return res.status(500).json({
       message: "Failed to create bulk admin invites"
     });
-
   }
 };
