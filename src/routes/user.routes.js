@@ -8,7 +8,7 @@ const router = express.Router();
 
 
 router.use(requireAuth); // 🔥 Global subscription check for all user routes
-router.get("/", checkSubscriptionStatus, requireSuperAdmin, getUsersByRole);
+router.get("/", requireSuperAdmin, getUsersByRole);
 router.get("/profile", getMyProfile);
 router.get("/resident-visitor-history", checkSubscriptionStatus, requireResident, getResidentVisitorHistory);
 router.get("/by-society", checkSubscriptionStatus, getUsersBySociety);
