@@ -1,6 +1,6 @@
 import Complaint from "../models/Complaint.js";
 import User from "../models/User.js";
-import Flat from "../models/Flat.js"; // 🔥 NEW
+import Flat from "../models/Flats.js"; // 🔥 NEW
 import {
     sendPushNotificationToMany
 } from "../services/notificationService.js";

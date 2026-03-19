@@ -2,7 +2,7 @@ import User from "../models/User.js";
 import VisitorLog from "../models/VisitorLog.js";
 import { auditLogger } from "../utils/auditLogger.js";
 import Invite from "../models/Invite.js";
-import Flat from "../models/Flat.js";
+import Flat from "../models/Flats.js";
 import Subscription from "../models/Subscription.js";
 
 

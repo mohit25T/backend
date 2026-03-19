@@ -3,7 +3,7 @@ import User from "../models/User.js";
 import Society from "../models/Society.js";
 import GuardLoginLog from "../models/GuardLoginLog.js";
 import EmailChangeRequest from "../models/EmailChangeRequest.js";
-import Flat from "../models/Flat.js";
+import Flat from "../models/Flats.js";
 import Subscription from "../models/Subscription.js";
 import { signToken, signRefreshToken, verifyRefreshToken } from "../utils/jwt.js";
 import { saveOtp, verifyOtp } from "../utils/otpStore.js";

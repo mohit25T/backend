@@ -1,7 +1,7 @@
 import Invite from "../models/Invite.js";
 import Society from "../models/Society.js";
 import User from "../models/User.js";
-import Flat from "../models/Flat.js"; // 🔥 ADDED
+import Flat from "../models/Flats.js"; // 🔥 ADDED
 import { auditLogger } from "../utils/auditLogger.js";
 
 const INVITE_EXPIRY_HOURS = 24;

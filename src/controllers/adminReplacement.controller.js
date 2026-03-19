@@ -1,5 +1,5 @@
 import User from "../models/User.js";
-import Flat from "../models/Flat.js";
+import Flat from "../models/Flats.js";
 import Subscription from "../models/Subscription.js";
 import { auditLogger } from "../utils/auditLogger.js";
 
