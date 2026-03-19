@@ -13,7 +13,9 @@ const societySchema = new mongoose.Schema(
       trim: true
     },
 
-    /* ✅ ADD THIS */
+    /* =====================================================
+       🏢 WINGS
+    ===================================================== */
     wings: [
       {
         type: String,
@@ -21,23 +23,43 @@ const societySchema = new mongoose.Schema(
       }
     ],
 
+    /* =====================================================
+       🔥 NEW: TOTAL FLATS (CRITICAL FOR BILLING)
+    ===================================================== */
+    totalFlats: {
+      type: Number,
+      required: true,
+      min: 1,
+    },
+
+    /* =====================================================
+       🔒 OPTIONAL: LOCK AFTER SUBSCRIPTION
+    ===================================================== */
+    isFlatLimitLocked: {
+      type: Boolean,
+      default: false,
+    },
+
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: true
+      required: true,
+      index: true
     },
 
     status: {
       type: String,
       enum: ["ACTIVE", "BLOCKED"],
-      default: "ACTIVE"
+      default: "ACTIVE",
+      index: true
     }
   },
   { timestamps: true }
 );
 
+
 /* =====================================================
-   🔥 PRODUCTION INDEXES
+   🔥 INDEXES
 ===================================================== */
 
 societySchema.index({ status: 1 });
@@ -45,5 +67,6 @@ societySchema.index({ createdBy: 1 });
 societySchema.index({ city: 1 });
 societySchema.index({ name: 1 });
 societySchema.index({ city: 1, status: 1 });
+
 
 export default mongoose.model("Society", societySchema);

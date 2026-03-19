@@ -1,9 +1,25 @@
 import Invite from "../models/Invite.js";
 import Society from "../models/Society.js";
 import User from "../models/User.js";
+import Flat from "../models/Flat.js"; // 🔥 ADDED
 import { auditLogger } from "../utils/auditLogger.js";
 
 const INVITE_EXPIRY_HOURS = 24;
+
+/* 🔥 HELPER: Validate Flat + Subscription */
+const validateFlatAccess = async (societyId, wing, flatNo) => {
+  const flat = await Flat.findOne({ societyId, wing, flatNo });
+
+  if (!flat) {
+    return { error: "Flat not found" };
+  }
+
+  if (!flat.isSubscribed) {
+    return { error: "Flat not included in subscription. Please upgrade plan." };
+  }
+
+  return { flat };
+};
 
 /**
  * CREATE ADMIN INVITE
@@ -24,9 +40,10 @@ export const inviteAdmin = async (req, res) => {
       return res.status(404).json({ message: "Society not found" });
     }
 
-    /* ==============================
-       🔒 Prevent same flat reassignment
-    ============================== */
+    // 🔥 ADDED VALIDATION
+    const { flat, error } = await validateFlatAccess(societyId, wing, flatNo);
+    if (error) return res.status(403).json({ message: error });
+
     const flatExists = await Invite.findOne({
       societyId,
       wing,
@@ -61,6 +78,7 @@ export const inviteAdmin = async (req, res) => {
       invite.email = email;
       invite.flatNo = flatNo;
       invite.wing = wing;
+      invite.flatId = flat._id; // 🔥 ADDED
       invite.status = "PENDING";
       invite.expiresAt = expiresAt;
       invite.invitedBy = req.user.userId;
@@ -89,6 +107,7 @@ export const inviteAdmin = async (req, res) => {
       email,
       wing,
       flatNo,
+      flatId: flat._id, // 🔥 ADDED
       roles: ["ADMIN", "OWNER"],
       societyId,
       invitedBy: req.user.userId,
@@ -211,6 +230,14 @@ export const inviteResident = async (req, res) => {
       });
     }
 
+    // 🔥 ADDED VALIDATION
+    const { flat, error } = await validateFlatAccess(
+      inviter.societyId,
+      wing,
+      flatNo
+    );
+    if (error) return res.status(403).json({ message: error });
+
     const isAdminInvitingOwner =
       inviter.roles.includes("ADMIN") && userRole === "OWNER";
 
@@ -274,6 +301,7 @@ export const inviteResident = async (req, res) => {
       invite.email = email;
       invite.flatNo = flatNo;
       invite.wing = wing;
+      invite.flatId = flat._id; // 🔥 ADDED
       invite.status = "PENDING";
       invite.expiresAt = expiresAt;
       invite.invitedBy = inviter._id;
@@ -286,6 +314,7 @@ export const inviteResident = async (req, res) => {
         email,
         wing,
         flatNo,
+        flatId: flat._id, // 🔥 ADDED
         roles: [userRole],
         societyId: inviter.societyId,
         invitedBy: inviter._id,
@@ -317,7 +346,7 @@ export const inviteResident = async (req, res) => {
 };
 
 /**
- * INVITE GUARD
+ * INVITE GUARD (unchanged)
  */
 export const inviteGuard = async (req, res) => {
   try {
@@ -398,142 +427,6 @@ export const inviteGuard = async (req, res) => {
     console.error("INVITE GUARD ERROR:", err);
     return res.status(500).json({
       message: "Failed to invite guard"
-    });
-  }
-};
-
-/**
- * BULK ADMIN INVITE (NEW)
- */
-export const inviteAdminsBulk = async (req, res) => {
-  try {
-    const { societyId, admins } = req.body;
-
-    if (!societyId || !Array.isArray(admins) || admins.length === 0) {
-      return res.status(400).json({
-        message: "societyId and admins array required"
-      });
-    }
-
-    const society = await Society.findById(societyId);
-
-    if (!society) {
-      return res.status(404).json({
-        message: "Society not found"
-      });
-    }
-
-    const createdInvites = [];
-    const errors = [];
-
-    for (const admin of admins) {
-      try {
-
-        const { name, mobile, email, wing, flatNo } = admin;
-
-        if (!name || !mobile || !email || !wing || !flatNo) {
-          errors.push({
-            mobile,
-            message: "Missing required fields"
-          });
-          continue;
-        }
-
-        const flatExists = await Invite.findOne({
-          societyId,
-          wing,
-          flatNo,
-          status: { $in: ["PENDING", "USED"] }
-        });
-
-        if (flatExists) {
-          errors.push({
-            mobile,
-            message: `Flat ${wing}-${flatNo} already assigned`
-          });
-          continue;
-        }
-
-        const expiresAt = new Date(
-          Date.now() + INVITE_EXPIRY_HOURS * 60 * 60 * 1000
-        );
-
-        let invite = await Invite.findOne({
-          mobile,
-          societyId,
-          roles: { $in: ["ADMIN"] }
-        });
-
-        if (invite && invite.status === "USED") {
-          errors.push({
-            mobile,
-            message: "Admin already onboarded"
-          });
-          continue;
-        }
-
-        if (invite) {
-          invite.name = name;
-          invite.email = email;
-          invite.flatNo = flatNo;
-          invite.wing = wing;
-          invite.status = "PENDING";
-          invite.expiresAt = expiresAt;
-          invite.invitedBy = req.user.userId;
-          invite.roles = ["ADMIN", "OWNER"];
-
-          await invite.save();
-
-        } else {
-
-          invite = await Invite.create({
-            name,
-            mobile,
-            email,
-            wing,
-            flatNo,
-            roles: ["ADMIN", "OWNER"],
-            societyId,
-            invitedBy: req.user.userId,
-            expiresAt
-          });
-
-        }
-
-        await auditLogger({
-          req,
-          action: "CREATE_ADMIN_INVITE",
-          targetType: "INVITE",
-          targetId: invite._id,
-          societyId,
-          description: `Admin invited | Wing ${wing} Flat ${flatNo}`
-        });
-
-        createdInvites.push(invite);
-
-      } catch (err) {
-
-        errors.push({
-          mobile: admin.mobile,
-          message: err.message
-        });
-
-      }
-    }
-
-    return res.status(201).json({
-      success: true,
-      created: createdInvites.length,
-      invites: createdInvites,
-      errors
-    });
-
-  } catch (error) {
-
-    console.error("BULK ADMIN INVITE ERROR:", error);
-
-    return res.status(500).json({
-      message: "Failed to create bulk admin invites"
     });
   }
 };

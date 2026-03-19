@@ -16,6 +16,18 @@ const sosSchema = new mongoose.Schema(
       index: true
     },
 
+    /* =====================================================
+       🏢 FLAT LINK (🔥 IMPORTANT CHANGE)
+    ===================================================== */
+
+    flatId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Flat",
+      required: true,
+      index: true
+    },
+
+    // Optional (for UI display)
     wing: {
       type: String,
       required: true,
@@ -60,13 +72,13 @@ const sosSchema = new mongoose.Schema(
 // Compound index for fast guard dashboard queries
 sosSchema.index({ societyId: 1, status: 1 });
 
-
 // Index for checking active SOS per user
 sosSchema.index({ userId: 1, status: 1 });
-
 
 // Index for admin history filtering
 sosSchema.index({ societyId: 1, createdAt: -1 });
 
+// 🔥 Flat-based lookup (NEW)
+sosSchema.index({ societyId: 1, flatId: 1 });
 
 export default mongoose.model("SOS", sosSchema);

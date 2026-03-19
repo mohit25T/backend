@@ -1,4 +1,6 @@
 import User from "../models/User.js";
+import Flat from "../models/Flat.js";
+import Subscription from "../models/Subscription.js";
 import { auditLogger } from "../utils/auditLogger.js";
 
 /**
@@ -8,8 +10,7 @@ import { auditLogger } from "../utils/auditLogger.js";
  * Logic:
  * - Admin must belong to same society
  * - New admin must be OWNER or TENANT
- * - Flat number must exist
- * - Wing must exist
+ * - Flat must be subscribed
  */
 export const replaceAdmin = async (req, res) => {
   try {
@@ -34,7 +35,7 @@ export const replaceAdmin = async (req, res) => {
       });
     }
 
-    // 2️⃣ Find eligible replacement (OWNER or TENANT)
+    // 2️⃣ Find eligible replacement
     const newAdmin = await User.findOne({
       mobile,
       societyId: oldAdmin.societyId,
@@ -48,15 +49,37 @@ export const replaceAdmin = async (req, res) => {
       });
     }
 
-    if (!newAdmin.flatNo) {
+    if (!newAdmin.flatId) {
       return res.status(400).json({
-        message: "Flat number not found for selected user"
+        message: "Flat not assigned to selected user"
       });
     }
 
-    if (!newAdmin.wing) {
+    // 🔥 Get Flat
+    const flat = await Flat.findById(newAdmin.flatId);
+
+    if (!flat) {
       return res.status(400).json({
-        message: "Wing not assigned to selected user"
+        message: "Flat not found"
+      });
+    }
+
+    // 🔥 Get Active Subscription
+    const subscription = await Subscription.findOne({
+      societyId: oldAdmin.societyId,
+      status: "active"
+    });
+
+    if (!subscription) {
+      return res.status(400).json({
+        message: "No active subscription found"
+      });
+    }
+
+    // 🔒 MAIN CHECK (IMPORTANT)
+    if (!flat.isSubscribed) {
+      return res.status(403).json({
+        message: "This flat is not included in your subscription. Cannot assign admin role."
       });
     }
 

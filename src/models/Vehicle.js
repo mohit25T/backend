@@ -31,13 +31,22 @@ const vehicleSchema = new mongoose.Schema(
     residentId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: true
+      required: true,
+      index: true
     },
 
     /* =====================================================
-       🏢 WING + FLAT INFO
+       🏢 FLAT LINK (🔥 IMPORTANT CHANGE)
     ===================================================== */
 
+    flatId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Flat",
+      required: true,
+      index: true
+    },
+
+    // Optional (for UI display)
     wing: {
       type: String,
       required: true,
@@ -53,7 +62,8 @@ const vehicleSchema = new mongoose.Schema(
     societyId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Society",
-      required: true
+      required: true,
+      index: true
     },
 
     /* =====================================================
@@ -63,7 +73,8 @@ const vehicleSchema = new mongoose.Schema(
     status: {
       type: String,
       enum: ["ACTIVE", "BLOCKED", "PENDING_APPROVAL"],
-      default: "ACTIVE"
+      default: "ACTIVE",
+      index: true
     },
 
     /* =====================================================
@@ -84,8 +95,9 @@ const vehicleSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+
 /* =====================================================
-   🔥 PRODUCTION OPTIMIZED INDEXES
+   🔥 INDEXES
 ===================================================== */
 
 // Search vehicle inside society
@@ -94,8 +106,8 @@ vehicleSchema.index({ societyId: 1, vehicleNumber: 1 });
 // Resident vehicle lookup
 vehicleSchema.index({ residentId: 1 });
 
-// Vehicles per flat
-vehicleSchema.index({ societyId: 1, wing: 1, flatNo: 1 });
+// 🔥 Flat-based lookup (NEW)
+vehicleSchema.index({ societyId: 1, flatId: 1 });
 
 // Admin vehicle list
 vehicleSchema.index({ societyId: 1, status: 1 });

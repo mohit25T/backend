@@ -12,7 +12,7 @@ export const createOrder = async (req, res) => {
     const societyId = req.user.societyId;
     const { plan = "monthly" } = req.body;
 
-    // 🔥 Count flats
+    // 🔥 Count ALL flats (before payment)
     const totalFlats = await Flat.countDocuments({ societyId });
 
     if (totalFlats === 0) {
@@ -50,7 +50,9 @@ export const createOrder = async (req, res) => {
     };
 
     const order = await razorpay.orders.create(options);
-console.log("Razorpay Order Created:", order);
+
+    console.log("Razorpay Order Created:", order);
+
     res.status(200).json({
       order,
       totalFlats,
@@ -63,7 +65,6 @@ console.log("Razorpay Order Created:", order);
     res.status(500).json({ message: "Server Error" });
   }
 };
-
 
 
 // ===============================
@@ -116,6 +117,12 @@ export const verifyPayment = async (req, res) => {
       { status: "expired" }
     );
 
+    // 🔥 NEW: Mark ALL flats as subscribed
+    await Flat.updateMany(
+      { societyId },
+      { isSubscribed: true }
+    );
+
     // ✅ Create new subscription
     const subscription = await Subscription.create({
       societyId,
@@ -139,7 +146,6 @@ export const verifyPayment = async (req, res) => {
 };
 
 
-
 // ===============================
 // 📊 GET CURRENT SUBSCRIPTION
 // ===============================
@@ -157,6 +163,7 @@ export const getMySubscription = async (req, res) => {
         message: "No active subscription found",
       });
     }
+
     console.log(subscription);
 
     res.status(200).json({ subscription });
@@ -168,7 +175,6 @@ export const getMySubscription = async (req, res) => {
 };
 
 
-
 // ===============================
 // 🔍 PREVIEW SUBSCRIPTION
 // ===============================
@@ -177,8 +183,11 @@ export const getSubscriptionPreview = async (req, res) => {
     const societyId = req.user.societyId;
     const { plan = "monthly" } = req.query;
 
+    // 🔥 Count ALL flats (before payment preview)
     const totalFlats = await Flat.countDocuments({ societyId });
-console.log("Total Flats:", totalFlats);
+
+    console.log("Total Flats:", totalFlats);
+
     let pricePerFlat = 20;
 
     if (plan === "yearly") {

@@ -32,7 +32,8 @@ const userSchema = new mongoose.Schema(
 
     societyId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Society"
+      ref: "Society",
+      index: true
     },
 
     invitedBy: {
@@ -43,7 +44,8 @@ const userSchema = new mongoose.Schema(
     status: {
       type: String,
       enum: ["ACTIVE", "BLOCKED", "PENDING_VERIFICATION", "INACTIVE"],
-      default: "ACTIVE"
+      default: "ACTIVE",
+      index: true
     },
 
     profileImage: {
@@ -57,29 +59,30 @@ const userSchema = new mongoose.Schema(
     },
 
     /* =====================================================
-       🏢 WING SUPPORT
+       🏢 FLAT LINK (🔥 IMPORTANT CHANGE)
     ===================================================== */
 
+    flatId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Flat",
+      required: function () {
+        return (
+          this.roles?.includes("OWNER") ||
+          this.roles?.includes("TENANT")
+        );
+      },
+      index: true
+    },
+
+    // Optional (for UI display only)
     wing: {
       type: String,
       uppercase: true,
-      trim: true,
-      required: function () {
-        return (
-          this.roles?.includes("OWNER") ||
-          this.roles?.includes("TENANT")
-        );
-      }
+      trim: true
     },
 
     flatNo: {
-      type: String,
-      required: function () {
-        return (
-          this.roles?.includes("OWNER") ||
-          this.roles?.includes("TENANT")
-        );
-      }
+      type: String
     },
 
     fcmTokens: {
@@ -144,13 +147,14 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+
 /* =====================================================
-   🔥 PRODUCTION OPTIMIZED INDEXES
+   🔥 INDEXES
 ===================================================== */
 
 userSchema.index({ societyId: 1 });
 userSchema.index({ societyId: 1, roles: 1 });
-userSchema.index({ societyId: 1, flatNo: 1 });
+userSchema.index({ societyId: 1, flatId: 1 }); // 🔥 NEW
 userSchema.index({ invitedBy: 1 });
 userSchema.index({ societyId: 1, status: 1 });
 userSchema.index({ roles: 1 });
@@ -159,7 +163,7 @@ userSchema.index({ societyId: 1, fullYearPaidYears: 1 });
 // Guard shift lookup
 userSchema.index({ societyId: 1, shiftType: 1 });
 
-// 🔥 Wing based queries (very important)
+// Optional display queries
 userSchema.index({ societyId: 1, wing: 1 });
 userSchema.index({ societyId: 1, wing: 1, flatNo: 1 });
 

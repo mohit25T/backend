@@ -13,19 +13,26 @@ const normalizeFlatNo = (flatNo) =>
  * ==========================================
  */
 export const getUsersByRole = async (req, res) => {
-  const { role } = req.query;
+  try {
+    const { role } = req.query;
 
-  if (!role) {
-    return res.status(400).json({ message: "Role is required" });
+    if (!role) {
+      return res.status(400).json({ message: "Role is required" });
+    }
+
+    const users = await User.find({ roles: { $in: [role] } })
+      .populate("societyId", "name city _id")
+      .select("name email mobile roles status societyId wing createdAt")
+      .sort({ createdAt: -1 });
+
+    res.json(users);
+
+  } catch (error) {
+    console.error("GET USERS BY ROLE ERROR:", error);
+    res.status(500).json({ message: "Server error" });
   }
-
-  const users = await User.find({ roles: { $in: [role] } })
-    .populate("societyId", "name city _id")
-    .select("name email mobile roles status societyId wing createdAt")
-    .sort({ createdAt: -1 });
-
-  res.json(users);
 };
+
 
 /**
  * ==========================
@@ -59,7 +66,7 @@ export const getMyProfile = async (req, res) => {
         email: user.email,
         mobile: user.mobile,
         roles: user.roles,
-        wing: user.wing, // ✅ ADDED
+        wing: user.wing,
         flatNo: user.flatNo,
         status: user.status,
         society: user.societyId,
@@ -78,6 +85,7 @@ export const getMyProfile = async (req, res) => {
   }
 };
 
+
 /**
  * =================================
  * GET OWNER / TENANT VISITOR HISTORY
@@ -94,13 +102,6 @@ export const getResidentVisitorHistory = async (req, res) => {
       return res.status(403).json({
         success: false,
         message: "Access denied. Flat members only."
-      });
-    }
-
-    if (!userId || !societyId) {
-      return res.status(403).json({
-        success: false,
-        message: "User not linked to society"
       });
     }
 
@@ -122,7 +123,7 @@ export const getResidentVisitorHistory = async (req, res) => {
     const filter = {
       societyId,
       flatNo,
-      wing: user.wing // ✅ ADDED
+      wing: user.wing
     };
 
     const activeTenant = await User.findOne({
@@ -169,6 +170,7 @@ export const getResidentVisitorHistory = async (req, res) => {
   }
 };
 
+
 /**
  * =================================
  * GET USERS BY SOCIETY
@@ -177,44 +179,13 @@ export const getResidentVisitorHistory = async (req, res) => {
 export const getUsersBySociety = async (req, res) => {
   try {
     const societyId = req.user.societyId;
-    const { role, wing, flatNo } = req.query; // ✅ include flatNo
-
-    if (!societyId) {
-      return res.status(400).json({
-        success: false,
-        message: "societyId is required"
-      });
-    }
+    const { role, wing, flatNo } = req.query;
 
     const filter = { societyId };
 
-    /* ==========================
-       FILTER BY ROLE
-    ========================== */
-
-    if (role) {
-      filter.roles = { $in: [role] };
-    }
-
-    /* ==========================
-       FILTER BY WING
-    ========================== */
-
-    if (wing) {
-      filter.wing = wing.toUpperCase();
-    }
-
-    /* ==========================
-       FILTER BY FLAT
-    ========================== */
-
-    if (flatNo) {
-      filter.flatNo = flatNo.trim();
-    }
-
-    /* ==========================
-       FETCH USERS
-    ========================== */
+    if (role) filter.roles = { $in: [role] };
+    if (wing) filter.wing = wing.toUpperCase();
+    if (flatNo) filter.flatNo = flatNo.trim();
 
     const users = await User.find(filter)
       .populate("societyId", "name city _id")
@@ -223,8 +194,6 @@ export const getUsersBySociety = async (req, res) => {
       )
       .sort({ createdAt: -1 })
       .lean();
-
-    console.log("USERS BY SOCIETY:", users);
 
     return res.status(200).json({
       success: true,
@@ -239,6 +208,7 @@ export const getUsersBySociety = async (req, res) => {
     });
   }
 };
+
 
 /**
  * =================================
@@ -282,6 +252,12 @@ export const uploadProfilePhoto = async (req, res) => {
   }
 };
 
+
+/**
+ * =================================
+ * GET TENANT DETAILS (OWNER)
+ * =================================
+ */
 export const getResidentTenantDetails = async (req, res) => {
   try {
     const owner = await User.findById(req.user.userId);
@@ -295,7 +271,7 @@ export const getResidentTenantDetails = async (req, res) => {
     const activeTenant = await User.findOne({
       societyId: owner.societyId,
       flatNo: owner.flatNo,
-      wing: owner.wing, // ✅ ADDED
+      wing: owner.wing,
       roles: { $in: ["TENANT"] },
       status: "ACTIVE"
     });
@@ -311,7 +287,7 @@ export const getResidentTenantDetails = async (req, res) => {
     const pendingTenant = await Invite.findOne({
       societyId: owner.societyId,
       flatNo: owner.flatNo,
-      wing: owner.wing, // ✅ ADDED
+      wing: owner.wing,
       roles: { $in: ["TENANT"] },
       status: "PENDING"
     });
@@ -336,6 +312,12 @@ export const getResidentTenantDetails = async (req, res) => {
   }
 };
 
+
+/**
+ * =================================
+ * REMOVE TENANT
+ * =================================
+ */
 export const removeTenant = async (req, res) => {
   try {
     const owner = await User.findById(req.user.userId);
@@ -349,7 +331,7 @@ export const removeTenant = async (req, res) => {
     const tenant = await User.findOne({
       societyId: owner.societyId,
       flatNo: owner.flatNo,
-      wing: owner.wing, // ✅ ADDED
+      wing: owner.wing,
       roles: { $in: ["TENANT"] },
       status: "ACTIVE"
     });
@@ -371,13 +353,19 @@ export const removeTenant = async (req, res) => {
     });
 
   } catch (err) {
-    console.error(err);
+    console.error("REMOVE TENANT ERROR:", err);
     return res.status(500).json({
       message: "Failed to remove tenant"
     });
   }
 };
 
+
+/**
+ * =================================
+ * GUARD ACTIVITY
+ * =================================
+ */
 export const getGuardActivity = async (req, res) => {
   try {
 
@@ -411,7 +399,7 @@ export const getGuardActivity = async (req, res) => {
       return {
         guardId: guard._id,
         name: guard.name,
-        wing: guard.wing, // ✅ ADDED
+        wing: guard.wing,
         shiftStartTime: guard.shiftStartTime,
         shiftEndTime: guard.shiftEndTime,
         shiftType: guard.shiftType,

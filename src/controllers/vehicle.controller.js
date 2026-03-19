@@ -18,109 +18,135 @@ const normalizeVehicleNumber = (vehicleNo) =>
 export const createVehicle = async (req, res) => {
     try {
 
-        const {
-            vehicleNumber,
-            vehicleType,
-            parkingSlot
-        } = req.body;
+      const {
+          vehicleNumber,
+          vehicleType,
+          parkingSlot
+      } = req.body;
 
-        const societyId = req.user.societyId;
-        const residentId = req.user.userId;
+      const societyId = req.user.societyId;
+      const residentId = req.user.userId;
 
-        if (!vehicleNumber || !vehicleType) {
-            return res.status(400).json({
-                message: "Vehicle number and type are required"
-            });
-        }
+      if (!vehicleNumber || !vehicleType) {
+          return res.status(400).json({
+              message: "Vehicle number and type are required"
+          });
+      }
 
-        const normalizedVehicleNumber =
-            normalizeVehicleNumber(vehicleNumber);
+      const normalizedVehicleNumber =
+          normalizeVehicleNumber(vehicleNumber);
 
-        /* =====================================================
-           🔍 STEP 1: Get Resident Info
-        ===================================================== */
+      /* =====================================================
+         🔍 STEP 1: Get Resident Info
+      ===================================================== */
 
-        const resident = await User.findById(residentId);
+      const resident = await User.findById(residentId);
 
-        if (!resident) {
-            return res.status(404).json({
-                message: "Resident not found"
-            });
-        }
+      if (!resident) {
+          return res.status(404).json({
+              message: "Resident not found"
+          });
+      }
 
-        const flatNo = resident.flatNo;
-        const wing = resident.wing; // ✅ ADDED
+      if (!resident.flatNo || !resident.wing) {
+          return res.status(400).json({
+              message: "User flat or wing not assigned"
+          });
+      }
 
-        /* =====================================================
-           🔍 STEP 2: Get Society Vehicle Policy
-        ===================================================== */
+      const flatNo = resident.flatNo;
+      const wing = resident.wing;
 
-        const settings = await SocietySettings.findOne({
-            societyId
-        });
+      /* =====================================================
+         🔍 STEP 2: Get Society Vehicle Policy
+      ===================================================== */
 
-        const maxVehicles =
-            settings?.vehicleSettings?.maxVehiclesPerFlat || 2;
+      const settings = await SocietySettings.findOne({
+          societyId
+      });
 
-        /* =====================================================
-           🚫 STEP 3: Validate Vehicle Limit
-        ===================================================== */
+      const maxVehicles =
+          settings?.vehicleSettings?.maxVehiclesPerFlat || 2;
 
-        const existingVehicles = await Vehicle.countDocuments({
-            societyId,
-            flatNo,
-            wing // ✅ ADDED
-        });
+      const requireParking =
+          settings?.vehicleSettings?.requireParkingSlot || false;
 
-        if (existingVehicles >= maxVehicles) {
-            return res.status(403).json({
-                message: `Maximum ${maxVehicles} vehicles allowed for this flat`
-            });
-        }
+      const requireApproval =
+          settings?.vehicleSettings?.requireAdminApproval || false;
 
-        /* =====================================================
-           🚫 STEP 4: Prevent Duplicate Vehicle
-        ===================================================== */
+    /* =====================================================
+       🚫 STEP 3: Validate Parking Slot (if required)
+    ===================================================== */
 
-        const duplicateVehicle = await Vehicle.findOne({
-            societyId,
-            vehicleNumber: normalizedVehicleNumber
-        });
+      if (requireParking && !parkingSlot) {
+          return res.status(400).json({
+              message: "Parking slot is required as per society rules"
+          });
+      }
 
-        if (duplicateVehicle) {
-            return res.status(409).json({
-                message: "Vehicle already registered in this society"
-            });
-        }
+      /* =====================================================
+         🚫 STEP 4: Validate Vehicle Limit
+      ===================================================== */
 
-        /* =====================================================
-           📝 STEP 5: Create Vehicle
-        ===================================================== */
+      const existingVehicles = await Vehicle.countDocuments({
+          societyId,
+          flatNo,
+        wing
+    });
 
-        const vehicle = await Vehicle.create({
-            societyId,
-            residentId,
-            flatNo,
-            wing, // ✅ ADDED
-            vehicleNumber: normalizedVehicleNumber,
-            vehicleType,
-            parkingSlot
-        });
+      if (existingVehicles >= maxVehicles) {
+          return res.status(403).json({
+              message: `Maximum ${maxVehicles} vehicles allowed for this flat`
+          });
+      }
 
-        return res.status(201).json({
-            success: true,
-            message: "Vehicle added successfully",
-            vehicle
-        });
+    /* =====================================================
+       🚫 STEP 5: Prevent Duplicate Vehicle
+    ===================================================== */
 
-    } catch (error) {
-        console.error("CREATE VEHICLE ERROR:", error);
+      const duplicateVehicle = await Vehicle.findOne({
+          societyId,
+          vehicleNumber: normalizedVehicleNumber
+      });
 
-        return res.status(500).json({
-            message: error.message || "Server error"
-        });
-    }
+      if (duplicateVehicle) {
+          return res.status(409).json({
+              message: "Vehicle already registered in this society"
+          });
+      }
+
+    /* =====================================================
+       📝 STEP 6: Create Vehicle
+    ===================================================== */
+
+      const vehicle = await Vehicle.create({
+          societyId,
+          residentId,
+          flatNo,
+        wing,
+        vehicleNumber: normalizedVehicleNumber,
+        vehicleType,
+        parkingSlot: parkingSlot || null,
+        status: requireApproval ? "PENDING_APPROVAL" : "ACTIVE"
+    });
+
+      return res.status(201).json({
+          success: true,
+        message: requireApproval
+            ? "Vehicle submitted for approval"
+            : "Vehicle added successfully",
+        vehicle
+    });
+
+  } catch (error) {
+      console.error("CREATE VEHICLE ERROR:", error);
+
+      return res.status(500).json({
+          message: error.message || "Server error"
+      });
+  }
 };
+
 
 /**
  * =====================================================
@@ -130,27 +156,28 @@ export const createVehicle = async (req, res) => {
 export const getMyVehicles = async (req, res) => {
     try {
 
-        const residentId = req.user.userId;
-        const societyId = req.user.societyId;
+      const residentId = req.user.userId;
+      const societyId = req.user.societyId;
 
-        const vehicles = await Vehicle.find({
-            residentId,
-            societyId
-        }).sort({ createdAt: -1 });
+      const vehicles = await Vehicle.find({
+          residentId,
+          societyId
+      }).sort({ createdAt: -1 });
 
-        return res.json({
-            success: true,
-            vehicles
-        });
+      return res.json({
+          success: true,
+          vehicles
+      });
 
-    } catch (error) {
-        console.error("GET MY VEHICLES ERROR:", error);
+  } catch (error) {
+      console.error("GET MY VEHICLES ERROR:", error);
 
-        return res.status(500).json({
-            message: error.message || "Server error"
-        });
-    }
+      return res.status(500).json({
+          message: error.message || "Server error"
+      });
+  }
 };
+
 
 /**
  * =====================================================
@@ -160,38 +187,39 @@ export const getMyVehicles = async (req, res) => {
 export const deleteVehicle = async (req, res) => {
     try {
 
-        const vehicleId = req.params.id;
-        const residentId = req.user.userId;
+      const vehicleId = req.params.id;
+      const residentId = req.user.userId;
 
-        const vehicle = await Vehicle.findById(vehicleId);
+      const vehicle = await Vehicle.findById(vehicleId);
 
-        if (!vehicle) {
-            return res.status(404).json({
-                message: "Vehicle not found"
-            });
-        }
+      if (!vehicle) {
+          return res.status(404).json({
+              message: "Vehicle not found"
+          });
+      }
 
-        if (vehicle.residentId.toString() !== residentId) {
-            return res.status(403).json({
-                message: "You are not allowed to delete this vehicle"
-            });
-        }
+      if (vehicle.residentId.toString() !== residentId) {
+          return res.status(403).json({
+              message: "You are not allowed to delete this vehicle"
+          });
+      }
 
-        await Vehicle.findByIdAndDelete(vehicleId);
+      await Vehicle.findByIdAndDelete(vehicleId);
 
-        return res.json({
-            success: true,
-            message: "Vehicle removed successfully"
-        });
+      return res.json({
+          success: true,
+          message: "Vehicle removed successfully"
+      });
 
-    } catch (error) {
-        console.error("DELETE VEHICLE ERROR:", error);
+  } catch (error) {
+      console.error("DELETE VEHICLE ERROR:", error);
 
-        return res.status(500).json({
-            message: error.message || "Server error"
-        });
-    }
+      return res.status(500).json({
+          message: error.message || "Server error"
+      });
+  }
 };
+
 
 /**
  * =====================================================
@@ -201,38 +229,39 @@ export const deleteVehicle = async (req, res) => {
 export const getAllVehicles = async (req, res) => {
     try {
 
-        const societyId = req.user.societyId;
+      const societyId = req.user.societyId;
 
-        const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 20;
-        const skip = (page - 1) * limit;
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 20;
+      const skip = (page - 1) * limit;
 
-        const vehicles = await Vehicle.find({ societyId })
-            .populate("residentId", "name flatNo wing mobile") // ✅ ADDED wing
-            .skip(skip)
-            .limit(limit)
-            .sort({ createdAt: -1 });
+      const vehicles = await Vehicle.find({ societyId })
+        .populate("residentId", "name flatNo wing mobile")
+        .skip(skip)
+        .limit(limit)
+        .sort({ createdAt: -1 });
 
-        const totalVehicles = await Vehicle.countDocuments({
-            societyId
-        });
+      const totalVehicles = await Vehicle.countDocuments({
+          societyId
+      });
 
-        return res.json({
-            success: true,
-            page,
-            totalPages: Math.ceil(totalVehicles / limit),
-            totalVehicles,
-            vehicles
-        });
+      return res.json({
+          success: true,
+          page,
+          totalPages: Math.ceil(totalVehicles / limit),
+          totalVehicles,
+          vehicles
+      });
 
-    } catch (error) {
-        console.error("GET ALL VEHICLES ERROR:", error);
+  } catch (error) {
+      console.error("GET ALL VEHICLES ERROR:", error);
 
-        return res.status(500).json({
-            message: error.message || "Server error"
-        });
-    }
+      return res.status(500).json({
+          message: error.message || "Server error"
+      });
+  }
 };
+
 
 /**
  * =====================================================
@@ -242,79 +271,71 @@ export const getAllVehicles = async (req, res) => {
 export const updateVehicle = async (req, res) => {
     try {
 
-        const vehicleId = req.params.id;
+      const vehicleId = req.params.id;
 
-        const {
-            vehicleNumber,
-            vehicleType,
-            parkingSlot
-        } = req.body;
+      const {
+          vehicleNumber,
+          vehicleType,
+          parkingSlot
+      } = req.body;
 
-        const residentId = req.user.userId;
-        const societyId = req.user.societyId;
+      const residentId = req.user.userId;
+      const societyId = req.user.societyId;
 
-        const vehicle = await Vehicle.findById(vehicleId);
+      const vehicle = await Vehicle.findById(vehicleId);
 
-        if (!vehicle) {
-            return res.status(404).json({
-                message: "Vehicle not found"
-            });
-        }
+      if (!vehicle) {
+          return res.status(404).json({
+              message: "Vehicle not found"
+          });
+      }
 
-        if (vehicle.residentId.toString() !== residentId) {
-            return res.status(403).json({
-                message: "You are not allowed to update this vehicle"
-            });
-        }
+      if (vehicle.residentId.toString() !== residentId) {
+          return res.status(403).json({
+              message: "You are not allowed to update this vehicle"
+          });
+      }
 
-        let normalizedVehicleNumber = vehicle.vehicleNumber;
+      if (vehicleNumber) {
 
-        if (vehicleNumber) {
-            normalizedVehicleNumber =
-                vehicleNumber.trim().toUpperCase();
-        }
+        const normalizedVehicleNumber =
+            normalizeVehicleNumber(vehicleNumber);
 
-        if (vehicleNumber) {
-
-            const duplicateVehicle = await Vehicle.findOne({
-                societyId,
-                vehicleNumber: normalizedVehicleNumber,
-                _id: { $ne: vehicleId }
-            });
-
-            if (duplicateVehicle) {
-                return res.status(409).json({
-                    message: "Vehicle number already exists in society"
-                });
-            }
-
-            vehicle.vehicleNumber = normalizedVehicleNumber;
-        }
-
-        if (vehicleType) {
-            vehicle.vehicleType = vehicleType;
-        }
-
-        if (parkingSlot !== undefined) {
-            vehicle.parkingSlot = parkingSlot;
-        }
-
-        await vehicle.save();
-
-        return res.json({
-            success: true,
-            message: "Vehicle updated successfully",
-            vehicle
+        const duplicateVehicle = await Vehicle.findOne({
+            societyId,
+            vehicleNumber: normalizedVehicleNumber,
+            _id: { $ne: vehicleId }
         });
 
-    } catch (error) {
-        console.error("UPDATE VEHICLE ERROR:", error);
+        if (duplicateVehicle) {
+            return res.status(409).json({
+                message: "Vehicle number already exists in society"
+            });
+        }
 
-        return res.status(500).json({
-            message: error.message || "Server error"
-        });
+        vehicle.vehicleNumber = normalizedVehicleNumber;
     }
+
+      if (vehicleType) vehicle.vehicleType = vehicleType;
+      if (parkingSlot !== undefined) vehicle.parkingSlot = parkingSlot;
+
+      await vehicle.save();
+
+      return res.json({
+          success: true,
+          message: "Vehicle updated successfully",
+          vehicle
+      });
+
+  } catch (error) {
+      console.error("UPDATE VEHICLE ERROR:", error);
+
+      return res.status(500).json({
+          message: error.message || "Server error"
+      });
+  }
 };
+
 
 /**
  * =====================================================
@@ -334,12 +355,12 @@ export const searchVehicle = async (req, res) => {
     }
 
     const normalizedVehicleNumber =
-      vehicleNumber.trim().toUpperCase();
+        normalizeVehicleNumber(vehicleNumber);
 
     const vehicle = await Vehicle.findOne({
       societyId,
       vehicleNumber: normalizedVehicleNumber
-    }).populate("residentId", "name flatNo wing mobile"); // ✅ ADDED wing
+    }).populate("residentId", "name flatNo wing mobile");
 
     if (!vehicle) {
       return res.status(404).json({

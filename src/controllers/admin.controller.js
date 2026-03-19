@@ -2,6 +2,9 @@ import User from "../models/User.js";
 import VisitorLog from "../models/VisitorLog.js";
 import { auditLogger } from "../utils/auditLogger.js";
 import Invite from "../models/Invite.js";
+import Flat from "../models/Flat.js";
+import Subscription from "../models/Subscription.js";
+
 
 /**
  * UPDATE ADMIN DETAILS
@@ -117,14 +120,43 @@ export const approveTenant = async (req, res) => {
       });
     }
 
-    // 🔥 Create Tenant User (WITH WING SUPPORT)
+    // 🔥 Get Flat (NEW)
+    const flat = await Flat.findById(invite.flatId);
+
+    if (!flat) {
+      return res.status(400).json({
+        message: "Flat not found"
+      });
+    }
+
+    // 🔥 Get Active Subscription (NEW)
+    const subscription = await Subscription.findOne({
+      societyId: invite.societyId,
+      status: "active"
+    });
+
+    if (!subscription) {
+      return res.status(400).json({
+        message: "No active subscription found"
+      });
+    }
+
+    // 🔒 Check if flat is subscribed (MAIN FIX)
+    if (!flat.isSubscribed) {
+      return res.status(403).json({
+        message: "This flat is not included in your subscription. Please upgrade your plan."
+      });
+    }
+
+    // 🔥 Create Tenant User (UPDATED)
     const user = await User.create({
       name: invite.name,
       mobile: invite.mobile,
       email: invite.email,
       roles: ["TENANT"],
-      wing: invite.wing, // ✅ NEW
-      flatNo: invite.flatNo,
+      flatId: flat._id, // ✅ IMPORTANT FIX
+      wing: flat.wing,
+      flatNo: flat.flatNo,
       societyId: invite.societyId,
       invitedBy: invite.invitedBy,
       status: "ACTIVE",

@@ -6,7 +6,7 @@ const subscriptionSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Society",
       required: true,
-      index: true, // 🔥 MUST for multi-tenant
+      index: true,
     },
 
     plan: {
@@ -21,9 +21,22 @@ const subscriptionSchema = new mongoose.Schema(
       default: 20,
     },
 
+    /**
+     * 🔥 ACTUAL FLATS AT PURCHASE (for record only)
+     */
     totalFlats: {
       type: Number,
       required: true,
+    },
+
+    /**
+     * 🔒 MOST IMPORTANT FIELD (LOOPHOLE FIX)
+     * Allowed flats under this subscription
+     */
+    allowedFlats: {
+      type: Number,
+      required: true,
+      index: true,
     },
 
     totalAmount: {
@@ -40,21 +53,21 @@ const subscriptionSchema = new mongoose.Schema(
     endDate: {
       type: Date,
       required: true,
-      index: true, // 🔥 expiry checks
+      index: true,
     },
 
     status: {
       type: String,
       enum: ["active", "expired"],
       default: "active",
-      index: true, // 🔥 frequent filter
+      index: true,
     },
   },
   { timestamps: true }
 );
 
 
-// 🔥 COMPOUND INDEX (MOST IMPORTANT)
+// 🔥 COMPOUND INDEX
 subscriptionSchema.index({
   societyId: 1,
   status: 1,
@@ -62,7 +75,7 @@ subscriptionSchema.index({
 });
 
 
-// 🔥 Ensure only ONE active subscription per society
+// 🔥 Only ONE active subscription
 subscriptionSchema.index(
   { societyId: 1, status: 1 },
   {
@@ -72,7 +85,7 @@ subscriptionSchema.index(
 );
 
 
-// 🔥 Fast lookup for latest subscription
+// 🔥 Latest subscription lookup
 subscriptionSchema.index({
   societyId: 1,
   createdAt: -1,

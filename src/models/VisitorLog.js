@@ -5,7 +5,8 @@ const visitorLogSchema = new mongoose.Schema(
     societyId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Society",
-      required: true
+      required: true,
+      index: true
     },
 
     visitorPhoto: {
@@ -24,9 +25,17 @@ const visitorLogSchema = new mongoose.Schema(
     vehicleNo: String,
 
     /* =====================================================
-       🏢 WING + FLAT INFO
+       🏢 FLAT LINK (🔥 IMPORTANT CHANGE)
     ===================================================== */
 
+    flatId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Flat",
+      required: true,
+      index: true
+    },
+
+    // Optional (for UI display)
     wing: {
       type: String,
       required: true,
@@ -67,7 +76,8 @@ const visitorLogSchema = new mongoose.Schema(
         "ENTERED",
         "EXITED"
       ],
-      default: "PENDING"
+      default: "PENDING",
+      index: true
     },
 
     checkInAt: Date,
@@ -76,7 +86,8 @@ const visitorLogSchema = new mongoose.Schema(
     entryType: {
       type: String,
       enum: ["VISITOR", "DELIVERY", "EMERGENCY", "GUEST"],
-      default: "VISITOR"
+      default: "VISITOR",
+      index: true
     },
 
     deliveryCompany: String,
@@ -104,8 +115,9 @@ const visitorLogSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+
 /* =====================================================
-   🔥 PRODUCTION OPTIMIZED INDEXES
+   🔥 INDEXES
 ===================================================== */
 
 // Society visitor listing
@@ -114,8 +126,8 @@ visitorLogSchema.index({ societyId: 1, createdAt: -1 });
 // Status filtering
 visitorLogSchema.index({ societyId: 1, status: 1 });
 
-// Wing + Flat pending visitors
-visitorLogSchema.index({ societyId: 1, wing: 1, flatNo: 1, status: 1 });
+// 🔥 Flat-based lookup (NEW)
+visitorLogSchema.index({ societyId: 1, flatId: 1, status: 1 });
 
 // Guard logs
 visitorLogSchema.index({ guardId: 1, createdAt: -1 });

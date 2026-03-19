@@ -28,7 +28,8 @@ const inviteSchema = new mongoose.Schema(
     societyId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Society",
-      required: true
+      required: true,
+      index: true
     },
 
     invitedBy: {
@@ -39,30 +40,32 @@ const inviteSchema = new mongoose.Schema(
 
     /**
      * ===============================
-     * 🏢 WING SUPPORT
+     * 🏢 FLAT LINK (🔥 IMPORTANT CHANGE)
      * ===============================
      */
 
-    wing: {
-      type: String,
+    flatId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Flat",
       required: function () {
         return (
           this.roles?.includes("OWNER") ||
           this.roles?.includes("TENANT")
         );
       },
+      index: true
+    },
+
+    // Optional (for UI display only)
+    wing: {
+      type: String,
       uppercase: true,
       trim: true
     },
 
     flatNo: {
       type: String,
-      required: function () {
-        return (
-          this.roles?.includes("OWNER") ||
-          this.roles?.includes("TENANT")
-        );
-      }
+      trim: true
     },
 
     /**
@@ -80,14 +83,14 @@ const inviteSchema = new mongoose.Schema(
     },
 
     shiftStartTime: {
-      type: String, // example: "08:00"
+      type: String,
       required: function () {
         return this.roles?.includes("GUARD");
       }
     },
 
     shiftEndTime: {
-      type: String, // example: "20:00"
+      type: String,
       required: function () {
         return this.roles?.includes("GUARD");
       }
@@ -96,16 +99,19 @@ const inviteSchema = new mongoose.Schema(
     status: {
       type: String,
       enum: ["PENDING", "USED", "EXPIRED"],
-      default: "PENDING"
+      default: "PENDING",
+      index: true
     },
 
     expiresAt: {
       type: Date,
-      required: true
+      required: true,
+      index: true
     }
   },
   { timestamps: true }
 );
+
 
 /* =====================================================
    🔥 PRODUCTION INDEXES
@@ -125,13 +131,11 @@ inviteSchema.index({ societyId: 1, createdAt: -1 });
 // Admin tracking
 inviteSchema.index({ invitedBy: 1 });
 
-// Expiry cleanup
-inviteSchema.index({ expiresAt: 1 });
-
 // Guard shift search
 inviteSchema.index({ societyId: 1, shiftType: 1 });
 
-// 🔥 Wing-based resident search
-inviteSchema.index({ societyId: 1, wing: 1, flatNo: 1 });
+// 🔥 Flat-based lookup (NEW)
+inviteSchema.index({ societyId: 1, flatId: 1 });
+
 
 export default mongoose.model("Invite", inviteSchema);

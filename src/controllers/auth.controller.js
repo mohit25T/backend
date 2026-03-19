@@ -3,11 +3,14 @@ import User from "../models/User.js";
 import Society from "../models/Society.js";
 import GuardLoginLog from "../models/GuardLoginLog.js";
 import EmailChangeRequest from "../models/EmailChangeRequest.js";
+import Flat from "../models/Flat.js";
+import Subscription from "../models/Subscription.js";
 import { signToken, signRefreshToken, verifyRefreshToken } from "../utils/jwt.js";
 import { saveOtp, verifyOtp } from "../utils/otpStore.js";
 import { generateOtp } from "../utils/generateOtp.js";
 import { auditLogger } from "../utils/auditLogger.js";
 import { sendOtpEmail } from "../utils/sendOtpEmail.js";
+
 
 /**
  * =====================================================
@@ -222,6 +225,34 @@ export const verifyUserLogin = async (req, res) => {
       });
     }
 
+    // 🔥 Get Flat
+    const flat = await Flat.findById(invite.flatId);
+
+    if (!flat) {
+      return res.status(400).json({
+        message: "Flat not found"
+      });
+    }
+
+    // 🔥 Get Subscription
+    const subscription = await Subscription.findOne({
+      societyId: invite.societyId,
+      status: "active"
+    });
+
+    if (!subscription) {
+      return res.status(400).json({
+        message: "No active subscription"
+      });
+    }
+
+    // 🔒 MAIN CHECK
+    if (!flat.isSubscribed) {
+      return res.status(403).json({
+        message: "This flat is not included in subscription. Please upgrade."
+      });
+    }
+
     if (!invite.email) {
       return res.status(400).json({
         message: "Email not found for OTP verification"
@@ -251,11 +282,9 @@ export const verifyUserLogin = async (req, res) => {
         roles: invite.roles,
         societyId: invite.societyId,
         invitedBy: invite.invitedBy,
-
-        // Wing support added
-        wing: invite.wing,
-        flatNo: invite.flatNo,
-
+        flatId: flat._id,
+        wing: flat.wing,
+        flatNo: flat.flatNo,
         shiftStartTime: invite.shiftStartTime,
         shiftEndTime: invite.shiftEndTime,
         shiftType: invite.shiftType
@@ -266,11 +295,7 @@ export const verifyUserLogin = async (req, res) => {
     }
 
     if (fcmToken) {
-
-      if (!user.fcmTokens) {
-        user.fcmTokens = [];
-      }
-
+      if (!user.fcmTokens) user.fcmTokens = [];
       if (!user.fcmTokens.includes(fcmToken)) {
         user.fcmTokens.push(fcmToken);
         user.fcmUpdatedAt = new Date();
@@ -289,32 +314,24 @@ export const verifyUserLogin = async (req, res) => {
     });
 
     user.refreshToken = refreshToken;
-
     await user.save();
 
     if (user.roles.includes("GUARD")) {
-
       await GuardLoginLog.create({
         guardId: user._id,
         societyId: user.societyId,
         wing: user.wing || null
       });
-
     }
-
-    const requiresProfilePhoto = !user.profileImage;
 
     return res.json({
       token,
       refreshToken,
       roles: user.roles,
       societyId: user.societyId,
-
       wing: user.wing,
       flatNo: user.flatNo,
-
-      requiresProfilePhoto,
-
+      requiresProfilePhoto: !user.profileImage,
       shiftStartTime: user.shiftStartTime,
       shiftEndTime: user.shiftEndTime,
       shiftType: user.shiftType
@@ -330,7 +347,6 @@ export const verifyUserLogin = async (req, res) => {
 
   }
 };
-
 
 /**
  * =====================================================
@@ -351,12 +367,38 @@ export const refreshAccessToken = async (req, res) => {
 
     const decoded = verifyRefreshToken(refreshToken);
 
-    const user = await User.findById(decoded.userId).select("refreshToken roles societyId status wing flatNo");
+    const user = await User.findById(decoded.userId).select(
+      "refreshToken roles societyId status wing flatNo flatId"
+    );
 
     if (!user || user.refreshToken !== refreshToken) {
       return res.status(401).json({
         message: "Invalid session"
       });
+    }
+
+    // 🔥 Get subscription
+    const subscription = await Subscription.findOne({
+      societyId: user.societyId,
+      status: "active"
+    });
+
+    if (!subscription) {
+      return res.status(403).json({
+        message: "No active subscription"
+      });
+    }
+
+    // 🔥 If user belongs to flat → validate subscription
+    if (user.flatId) {
+
+      const flat = await Flat.findById(user.flatId);
+
+      if (!flat || !flat.isSubscribed) {
+        return res.status(403).json({
+          message: "Your flat is not included in subscription. Please contact admin."
+        });
+      }
     }
 
     const token = signToken({
@@ -541,11 +583,9 @@ export const logoutUser = async (req, res) => {
     const user = await User.findById(userId);
 
     if (fcmToken) {
-
       user.fcmTokens = user.fcmTokens.filter(
         (token) => token !== fcmToken
       );
-
     }
 
     user.refreshToken = null;

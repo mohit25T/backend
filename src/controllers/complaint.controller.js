@@ -1,5 +1,6 @@
 import Complaint from "../models/Complaint.js";
 import User from "../models/User.js";
+import Flat from "../models/Flat.js"; // 🔥 NEW
 import {
     sendPushNotificationToMany
 } from "../services/notificationService.js";
@@ -15,8 +16,6 @@ const getUserTokens = (user) => {
 
 /* ===============================
    1️⃣ CREATE COMPLAINT
-   🔔 Notify Admins
-   📸 Supports Multiple Images
 =============================== */
 export const createComplaint = async (req, res) => {
     try {
@@ -28,6 +27,18 @@ export const createComplaint = async (req, res) => {
             });
         }
 
+        // 🔥 NEW: Validate Flat
+        let flat = null;
+        if (user.flatId) {
+            flat = await Flat.findById(user.flatId);
+
+            if (!flat) {
+                return res.status(400).json({
+                    message: "Invalid flat assigned to user"
+                });
+            }
+        }
+
         const { category, priority, title, description } = req.body;
 
         if (!category || !title) {
@@ -36,24 +47,20 @@ export const createComplaint = async (req, res) => {
             });
         }
 
-        /* ===============================
-           📸 Handle Multiple Images
-        =============================== */
         let complaintImages = [];
 
         if (req.files && req.files.length > 0) {
-            console.log("Uploaded Files:", req.files);
             complaintImages = req.files.map(file => file.path);
         }
 
-        /* ===============================
-           📝 Create Complaint
-        =============================== */
         const complaint = await Complaint.create({
             societyId: user.societyId,
             userId: user._id,
-            wing: user.wing,          // ✅ Added
-            flatNo: user.flatNo,
+
+            // 🔥 UPDATED
+            wing: flat?.wing || user.wing,
+            flatNo: flat?.flatNo || user.flatNo,
+
             category,
             priority,
             title,
@@ -62,9 +69,7 @@ export const createComplaint = async (req, res) => {
             status: "OPEN"
         });
 
-        /* ===============================
-           🔔 Notify Admins
-        =============================== */
+        /* 🔔 Notify Admins */
         try {
             const admins = await User.find({
                 societyId: user.societyId,
@@ -80,7 +85,7 @@ export const createComplaint = async (req, res) => {
                 await sendPushNotificationToMany(
                     allTokens,
                     "New Complaint 📢",
-                    `${title} - Wing ${user.wing} Flat ${user.flatNo}`, // ✅ Improved message
+                    `${title} - Wing ${complaint.wing} Flat ${complaint.flatNo}`,
                     {
                         type: "COMPLAINT_CREATED",
                         complaintId: complaint._id.toString()
@@ -141,7 +146,6 @@ export const getMyComplaints = async (req, res) => {
 
 /* ===============================
    3️⃣ ADMIN → ALL COMPLAINTS
-   🔎 Supports wing filtering
 =============================== */
 export const getAllComplaints = async (req, res) => {
     try {
@@ -159,7 +163,6 @@ export const getAllComplaints = async (req, res) => {
             societyId: admin.societyId
         };
 
-        // ✅ Optional wing filter
         if (wing) {
             query.wing = wing;
         }
@@ -184,7 +187,6 @@ export const getAllComplaints = async (req, res) => {
 
 /* ===============================
    4️⃣ ADMIN → UPDATE STATUS
-   🔔 Notify Resident
 =============================== */
 export const updateComplaintStatus = async (req, res) => {
     try {
@@ -214,7 +216,6 @@ export const updateComplaintStatus = async (req, res) => {
             });
         }
 
-        /* 🔒 Society isolation check */
         if (
             complaint.societyId.toString() !==
             admin.societyId.toString()
@@ -238,9 +239,7 @@ export const updateComplaintStatus = async (req, res) => {
 
         await complaint.save();
 
-        /* ===============================
-           🔔 Notify Complaint Owner
-        =============================== */
+        /* 🔔 Notify Owner */
         try {
             const complaintOwner = await User.findById(complaint.userId);
             const tokens = getUserTokens(complaintOwner);
