@@ -234,24 +234,24 @@ export const verifyUserLogin = async (req, res) => {
       });
     }
 
-    // 🔥 Get Subscription
-    const subscription = await Subscription.findOne({
-      societyId: invite.societyId,
-      status: "active"
-    });
+    // // 🔥 Get Subscription
+    // const subscription = await Subscription.findOne({
+    //   societyId: invite.societyId,
+    //   status: "active"
+    // });
 
-    if (!subscription) {
-      return res.status(400).json({
-        message: "No active subscription"
-      });
-    }
+    // if (!subscription) {
+    //   return res.status(400).json({
+    //     message: "No active subscription"
+    //   });
+    // }
 
-    // 🔒 MAIN CHECK
-    if (!flat.isSubscribed) {
-      return res.status(403).json({
-        message: "This flat is not included in subscription. Please upgrade."
-      });
-    }
+    // // 🔒 MAIN CHECK
+    // if (!flat.isSubscribed) {
+    //   return res.status(403).json({
+    //     message: "This flat is not included in subscription. Please upgrade."
+    //   });
+    // }
 
     if (!invite.email) {
       return res.status(400).json({
