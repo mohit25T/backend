@@ -40,23 +40,18 @@ const inviteSchema = new mongoose.Schema(
 
     /**
      * ===============================
-     * 🏢 FLAT LINK (🔥 IMPORTANT CHANGE)
+     * 🏢 FLAT LINK (FIXED ✅)
      * ===============================
      */
 
     flatId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Flat",
-      required: function () {
-        return (
-          this.roles?.includes("OWNER") ||
-          this.roles?.includes("TENANT")
-        );
-      },
+      required: false, // ✅ IMPORTANT FIX
       index: true
     },
 
-    // Optional (for UI display only)
+    // For invite stage (before flat exists)
     wing: {
       type: String,
       uppercase: true,
@@ -134,8 +129,7 @@ inviteSchema.index({ invitedBy: 1 });
 // Guard shift search
 inviteSchema.index({ societyId: 1, shiftType: 1 });
 
-// 🔥 Flat-based lookup (NEW)
+// Flat-based lookup (optional now)
 inviteSchema.index({ societyId: 1, flatId: 1 });
-
 
 export default mongoose.model("Invite", inviteSchema);

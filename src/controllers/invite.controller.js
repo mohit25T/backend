@@ -28,6 +28,10 @@ export const inviteAdmin = async (req, res) => {
   try {
     const { name, mobile, email, societyId, flatNo, wing } = req.body;
 
+    /* =====================================================
+       🧾 VALIDATION
+    ===================================================== */
+
     if (!name || !mobile || !email || !societyId || !flatNo || !wing) {
       return res.status(400).json({
         message:
@@ -35,31 +39,46 @@ export const inviteAdmin = async (req, res) => {
       });
     }
 
+    const normalizedWing = wing.trim().toUpperCase();
+    const normalizedFlatNo = flatNo.trim();
+
     const society = await Society.findById(societyId);
+
     if (!society) {
-      return res.status(404).json({ message: "Society not found" });
+      return res.status(404).json({
+        message: "Society not found"
+      });
     }
 
-    // 🔥 ADDED VALIDATION
-    const { flat, error } = await validateFlatAccess(societyId, wing, flatNo);
-    if (error) return res.status(403).json({ message: error });
+    /* =====================================================
+       🚫 PREVENT DUPLICATE FLAT ASSIGNMENT
+    ===================================================== */
 
     const flatExists = await Invite.findOne({
       societyId,
-      wing,
-      flatNo,
-      status: { $in: ["PENDING", "USED"] }
+      wing: normalizedWing,
+      flatNo: normalizedFlatNo,
+      status: { $in: ["PENDING", "USED"] },
+      roles: { $in: ["ADMIN"] } // ✅ only admin check
     });
 
     if (flatExists) {
       return res.status(409).json({
-        message: `Flat ${wing}-${flatNo} already assigned`
+        message: `Flat ${normalizedWing}-${normalizedFlatNo} already assigned`
       });
     }
+
+    /* =====================================================
+       ⏳ EXPIRY
+    ===================================================== */
 
     const expiresAt = new Date(
       Date.now() + INVITE_EXPIRY_HOURS * 60 * 60 * 1000
     );
+
+    /* =====================================================
+       🔍 CHECK EXISTING INVITE
+    ===================================================== */
 
     let invite = await Invite.findOne({
       mobile,
@@ -73,16 +92,19 @@ export const inviteAdmin = async (req, res) => {
       });
     }
 
+    /* =====================================================
+       🔄 UPDATE OR CREATE
+    ===================================================== */
+
     if (invite) {
       invite.name = name;
       invite.email = email;
-      invite.flatNo = flatNo;
-      invite.wing = wing;
-      invite.flatId = flat._id; // 🔥 ADDED
+      invite.flatNo = normalizedFlatNo;
+      invite.wing = normalizedWing;
       invite.status = "PENDING";
       invite.expiresAt = expiresAt;
       invite.invitedBy = req.user.userId;
-      invite.roles = ["ADMIN", "OWNER"];
+      invite.roles = ["ADMIN"]; // ✅ FIXED
 
       await invite.save();
 
@@ -92,7 +114,7 @@ export const inviteAdmin = async (req, res) => {
         targetType: "INVITE",
         targetId: invite._id,
         societyId,
-        description: `Admin invite updated | Wing ${wing} Flat ${flatNo}`
+        description: `Admin invite updated | Wing ${normalizedWing} Flat ${normalizedFlatNo}`
       });
 
       return res.json({
@@ -101,14 +123,17 @@ export const inviteAdmin = async (req, res) => {
       });
     }
 
+    /* =====================================================
+       🆕 CREATE INVITE
+    ===================================================== */
+
     invite = await Invite.create({
       name,
       mobile,
       email,
-      wing,
-      flatNo,
-      flatId: flat._id, // 🔥 ADDED
-      roles: ["ADMIN", "OWNER"],
+      wing: normalizedWing,
+      flatNo: normalizedFlatNo,
+      roles: ["ADMIN"], // ✅ FIXED
       societyId,
       invitedBy: req.user.userId,
       expiresAt
@@ -120,7 +145,7 @@ export const inviteAdmin = async (req, res) => {
       targetType: "INVITE",
       targetId: invite._id,
       societyId,
-      description: `Admin invited | Wing ${wing} Flat ${flatNo}`
+      description: `Admin invited | Wing ${normalizedWing} Flat ${normalizedFlatNo}`
     });
 
     return res.status(201).json({
@@ -130,6 +155,7 @@ export const inviteAdmin = async (req, res) => {
 
   } catch (error) {
     console.error("INVITE ADMIN ERROR:", error);
+
     return res.status(500).json({
       message: "Failed to create admin invite"
     });
@@ -493,31 +519,15 @@ export const inviteAdminsBulk = async (req, res) => {
         }
 
         /* =========================
-           🔍 FETCH FLAT (CRITICAL FIX)
-        ========================= */
-
-        const flat = await Flat.findOne({
-          societyId,
-          wing,
-          flatNo
-        });
-
-        if (!flat) {
-          errors.push({
-            mobile,
-            message: `Flat ${wing}-${flatNo} does not exist`
-          });
-          continue;
-        }
-
-        /* =========================
-           🚫 CHECK FLAT DUPLICATE
+           🚫 PREVENT DUPLICATE FLAT ASSIGNMENT
         ========================= */
 
         const flatExists = await Invite.findOne({
           societyId,
-          flatId: flat._id,
-          status: { $in: ["PENDING", "USED"] }
+          wing,
+          flatNo,
+          status: { $in: ["PENDING", "USED"] },
+          roles: { $in: ["ADMIN"] } // ✅ only admin
         });
 
         if (flatExists) {
@@ -563,11 +573,10 @@ export const inviteAdminsBulk = async (req, res) => {
           invite.email = email;
           invite.flatNo = flatNo;
           invite.wing = wing;
-          invite.flatId = flat._id; // ✅ FIXED
           invite.status = "PENDING";
           invite.expiresAt = expiresAt;
           invite.invitedBy = req.user.userId;
-          invite.roles = ["ADMIN", "OWNER"];
+          invite.roles = ["ADMIN"]; // ✅ FIXED
 
           await invite.save();
 
@@ -579,8 +588,7 @@ export const inviteAdminsBulk = async (req, res) => {
             email,
             wing,
             flatNo,
-            flatId: flat._id, // ✅ FIXED
-            roles: ["ADMIN", "OWNER"],
+            roles: ["ADMIN"], // ✅ FIXED
             societyId,
             invitedBy: req.user.userId,
             expiresAt
