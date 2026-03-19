@@ -430,3 +430,183 @@ export const inviteGuard = async (req, res) => {
     });
   }
 };
+
+export const inviteAdminsBulk = async (req, res) => {
+  try {
+    const { societyId, admins } = req.body;
+
+    /* =====================================================
+       🧾 VALIDATION
+    ===================================================== */
+
+    if (!societyId || !Array.isArray(admins) || admins.length === 0) {
+      return res.status(400).json({
+        message: "societyId and admins array required"
+      });
+    }
+
+    // 🔥 Limit bulk size (important for performance)
+    if (admins.length > 100) {
+      return res.status(400).json({
+        message: "Maximum 100 admins allowed per request"
+      });
+    }
+
+    const society = await Society.findById(societyId);
+
+    if (!society) {
+      return res.status(404).json({
+        message: "Society not found"
+      });
+    }
+
+    const createdInvites = [];
+    const errors = [];
+
+    /* =====================================================
+       🔁 PROCESS ADMINS
+    ===================================================== */
+
+    for (const admin of admins) {
+      try {
+        let { name, mobile, email, wing, flatNo } = admin;
+
+        /* =========================
+           🧹 NORMALIZATION
+        ========================= */
+
+        name = name?.trim();
+        mobile = mobile?.trim();
+        email = email?.trim();
+        wing = wing?.trim().toUpperCase();
+        flatNo = flatNo?.trim();
+
+        if (!name || !mobile || !email || !wing || !flatNo) {
+          errors.push({
+            mobile,
+            message: "Missing required fields"
+          });
+          continue;
+        }
+
+        /* =========================
+           🚫 CHECK FLAT DUPLICATE
+        ========================= */
+
+        const flatExists = await Invite.findOne({
+          societyId,
+          wing,
+          flatNo,
+          status: { $in: ["PENDING", "USED"] }
+        });
+
+        if (flatExists) {
+          errors.push({
+            mobile,
+            message: `Flat ${wing}-${flatNo} already assigned`
+          });
+          continue;
+        }
+
+        /* =========================
+           ⏳ EXPIRY
+        ========================= */
+
+        const expiresAt = new Date(
+          Date.now() + INVITE_EXPIRY_HOURS * 60 * 60 * 1000
+        );
+
+        /* =========================
+           🔍 EXISTING INVITE
+        ========================= */
+
+        let invite = await Invite.findOne({
+          mobile,
+          societyId,
+          roles: { $in: ["ADMIN"] }
+        });
+
+        if (invite && invite.status === "USED") {
+          errors.push({
+            mobile,
+            message: "Admin already onboarded"
+          });
+          continue;
+        }
+
+        /* =========================
+           🔄 UPDATE OR CREATE
+        ========================= */
+
+        if (invite) {
+          invite.name = name;
+          invite.email = email;
+          invite.flatNo = flatNo;
+          invite.wing = wing;
+          invite.status = "PENDING";
+          invite.expiresAt = expiresAt;
+          invite.invitedBy = req.user.userId;
+          invite.roles = ["ADMIN", "OWNER"];
+
+          await invite.save();
+
+        } else {
+
+          invite = await Invite.create({
+            name,
+            mobile,
+            email,
+            wing,
+            flatNo,
+            roles: ["ADMIN", "OWNER"],
+            societyId,
+            invitedBy: req.user.userId,
+            expiresAt
+          });
+
+        }
+
+        /* =========================
+           📝 AUDIT LOG
+        ========================= */
+
+        await auditLogger({
+          req,
+          action: "CREATE_ADMIN_INVITE",
+          targetType: "INVITE",
+          targetId: invite._id,
+          societyId,
+          description: `Admin invited | Wing ${wing} Flat ${flatNo}`
+        });
+
+        createdInvites.push(invite);
+
+      } catch (err) {
+        errors.push({
+          mobile: admin.mobile,
+          message: err.message
+        });
+      }
+    }
+
+    /* =====================================================
+       ✅ RESPONSE
+    ===================================================== */
+
+    return res.status(201).json({
+      success: true,
+      created: createdInvites.length,
+      invites: createdInvites,
+      errors
+    });
+
+  } catch (error) {
+
+    console.error("BULK ADMIN INVITE ERROR:", error);
+
+    return res.status(500).json({
+      message: "Failed to create bulk admin invites"
+    });
+
+  }
+};
