@@ -117,11 +117,14 @@ export const verifyPayment = async (req, res) => {
       { status: "expired" }
     );
 
-    // 🔥 NEW: Mark ALL flats as subscribed
+    // 🔥 Mark ALL flats as subscribed
     await Flat.updateMany(
       { societyId },
       { isSubscribed: true }
     );
+
+    // ✅ IMPORTANT FIX
+    const allowedFlats = totalFlats;
 
     // ✅ Create new subscription
     const subscription = await Subscription.create({
@@ -129,6 +132,7 @@ export const verifyPayment = async (req, res) => {
       plan,
       pricePerFlat,
       totalFlats,
+      allowedFlats, // ✅ FIXED
       totalAmount,
       startDate,
       endDate,
