@@ -431,6 +431,10 @@ export const inviteGuard = async (req, res) => {
   }
 };
 
+/**
+ * INVITE ADMINS BULK (unchanged)
+ */
+
 export const inviteAdminsBulk = async (req, res) => {
   try {
     const { societyId, admins } = req.body;
@@ -445,7 +449,6 @@ export const inviteAdminsBulk = async (req, res) => {
       });
     }
 
-    // 🔥 Limit bulk size (important for performance)
     if (admins.length > 100) {
       return res.status(400).json({
         message: "Maximum 100 admins allowed per request"
@@ -490,13 +493,30 @@ export const inviteAdminsBulk = async (req, res) => {
         }
 
         /* =========================
+           🔍 FETCH FLAT (CRITICAL FIX)
+        ========================= */
+
+        const flat = await Flat.findOne({
+          societyId,
+          wing,
+          flatNo
+        });
+
+        if (!flat) {
+          errors.push({
+            mobile,
+            message: `Flat ${wing}-${flatNo} does not exist`
+          });
+          continue;
+        }
+
+        /* =========================
            🚫 CHECK FLAT DUPLICATE
         ========================= */
 
         const flatExists = await Invite.findOne({
           societyId,
-          wing,
-          flatNo,
+          flatId: flat._id,
           status: { $in: ["PENDING", "USED"] }
         });
 
@@ -543,6 +563,7 @@ export const inviteAdminsBulk = async (req, res) => {
           invite.email = email;
           invite.flatNo = flatNo;
           invite.wing = wing;
+          invite.flatId = flat._id; // ✅ FIXED
           invite.status = "PENDING";
           invite.expiresAt = expiresAt;
           invite.invitedBy = req.user.userId;
@@ -558,6 +579,7 @@ export const inviteAdminsBulk = async (req, res) => {
             email,
             wing,
             flatNo,
+            flatId: flat._id, // ✅ FIXED
             roles: ["ADMIN", "OWNER"],
             societyId,
             invitedBy: req.user.userId,
@@ -593,8 +615,11 @@ export const inviteAdminsBulk = async (req, res) => {
        ✅ RESPONSE
     ===================================================== */
 
-    console.log(`Bulk invite completed: ${createdInvites.length} created, ${errors.length} errors`);
+    console.log(
+      `Bulk invite completed: ${createdInvites.length} created, ${errors.length} errors`
+    );
     console.log("Errors:", errors);
+
     return res.status(201).json({
       success: true,
       created: createdInvites.length,
