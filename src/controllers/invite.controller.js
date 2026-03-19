@@ -594,7 +594,7 @@ export const inviteAdminsBulk = async (req, res) => {
     ===================================================== */
 
     console.log(`Bulk invite completed: ${createdInvites.length} created, ${errors.length} errors`);
-
+    console.log("Errors:", errors);
     return res.status(201).json({
       success: true,
       created: createdInvites.length,
