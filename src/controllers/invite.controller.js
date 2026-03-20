@@ -76,7 +76,7 @@ export const inviteAdmin = async (req, res) => {
       societyId,
       flatId: flat._id,
       status: { $in: ["PENDING", "USED"] },
-      roles: { $in: ["ADMIN"] }
+      roles: { $in: ["ADMIN", "OWNER"] }
     });
 
     if (flatExists) {
@@ -100,12 +100,12 @@ export const inviteAdmin = async (req, res) => {
     let invite = await Invite.findOne({
       mobile,
       societyId,
-      roles: { $in: ["ADMIN"] }
+      roles: { $in: ["ADMIN","OWNER"] }
     });
 
     if (invite && invite.status === "USED") {
       return res.status(409).json({
-        message: "Admin already onboarded with this number"
+        message: "Admin or Owner already onboarded with this number"
       });
     }
 
@@ -122,7 +122,7 @@ export const inviteAdmin = async (req, res) => {
       invite.status = "PENDING";
       invite.expiresAt = expiresAt;
       invite.invitedBy = req.user.userId;
-      invite.roles = ["ADMIN"];
+      invite.roles = ["ADMIN","OWNER"];
 
       await invite.save();
 
