@@ -1,7 +1,8 @@
 import Invite from "../models/Invite.js";
 import Society from "../models/Society.js";
 import User from "../models/User.js";
-import Flat from "../models/Flats.js"; // 🔥 ADDED
+import Flat from "../models/Flats.js";
+import Subscription from "../models/Subscription.js"; // 🔥 ADDED
 import { auditLogger } from "../utils/auditLogger.js";
 
 const INVITE_EXPIRY_HOURS = 24;
@@ -19,6 +20,30 @@ const validateFlatAccess = async (societyId, wing, flatNo) => {
   }
 
   return { flat };
+};
+
+/* 🔥 ADDED: CHECK FLAT LIMIT */
+const checkFlatLimit = async (societyId) => {
+  const subscription = await Subscription.findOne({
+    societyId,
+    status: "active"
+  });
+
+  // Setup mode (no subscription yet)
+  if (!subscription) {
+    return { allowed: true };
+  }
+
+  const totalFlats = await Flat.countDocuments({ societyId });
+
+  if (totalFlats >= subscription.allowedFlats) {
+    return {
+      allowed: false,
+      message: "Flat limit reached. Please upgrade your subscription."
+    };
+  }
+
+  return { allowed: true, subscription };
 };
 
 /**
@@ -51,6 +76,17 @@ export const inviteAdmin = async (req, res) => {
     }
 
     /* =====================================================
+       🔥 ADDED: CHECK SUBSCRIPTION LIMIT
+    ===================================================== */
+
+    const limitCheck = await checkFlatLimit(societyId);
+    if (!limitCheck.allowed) {
+      return res.status(403).json({
+        message: limitCheck.message
+      });
+    }
+
+    /* =====================================================
        🔥 CREATE OR GET FLAT
     ===================================================== */
 
@@ -64,7 +100,8 @@ export const inviteAdmin = async (req, res) => {
       flat = await Flat.create({
         societyId,
         wing: normalizedWing,
-        flatNo: normalizedFlatNo
+        flatNo: normalizedFlatNo,
+        isSubscribed: !!limitCheck.subscription // 🔥 ADDED
       });
     }
 
@@ -118,7 +155,7 @@ export const inviteAdmin = async (req, res) => {
       invite.email = email;
       invite.flatNo = normalizedFlatNo;
       invite.wing = normalizedWing;
-      invite.flatId = flat._id; // ✅ ADDED
+      invite.flatId = flat._id;
       invite.status = "PENDING";
       invite.expiresAt = expiresAt;
       invite.invitedBy = req.user.userId;
@@ -151,8 +188,8 @@ export const inviteAdmin = async (req, res) => {
       email,
       wing: normalizedWing,
       flatNo: normalizedFlatNo,
-      flatId: flat._id, // ✅ ADDED
-      roles: ["ADMIN"],
+      flatId: flat._id,
+      roles: ["ADMIN", "OWNER"],
       societyId,
       invitedBy: req.user.userId,
       expiresAt
@@ -192,33 +229,6 @@ export const getAllInvites = async (req, res) => {
   res.json(invites);
 };
 
-/**
- * RESEND INVITE
- */
-export const resendInvite = async (req, res) => {
-  const { id } = req.params;
-
-  const invite = await Invite.findById(id);
-  if (!invite || invite.status !== "PENDING") {
-    return res.status(400).json({ message: "Invite not valid" });
-  }
-
-  invite.expiresAt = new Date(
-    Date.now() + INVITE_EXPIRY_HOURS * 60 * 60 * 1000
-  );
-  await invite.save();
-
-  await auditLogger({
-    req,
-    action: "RESEND_ADMIN_INVITE",
-    targetType: "INVITE",
-    targetId: invite._id,
-    societyId: invite.societyId,
-    description: `Invite resent for ${invite.name} (${invite.mobile})`
-  });
-
-  res.json({ message: "Invite resent" });
-};
 
 /**
  * CANCEL INVITE
@@ -245,6 +255,7 @@ export const cancelInvite = async (req, res) => {
 
   res.json({ message: "Invite cancelled" });
 };
+
 
 /**
  * INVITE RESIDENT
@@ -275,7 +286,17 @@ export const inviteResident = async (req, res) => {
       });
     }
 
-    // 🔥 ADDED VALIDATION
+    /* =====================================================
+       🔥 ADDED: CHECK SUBSCRIPTION LIMIT
+    ===================================================== */
+    const limitCheck = await checkFlatLimit(inviter.societyId);
+    if (!limitCheck.allowed) {
+      return res.status(403).json({
+        message: limitCheck.message
+      });
+    }
+
+    // 🔥 EXISTING VALIDATION (UNCHANGED)
     const { flat, error } = await validateFlatAccess(
       inviter.societyId,
       wing,
@@ -346,7 +367,7 @@ export const inviteResident = async (req, res) => {
       invite.email = email;
       invite.flatNo = flatNo;
       invite.wing = wing;
-      invite.flatId = flat._id; // 🔥 ADDED
+      invite.flatId = flat._id;
       invite.status = "PENDING";
       invite.expiresAt = expiresAt;
       invite.invitedBy = inviter._id;
@@ -359,7 +380,7 @@ export const inviteResident = async (req, res) => {
         email,
         wing,
         flatNo,
-        flatId: flat._id, // 🔥 ADDED
+        flatId: flat._id,
         roles: [userRole],
         societyId: inviter.societyId,
         invitedBy: inviter._id,
@@ -389,7 +410,6 @@ export const inviteResident = async (req, res) => {
     });
   }
 };
-
 /**
  * INVITE GUARD (unchanged)
  */
@@ -476,10 +496,10 @@ export const inviteGuard = async (req, res) => {
   }
 };
 
-/**
- * INVITE ADMINS BULK (unchanged)
- */
 
+/**
+ * INVITE ADMINS BULK (patched)
+ */
 export const inviteAdminsBulk = async (req, res) => {
   try {
     const { societyId, admins } = req.body;
@@ -523,6 +543,18 @@ export const inviteAdminsBulk = async (req, res) => {
           continue;
         }
 
+        /* =====================================================
+           🔥 ADDED: CHECK SUBSCRIPTION LIMIT
+        ===================================================== */
+        const limitCheck = await checkFlatLimit(societyId);
+        if (!limitCheck.allowed) {
+          errors.push({
+            mobile,
+            message: limitCheck.message
+          });
+          continue;
+        }
+
         /* =========================
            🔥 CREATE OR GET FLAT
         ========================= */
@@ -533,7 +565,8 @@ export const inviteAdminsBulk = async (req, res) => {
           flat = await Flat.create({
             societyId,
             wing,
-            flatNo
+            flatNo,
+            isSubscribed: !!limitCheck.subscription // 🔥 ADDED
           });
         }
 
@@ -562,13 +595,13 @@ export const inviteAdminsBulk = async (req, res) => {
         let invite = await Invite.findOne({
           mobile,
           societyId,
-          roles: { $in: ["ADMIN"] }
+          roles: { $in: ["ADMIN", "OWNER"] }
         });
 
         if (invite && invite.status === "USED") {
           errors.push({
             mobile,
-            message: "Admin already onboarded"
+            message: "Admin or owner already onboarded"
           });
           continue;
         }
@@ -578,11 +611,11 @@ export const inviteAdminsBulk = async (req, res) => {
           invite.email = email;
           invite.flatNo = flatNo;
           invite.wing = wing;
-          invite.flatId = flat._id; // ✅ NOW VALID
+          invite.flatId = flat._id;
           invite.status = "PENDING";
           invite.expiresAt = expiresAt;
           invite.invitedBy = req.user.userId;
-          invite.roles = ["ADMIN"];
+          invite.roles = ["ADMIN", "OWNER"];
 
           await invite.save();
 
@@ -594,8 +627,8 @@ export const inviteAdminsBulk = async (req, res) => {
             email,
             wing,
             flatNo,
-            flatId: flat._id, // ✅ NOW VALID
-            roles: ["ADMIN"],
+            flatId: flat._id,
+            roles: ["ADMIN", "OWNER"],
             societyId,
             invitedBy: req.user.userId,
             expiresAt

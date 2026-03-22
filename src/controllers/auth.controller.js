@@ -2,6 +2,7 @@ import Invite from "../models/Invite.js";
 import User from "../models/User.js";
 import Society from "../models/Society.js";
 import GuardLoginLog from "../models/GuardLoginLog.js";
+import Subscription from "../models/Subscription.js";
 import EmailChangeRequest from "../models/EmailChangeRequest.js";
 import Flat from "../models/Flats.js";
 import Subscription from "../models/Subscription.js";
@@ -71,7 +72,6 @@ export const sendOtp = async (req, res) => {
  */
 export const sendOtpUser = async (req, res) => {
   try {
-
     const { mobile } = req.body;
 
     if (!mobile) {
@@ -80,15 +80,15 @@ export const sendOtpUser = async (req, res) => {
       });
     }
 
-    const user = await Invite.findOne({ mobile });
+    const invite = await Invite.findOne({ mobile }); // 🔥 renamed (optional)
 
-    if (!user) {
+    if (!invite) {
       return res.status(403).json({
         message: "Account not approved yet. Please contact admin."
       });
     }
 
-    const society = await Society.findById(user.societyId);
+    const society = await Society.findById(invite.societyId);
 
     if (society?.status === "BLOCKED") {
       return res.status(403).json({
@@ -96,54 +96,74 @@ export const sendOtpUser = async (req, res) => {
       });
     }
 
-    if (user.status === "BLOCKED") {
+    if (invite.status === "BLOCKED") {
       return res.status(403).json({
         message: "Your account has been blocked. Contact admin."
       });
     }
 
-    if (user.status === "INACTIVE") {
+    if (invite.status === "INACTIVE") {
       return res.status(403).json({
         message: "Your tenancy has ended. Please contact the flat owner."
       });
     }
 
-    if (user.roles.includes("SUPER_ADMIN")) {
+    if (invite.roles.includes("SUPER_ADMIN")) {
       return res.status(403).json({
         message: "Super admin login not allowed in mobile app"
       });
     }
 
-    if (!user.email) {
+    if (!invite.email) {
       return res.status(400).json({
         message: "Email not found for OTP"
       });
     }
 
+    /* =====================================================
+       🔥 OPTIONAL: CHECK SUBSCRIPTION (DO NOT BLOCK LOGIN)
+    ===================================================== */
+
+    let subscriptionStatus = "ACTIVE";
+
+    const subscription = await Subscription.findOne({
+      societyId: invite.societyId,
+      status: "active"
+    }).select("endDate");
+
+    if (!subscription) {
+      subscriptionStatus = "NOT_FOUND";
+    } else if (new Date() > subscription.endDate) {
+      subscriptionStatus = "EXPIRED";
+    }
+
+    /* =====================================================
+       OTP FLOW
+    ===================================================== */
+
     const otp = generateOtp();
 
     saveOtp({
       mobile,
-      email: user.email,
+      email: invite.email,
       otp
     });
 
-    await sendOtpEmail(user.email, otp);
+    await sendOtpEmail(invite.email, otp);
 
     return res.json({
       success: true,
       message: "OTP sent successfully",
-      role: user.roles[0]
+      role: invite.roles[0],
+      subscriptionStatus // 🔥 frontend can use this
     });
 
   } catch (err) {
-
     console.error("SEND USER OTP ERROR:", err);
 
     return res.status(500).json({
       message: "Failed to send OTP"
     });
-
   }
 };
 
@@ -234,25 +254,6 @@ export const verifyUserLogin = async (req, res) => {
       });
     }
 
-    // // 🔥 Get Subscription
-    // const subscription = await Subscription.findOne({
-    //   societyId: invite.societyId,
-    //   status: "active"
-    // });
-
-    // if (!subscription) {
-    //   return res.status(400).json({
-    //     message: "No active subscription"
-    //   });
-    // }
-
-    // // 🔒 MAIN CHECK
-    // if (!flat.isSubscribed) {
-    //   return res.status(403).json({
-    //     message: "This flat is not included in subscription. Please upgrade."
-    //   });
-    // }
-
     if (!invite.email) {
       return res.status(400).json({
         message: "Email not found for OTP verification"
@@ -294,6 +295,27 @@ export const verifyUserLogin = async (req, res) => {
       await invite.save();
     }
 
+    /* =====================================================
+       🔥 OPTIONAL: SUBSCRIPTION STATUS (DO NOT BLOCK)
+    ===================================================== */
+
+    let subscriptionStatus = "ACTIVE";
+
+    const subscription = await Subscription.findOne({
+      societyId: user.societyId,
+      status: "active"
+    }).select("endDate");
+
+    if (!subscription) {
+      subscriptionStatus = "NOT_FOUND";
+    } else if (new Date() > subscription.endDate) {
+      subscriptionStatus = "EXPIRED";
+    }
+
+    /* =====================================================
+       🔔 FCM TOKEN
+    ===================================================== */
+
     if (fcmToken) {
       if (!user.fcmTokens) user.fcmTokens = [];
       if (!user.fcmTokens.includes(fcmToken)) {
@@ -306,7 +328,8 @@ export const verifyUserLogin = async (req, res) => {
       userId: user._id,
       roles: user.roles,
       societyId: user.societyId,
-      wing: user.wing
+      wing: user.wing,
+      flatId: user.flatId // 🔥 ADDED (important for middleware)
     });
 
     const refreshToken = signRefreshToken({
@@ -334,7 +357,8 @@ export const verifyUserLogin = async (req, res) => {
       requiresProfilePhoto: !user.profileImage,
       shiftStartTime: user.shiftStartTime,
       shiftEndTime: user.shiftEndTime,
-      shiftType: user.shiftType
+      shiftType: user.shiftType,
+      subscriptionStatus // 🔥 ADDED
     });
 
   } catch (err) {

@@ -1,11 +1,40 @@
 import { motion } from "framer-motion";
 import { toggleSocietyBlock } from "../../api/block";
+import { useState } from "react";
 
-const SocietyTable = ({ societies, reloadSocieties }) => {
+const SocietyTable = ({ societies = [], reloadSocieties }) => {
+
+  const [loadingId, setLoadingId] = useState(null); // 🔥 track button loading
+
+  // 🔥 EMPTY STATE
+  if (!societies.length) {
+    return (
+      <div className="glass-panel rounded-2xl p-6 text-center text-gray-400">
+        No societies found
+      </div>
+    );
+  }
+
+  const handleToggle = async (id) => {
+    try {
+      setLoadingId(id);
+
+      await toggleSocietyBlock(id);
+      await reloadSocieties();
+
+    } catch (err) {
+      console.error("Toggle Society Error:", err);
+      alert(err.response?.data?.message || "Action failed");
+    } finally {
+      setLoadingId(null);
+    }
+  };
+
   return (
-      <div className="glass-panel rounded-2xl shadow-xl overflow-hidden border border-white/5">
+    <div className="glass-panel rounded-2xl shadow-xl overflow-hidden border border-white/5">
       <div className="overflow-x-auto">
         <table className="w-full text-left whitespace-nowrap">
+
           <thead className="bg-dark-900/50 backdrop-blur-md border-b border-white/10 text-gray-400 text-sm font-medium">
             <tr>
               <th className="p-4 px-6">Name</th>
@@ -26,15 +55,20 @@ const SocietyTable = ({ societies, reloadSocieties }) => {
                 transition={{ delay: i * 0.03 }}
                 className="hover:bg-white/[0.02] transition-colors"
               >
+
                 {/* NAME */}
-                <td className="p-4 px-6 font-semibold text-gray-100">{s.name}</td>
+                <td className="p-4 px-6 font-semibold text-gray-100">
+                  {s.name}
+                </td>
 
                 {/* CITY */}
-                <td className="p-4 px-6 text-gray-400">{s.city || "-"}</td>
+                <td className="p-4 px-6 text-gray-400">
+                  {s.city || "-"}
+                </td>
 
                 {/* WINGS */}
                 <td className="p-4 px-6">
-                  {s.wings && s.wings.length > 0 ? (
+                  {s.wings?.length ? (
                     <div className="flex flex-wrap gap-2">
                       {s.wings.map((wing) => (
                         <span
@@ -59,35 +93,47 @@ const SocietyTable = ({ societies, reloadSocieties }) => {
                         : "bg-red-500/10 text-red-400 border-red-500/20"
                     }`}
                   >
-                    <span className={`w-1.5 h-1.5 rounded-full mr-1.5 ${s.status === "ACTIVE" ? "bg-emerald-400" : "bg-red-400"}`}></span>
+                    <span
+                      className={`w-1.5 h-1.5 rounded-full mr-1.5 ${
+                        s.status === "ACTIVE"
+                          ? "bg-emerald-400"
+                          : "bg-red-400"
+                      }`}
+                    ></span>
                     {s.status}
                   </span>
                 </td>
 
                 {/* CREATED */}
                 <td className="p-4 px-6 text-sm text-gray-400">
-                  {new Date(s.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
+                  {s.createdAt
+                    ? new Date(s.createdAt).toLocaleDateString()
+                    : "-"}
                 </td>
 
                 {/* ACTION */}
                 <td className="p-4 px-6">
                   <button
-                    onClick={async () => {
-                      await toggleSocietyBlock(s._id);
-                      await reloadSocieties();
-                    }}
+                    onClick={() => handleToggle(s._id)}
+                    disabled={loadingId === s._id}
                     className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
                       s.status === "ACTIVE"
                         ? "bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/20"
                         : "bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/20"
-                    }`}
+                    } ${loadingId === s._id ? "opacity-60 cursor-not-allowed" : ""}`}
                   >
-                    {s.status === "ACTIVE" ? "Block" : "Unblock"}
+                    {loadingId === s._id
+                      ? "Processing..."
+                      : s.status === "ACTIVE"
+                      ? "Block"
+                      : "Unblock"}
                   </button>
                 </td>
+
               </motion.tr>
             ))}
           </tbody>
+
         </table>
       </div>
     </div>

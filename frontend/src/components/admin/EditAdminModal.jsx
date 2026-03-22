@@ -20,9 +20,16 @@ const EditAdminModal = ({ admin, onClose, onUpdated }) => {
       if (mobile !== admin.mobile) payload.mobile = mobile;
       if (email !== admin.email) payload.email = email;
 
+      // 🔥 Prevent empty update call
+      if (Object.keys(payload).length === 0) {
+        setMessage("No changes made.");
+        setLoading(false);
+        return;
+      }
+
       const res = await updateAdminDetails(admin._id, payload);
 
-      if (res.data.requiresVerification) {
+      if (res.data?.requiresVerification) {
         setMessage(
           "Mobile updated. Admin must verify OTP on next login."
         );
@@ -33,8 +40,12 @@ const EditAdminModal = ({ admin, onClose, onUpdated }) => {
       onUpdated();
 
     } catch (err) {
+      console.error("Update Admin Error:", err);
+
       setMessage(
-        err.response?.data?.message || "Update failed"
+        err.response?.data?.message ||
+        err.message ||
+        "Update failed"
       );
     } finally {
       setLoading(false);
@@ -43,7 +54,7 @@ const EditAdminModal = ({ admin, onClose, onUpdated }) => {
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-      <div className="bg-white rounded-xl w-full max-w-md p-6">
+      <div className="bg-white rounded-xl w-full max-w-md p-6 shadow-lg">
 
         <h2 className="text-xl font-bold mb-4">
           Edit Admin
@@ -57,7 +68,7 @@ const EditAdminModal = ({ admin, onClose, onUpdated }) => {
             placeholder="Admin Name"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="w-full border p-2 rounded"
+            className="w-full border p-2 rounded focus:outline-none focus:ring-2 focus:ring-black"
           />
 
           {/* EMAIL */}
@@ -66,7 +77,7 @@ const EditAdminModal = ({ admin, onClose, onUpdated }) => {
             placeholder="Email Address"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full border p-2 rounded"
+            className="w-full border p-2 rounded focus:outline-none focus:ring-2 focus:ring-black"
           />
 
           {/* MOBILE */}
@@ -75,7 +86,7 @@ const EditAdminModal = ({ admin, onClose, onUpdated }) => {
             placeholder="Mobile Number"
             value={mobile}
             onChange={(e) => setMobile(e.target.value)}
-            className="w-full border p-2 rounded"
+            className="w-full border p-2 rounded focus:outline-none focus:ring-2 focus:ring-black"
           />
 
           {/* WING (READ ONLY) */}
@@ -115,7 +126,7 @@ const EditAdminModal = ({ admin, onClose, onUpdated }) => {
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 border rounded"
+              className="px-4 py-2 border rounded hover:bg-gray-100 transition"
             >
               Cancel
             </button>
@@ -123,7 +134,7 @@ const EditAdminModal = ({ admin, onClose, onUpdated }) => {
             <button
               type="submit"
               disabled={loading}
-              className="px-4 py-2 bg-black text-white rounded"
+              className="px-4 py-2 bg-black text-white rounded hover:opacity-90 transition"
             >
               {loading ? "Saving..." : "Save"}
             </button>

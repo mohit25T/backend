@@ -23,14 +23,17 @@ const ChangeEmail = () => {
      FETCH CURRENT EMAIL
   ========================== */
   useEffect(() => {
-    api
-      .get("/auth/me")
-      .then((res) => {
-        setOldEmail(res.data.email);
-      })
-      .catch(() => {
+    const fetchEmail = async () => {
+      try {
+        const res = await api.get("/auth/me");
+        setOldEmail(res.data?.email || "");
+      } catch (err) {
+        console.error(err);
         setError("Failed to load current email");
-      });
+      }
+    };
+
+    fetchEmail();
   }, []);
 
   /* ==========================
@@ -43,6 +46,13 @@ const ChangeEmail = () => {
 
     if (!newEmail) {
       setError("New email is required");
+      return;
+    }
+
+    // ✅ email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(newEmail)) {
+      setError("Enter a valid email address");
       return;
     }
 
@@ -61,7 +71,9 @@ const ChangeEmail = () => {
 
       setMessage("Secure OTP sent to your current email");
       setStep(2);
+
     } catch (err) {
+      console.error(err);
       setError(err.response?.data?.message || "Request failed");
     } finally {
       setLoading(false);
@@ -80,6 +92,12 @@ const ChangeEmail = () => {
       return;
     }
 
+    // ✅ OTP validation
+    if (otp.length !== 6 || !/^\d+$/.test(otp)) {
+      setError("Enter valid 6-digit OTP");
+      return;
+    }
+
     try {
       setLoading(true);
 
@@ -91,7 +109,9 @@ const ChangeEmail = () => {
         logout();
         navigate("/login");
       }, 2000);
+
     } catch (err) {
+      console.error(err);
       setError(err.response?.data?.message || "Invalid OTP");
     } finally {
       setLoading(false);
@@ -102,7 +122,7 @@ const ChangeEmail = () => {
     <AppLayout>
       <PageWrapper>
         <div className="max-w-md mx-auto mt-12 sm:mt-20">
-          
+
           <div className="mb-8 text-center">
             <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center shadow-lg shadow-indigo-500/30 mb-6">
               <ShieldCheck className="w-8 h-8 text-white" />
@@ -110,7 +130,9 @@ const ChangeEmail = () => {
             <h2 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-100 to-gray-400 tracking-tight">
               Change Email Address
             </h2>
-            <p className="text-gray-400 mt-2 text-sm">Securely update your administrator email using OTP verification.</p>
+            <p className="text-gray-400 mt-2 text-sm">
+              Securely update your administrator email using OTP verification.
+            </p>
           </div>
 
           <div className="glass-panel p-6 sm:p-8 rounded-2xl shadow-xl relative mt-4">
@@ -120,6 +142,7 @@ const ChangeEmail = () => {
                 {error}
               </div>
             )}
+
             {message && (
               <div className="mb-6 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm text-center">
                 {message}
@@ -129,7 +152,7 @@ const ChangeEmail = () => {
             {/* STEP 1 */}
             {step === 1 && (
               <form onSubmit={requestChange} className="space-y-5">
-                {/* OLD EMAIL (READ ONLY) */}
+
                 <div>
                   <label className="block text-sm font-medium text-gray-400 mb-2">
                     Current Enrolled Email
@@ -145,7 +168,6 @@ const ChangeEmail = () => {
                   </div>
                 </div>
 
-                {/* NEW EMAIL */}
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
                     New Email Address
@@ -178,9 +200,9 @@ const ChangeEmail = () => {
             {/* STEP 2 */}
             {step === 2 && (
               <form onSubmit={verifyOtp} className="space-y-5">
-                
+
                 <div className="text-center text-sm text-gray-400 mb-6">
-                  Please enter the 6-digit confirmation code we sent to <br/>
+                  Please enter the 6-digit confirmation code we sent to <br />
                   <span className="text-primary-400 font-medium">{oldEmail}</span>
                 </div>
 
@@ -191,7 +213,7 @@ const ChangeEmail = () => {
                     placeholder="Enter 6-digit OTP"
                     value={otp}
                     onChange={(e) => setOtp(e.target.value)}
-                    className="glass-input pl-12 focus:border-emerald-500 focus:ring-emerald-500 text-center text-lg font-mono tracking-widest"
+                    className="glass-input pl-12 text-center text-lg font-mono tracking-widest"
                     maxLength={6}
                     autoFocus
                     required
@@ -207,11 +229,16 @@ const ChangeEmail = () => {
                     {loading ? "Verifying..." : "Verify & Update Email"}
                   </button>
                 </div>
-                
+
                 <div className="text-center mt-4">
-                  <button 
-                    type="button" 
-                    onClick={() => { setStep(1); setOtp(""); setError(""); setMessage(""); }}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setStep(1);
+                      setOtp("");
+                      setError("");
+                      setMessage("");
+                    }}
                     className="text-xs text-gray-500 hover:text-gray-300 transition-colors underline underline-offset-2"
                   >
                     Back to previous step

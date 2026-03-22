@@ -36,6 +36,7 @@ const AddAdminWithSociety = () => {
       setSocieties(res.data);
     } catch (err) {
       console.error(err);
+      setMsg("Failed to load societies");
     }
   };
 
@@ -48,7 +49,6 @@ const AddAdminWithSociety = () => {
   ============================= */
 
   const handleSocietyChange = (e) => {
-
     const value = e.target.value;
 
     if (value === "OTHER") {
@@ -64,7 +64,6 @@ const AddAdminWithSociety = () => {
     setWing("");
 
     const society = societies.find((s) => s._id === value);
-
     const wingsData = society?.wings || [];
 
     setWings(wingsData);
@@ -85,11 +84,10 @@ const AddAdminWithSociety = () => {
   ============================= */
 
   const handleCreateSociety = async (data) => {
-
     try {
+      setLoading(true);
 
       const res = await api.post("/societies", data);
-
       const newSociety = res.data;
 
       await loadSocieties();
@@ -111,11 +109,14 @@ const AddAdminWithSociety = () => {
       );
 
       setShowSocietyModal(false);
+      setMsg("Society created successfully");
 
     } catch (err) {
       console.error(err);
+      setMsg(err.response?.data?.message || "Failed to create society");
+    } finally {
+      setLoading(false);
     }
-
   };
 
   /* =============================
@@ -123,13 +124,9 @@ const AddAdminWithSociety = () => {
   ============================= */
 
   const handleBulkChange = (index, field, value) => {
-
     const updated = [...admins];
-
     updated[index][field] = value;
-
     setAdmins(updated);
-
   };
 
   /* =============================
@@ -137,21 +134,25 @@ const AddAdminWithSociety = () => {
   ============================= */
 
   const handleSubmit = async (e) => {
-
     e.preventDefault();
+
+    if (!societyId) {
+      setMsg("Please select a society");
+      return;
+    }
 
     setLoading(true);
     setMsg("");
 
     try {
-
-      if (!societyId) {
-        setMsg("Please select a society");
-        setLoading(false);
-        return;
-      }
-
       if (mode === "single") {
+
+        // ✅ extra validation (safe)
+        if (!name || !mobile || !email || !wing || !flatNo) {
+          setMsg("All fields are required");
+          setLoading(false);
+          return;
+        }
 
         await api.post("/invites/admin", {
           name,
@@ -198,19 +199,14 @@ const AddAdminWithSociety = () => {
             flatNo: ""
           }))
         );
-
       }
 
     } catch (err) {
-
+      console.error(err);
       setMsg(err.response?.data?.message || "Operation failed");
-
     } finally {
-
       setLoading(false);
-
     }
-
   };
 
   return (
@@ -226,20 +222,24 @@ const AddAdminWithSociety = () => {
               <UserPlus className="w-8 h-8 text-primary-400" />
               Add Admin
             </h1>
-            <p className="text-gray-400 mt-2">Invite new administrators to manage societies and wings.</p>
+            <p className="text-gray-400 mt-2">
+              Invite new administrators to manage societies and wings.
+            </p>
           </div>
 
           <div className="glass-panel p-6 sm:p-8 rounded-2xl relative">
-            
+
             {msg && (
               <div className={`mb-6 p-4 rounded-xl border flex items-center gap-3 ${
-                msg.includes("success") || msg.includes("invited") 
-                ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" 
-                : "bg-red-500/10 border-red-500/20 text-red-400"
+                msg.toLowerCase().includes("success") || msg.toLowerCase().includes("invited")
+                  ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
+                  : "bg-red-500/10 border-red-500/20 text-red-400"
               }`}>
                 {msg}
               </div>
             )}
+
+            {/* EVERYTHING BELOW = SAME (UNCHANGED UI) */}
 
             {/* MODE SWITCH */}
             <div className="flex bg-dark-800/50 p-1.5 rounded-xl border border-white/5 w-fit mb-8 shadow-inner">
@@ -268,6 +268,7 @@ const AddAdminWithSociety = () => {
               </button>
             </div>
 
+           
             {/* SOCIETY SELECT */}
             <div className="mb-8 relative group">
               <Building className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 group-focus-within:text-primary-400 transition-colors pointer-events-none" />

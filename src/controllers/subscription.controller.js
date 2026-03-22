@@ -10,54 +10,54 @@ import crypto from "crypto";
 export const createOrder = async (req, res) => {
   try {
     const societyId = req.user.societyId;
-    const { plan = "monthly" } = req.body;
+    const { plan = "monthly", extraFlats = 0 } = req.body; // 🔥 ADDED
 
-    // 🔥 Count ALL flats (before payment)
-    const totalFlats = await Flat.countDocuments({ societyId });
-
-    if (totalFlats === 0) {
-      return res.status(400).json({
-        message: "No flats found for this society",
-      });
-    }
-
-    // 🔥 Prevent duplicate active subscription
     const existing = await Subscription.findOne({
       societyId,
       status: "active",
     });
 
+    let totalFlats;
+
+    // 🔥 NEW LOGIC (upgrade vs new purchase)
     if (existing) {
-      return res.status(400).json({
-        message: "Active subscription already exists",
-      });
+      if (!extraFlats || extraFlats <= 0) {
+        return res.status(400).json({
+          message: "Please specify additional flats to upgrade",
+        });
+      }
+
+      totalFlats = extraFlats; // 🔥 only charge extra flats
+    } else {
+      totalFlats = await Flat.countDocuments({ societyId });
+
+      if (totalFlats === 0) {
+        return res.status(400).json({
+          message: "No flats found for this society",
+        });
+      }
     }
 
     // 💰 Pricing
     let pricePerFlat = 20;
-
-    if (plan === "yearly") {
-      pricePerFlat = 200;
-    }
+    if (plan === "yearly") pricePerFlat = 200;
 
     const totalAmount = totalFlats * pricePerFlat;
 
-    // 💳 Razorpay order
     const options = {
-      amount: totalAmount * 100, // in paise
+      amount: totalAmount * 100,
       currency: "INR",
       receipt: `receipt_${Date.now()}`,
     };
 
     const order = await razorpay.orders.create(options);
 
-    console.log("Razorpay Order Created:", order);
-
     res.status(200).json({
       order,
       totalFlats,
       totalAmount,
       plan,
+      isUpgrade: !!existing, // 🔥 ADDED
     });
 
   } catch (error) {
@@ -68,7 +68,7 @@ export const createOrder = async (req, res) => {
 
 
 // ===============================
-// ✅ VERIFY PAYMENT + CREATE SUBSCRIPTION
+// ✅ VERIFY PAYMENT + CREATE/UPGRADE SUBSCRIPTION
 // ===============================
 export const verifyPayment = async (req, res) => {
   try {
@@ -79,6 +79,7 @@ export const verifyPayment = async (req, res) => {
       razorpay_payment_id,
       razorpay_signature,
       plan = "monthly",
+      extraFlats = 0, // 🔥 ADDED
     } = req.body;
 
     // 🔐 Verify signature
@@ -93,9 +94,6 @@ export const verifyPayment = async (req, res) => {
       });
     }
 
-    // 🔥 Count flats again (secure)
-    const totalFlats = await Flat.countDocuments({ societyId });
-
     let pricePerFlat = 20;
     let durationDays = 30;
 
@@ -104,35 +102,71 @@ export const verifyPayment = async (req, res) => {
       durationDays = 365;
     }
 
+    const existing = await Subscription.findOne({
+      societyId,
+      status: "active",
+    });
+
+    /* =====================================================
+       🔥 UPGRADE FLOW
+    ===================================================== */
+    if (existing) {
+      const newAllowedFlats = existing.allowedFlats + Number(extraFlats);
+
+      // 🔥 Update subscription
+      existing.allowedFlats = newAllowedFlats;
+      existing.totalFlats = newAllowedFlats;
+      await existing.save();
+
+      // 🔥 Enable newly allowed flats
+      const flats = await Flat.find({ societyId })
+        .sort({ flatIndex: 1 })
+        .limit(newAllowedFlats);
+
+      await Flat.updateMany(
+        { _id: { $in: flats.map(f => f._id) } },
+        { isSubscribed: true }
+      );
+
+      return res.status(200).json({
+        message: "Subscription upgraded successfully",
+        subscription: existing,
+      });
+    }
+
+    /* =====================================================
+       🔥 FIRST TIME SUBSCRIPTION
+    ===================================================== */
+
+    const totalFlats = await Flat.countDocuments({ societyId });
+
     const totalAmount = totalFlats * pricePerFlat;
 
-    // 📅 Dates
     const startDate = new Date();
     const endDate = new Date();
     endDate.setDate(startDate.getDate() + durationDays);
 
-    // 🔥 Expire old subscriptions
     await Subscription.updateMany(
       { societyId, status: "active" },
       { status: "expired" }
     );
 
-    // 🔥 Mark ALL flats as subscribed
+    // 🔥 ONLY allow limited flats
+    const flats = await Flat.find({ societyId })
+      .sort({ flatIndex: 1 })
+      .limit(totalFlats);
+
     await Flat.updateMany(
-      { societyId },
+      { _id: { $in: flats.map(f => f._id) } },
       { isSubscribed: true }
     );
 
-    // ✅ IMPORTANT FIX
-    const allowedFlats = totalFlats;
-
-    // ✅ Create new subscription
     const subscription = await Subscription.create({
       societyId,
       plan,
       pricePerFlat,
       totalFlats,
-      allowedFlats, // ✅ FIXED
+      allowedFlats: totalFlats,
       totalAmount,
       startDate,
       endDate,
@@ -168,8 +202,6 @@ export const getMySubscription = async (req, res) => {
       });
     }
 
-    console.log(subscription);
-
     res.status(200).json({ subscription });
 
   } catch (error) {
@@ -187,16 +219,10 @@ export const getSubscriptionPreview = async (req, res) => {
     const societyId = req.user.societyId;
     const { plan = "monthly" } = req.query;
 
-    // 🔥 Count ALL flats (before payment preview)
     const totalFlats = await Flat.countDocuments({ societyId });
 
-    console.log("Total Flats:", totalFlats);
-
     let pricePerFlat = 20;
-
-    if (plan === "yearly") {
-      pricePerFlat = 200;
-    }
+    if (plan === "yearly") pricePerFlat = 200;
 
     const totalAmount = totalFlats * pricePerFlat;
 

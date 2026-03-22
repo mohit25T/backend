@@ -10,16 +10,36 @@ const AuditLogs = () => {
   const [action, setAction] = useState("");
   const [dateRange, setDateRange] = useState("ALL");
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    fetchAuditLogs()
-      .then((res) => setLogs(res.data))
-      .finally(() => setLoading(false));
+    const loadLogs = async () => {
+      try {
+        setLoading(true);
+        const res = await fetchAuditLogs();
+        setLogs(res.data || []);
+      } catch (err) {
+        console.error(err);
+        setError("Failed to load audit logs");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadLogs();
   }, []);
 
+  /* =============================
+     AVAILABLE ACTIONS
+  ============================= */
+
   const availableActions = useMemo(() => {
-    return [...new Set(logs.map((l) => l.action))];
+    return [...new Set(logs.map((l) => l.action).filter(Boolean))];
   }, [logs]);
+
+  /* =============================
+     FILTER LOGS
+  ============================= */
 
   const filteredLogs = useMemo(() => {
     return logs.filter((log) => {
@@ -33,8 +53,10 @@ const AuditLogs = () => {
       }
 
       if (dateRange === "7_DAYS") {
-        const diff = (now - logDate) / (1000 * 60 * 60 * 24);
-        return diff <= 7;
+        const diffDays = Math.floor(
+          (now - logDate) / (1000 * 60 * 60 * 24)
+        );
+        return diffDays <= 7;
       }
 
       return true;
@@ -56,8 +78,18 @@ const AuditLogs = () => {
           availableActions={availableActions}
         />
 
+        {/* ERROR */}
+        {error && (
+          <p className="text-red-500 mb-4">
+            {error}
+          </p>
+        )}
+
+        {/* LOADING */}
         {loading ? (
-          <p>Loading audit logs...</p>
+          <p className="text-gray-400 animate-pulse">
+            Loading audit logs...
+          </p>
         ) : filteredLogs.length === 0 ? (
           <p className="text-gray-500">
             No logs found

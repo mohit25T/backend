@@ -26,38 +26,56 @@ const UsersByRole = () => {
   });
 
   /* ================= LOAD ADMINS ================= */
-  useEffect(() => {
-    api.get("/users?role=ADMIN").then((res) => {
-      setAdmins(res.data);
+  const loadAdmins = async () => {
+    try {
+      const res = await api.get("/users?role=ADMIN");
+
+      const data = res.data || [];
+
+      setAdmins(data);
 
       setCounts((p) => ({
         ...p,
-        admins: res.data.length,
+        admins: data.length,
       }));
-    });
+    } catch (err) {
+      console.error("Failed to load admins:", err);
+    }
+  };
+
+  useEffect(() => {
+    loadAdmins();
   }, []);
 
   /* ================= LOAD USERS ================= */
   const loadUsersByAdmin = async (role) => {
-    const res = await api.get(`/users?role=${role}`);
+    try {
+      if (!selectedAdmin) return;
 
-    /* 🔥 FILTER BY SOCIETY + WING */
-    const filtered = res.data.filter(
-      (u) =>
-        u.societyId?._id === selectedAdmin?.societyId?._id &&
-        u.wing === selectedAdmin?.wing,
-    );
+      const res = await api.get(`/users?role=${role}`);
 
-    setUsers(filtered);
+      const data = res.data || [];
 
-    setCounts((p) => ({
-      ...p,
-      owners: role === "OWNER" ? filtered.length : p.owners,
-      tenants: role === "TENANT" ? filtered.length : p.tenants,
-      guards: role === "GUARD" ? filtered.length : p.guards,
-    }));
+      /* 🔥 FILTER BY SOCIETY + WING */
+      const filtered = data.filter(
+        (u) =>
+          u.societyId?._id === selectedAdmin?.societyId?._id &&
+          u.wing === selectedAdmin?.wing
+      );
 
-    setView(role);
+      setUsers(filtered);
+
+      setCounts((p) => ({
+        ...p,
+        owners: role === "OWNER" ? filtered.length : p.owners,
+        tenants: role === "TENANT" ? filtered.length : p.tenants,
+        guards: role === "GUARD" ? filtered.length : p.guards,
+      }));
+
+      setView(role);
+    } catch (err) {
+      console.error("Failed to load users:", err);
+    }
   };
 
   const goBack = () => {
@@ -116,7 +134,8 @@ const UsersByRole = () => {
             )}
           </h1>
 
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
+            {/* EXPORT BUTTONS */}
             {view === "ADMINS" && (
               <button
                 onClick={() => downloadUsersCSV("ADMIN")}
@@ -170,6 +189,7 @@ const UsersByRole = () => {
             users={admins}
             view={view}
             onEdit={(a) => setEditingAdmin(a)}
+            onReplace={(a) => setReplacingAdmin(a)} // ✅ ADDED
             onRowClick={(a) => {
               setSelectedAdmin(a);
               setView("OPTIONS");
@@ -179,7 +199,7 @@ const UsersByRole = () => {
 
         {/* OPTIONS */}
         {view === "OPTIONS" && selectedAdmin && (
-          <div className="flex gap-4">
+          <div className="flex gap-4 flex-wrap">
             <button
               onClick={() => loadUsersByAdmin("OWNER")}
               className="bg-black text-white px-4 py-2 rounded"
@@ -203,6 +223,7 @@ const UsersByRole = () => {
           </div>
         )}
 
+        {/* USERS TABLE */}
         {(view === "OWNER" || view === "TENANT" || view === "GUARD") && (
           <UserTable users={users} view={view} />
         )}
@@ -215,9 +236,7 @@ const UsersByRole = () => {
             onClose={() => setEditingAdmin(null)}
             onUpdated={() => {
               setEditingAdmin(null);
-              api.get("/users?role=ADMIN").then((res) => {
-                setAdmins(res.data);
-              });
+              loadAdmins(); // ✅ cleaner
             }}
           />
         )}
@@ -229,11 +248,9 @@ const UsersByRole = () => {
             setLoading={setReplaceLoading}
             onClose={() => !replaceLoading && setReplacingAdmin(null)}
             onReplaced={() => {
-              api.get("/users?role=ADMIN").then((res) => {
-                setAdmins(res.data);
-                setReplacingAdmin(null);
-                setView("ADMINS");
-              });
+              loadAdmins(); // ✅ cleaner
+              setReplacingAdmin(null);
+              setView("ADMINS");
             }}
           />
         )}
