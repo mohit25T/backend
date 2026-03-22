@@ -633,8 +633,9 @@ export const inviteAdminsBulk = async (req, res) => {
             invitedBy: req.user.userId,
             expiresAt
           });
-
         }
+        console.log("Created invite:", invite);
+        console.log("Error:", errors);
 
         await auditLogger({
           req,
@@ -648,6 +649,7 @@ export const inviteAdminsBulk = async (req, res) => {
         createdInvites.push(invite);
 
       } catch (err) {
+        console.error("Error processing admin invite:", err);
         errors.push({
           mobile: admin.mobile,
           message: err.message
