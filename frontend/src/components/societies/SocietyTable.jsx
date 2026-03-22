@@ -3,28 +3,33 @@ import { toggleSocietyBlock } from "../../api/block";
 import { useState } from "react";
 
 const SocietyTable = ({ societies = [], reloadSocieties }) => {
+  const [loadingId, setLoadingId] = useState(null);
+  const [error, setError] = useState(""); // ✅ NEW
 
-  const [loadingId, setLoadingId] = useState(null); // 🔥 track button loading
-
-  // 🔥 EMPTY STATE
+  /* 🔥 EMPTY STATE */
   if (!societies.length) {
     return (
-      <div className="glass-panel rounded-2xl p-6 text-center text-gray-400">
-        No societies found
+      <div className="glass-panel rounded-2xl p-8 text-center text-gray-400">
+        <p className="text-lg font-medium">No societies found</p>
+        <p className="text-sm mt-1 text-gray-500">
+          Create a society to get started
+        </p>
       </div>
     );
   }
 
   const handleToggle = async (id) => {
     try {
+      if (loadingId) return; // ✅ prevent double click
+
+      setError("");
       setLoadingId(id);
 
       await toggleSocietyBlock(id);
       await reloadSocieties();
-
     } catch (err) {
       console.error("Toggle Society Error:", err);
-      alert(err.response?.data?.message || "Action failed");
+      setError(err.response?.data?.message || "Action failed");
     } finally {
       setLoadingId(null);
     }
@@ -32,6 +37,20 @@ const SocietyTable = ({ societies = [], reloadSocieties }) => {
 
   return (
     <div className="glass-panel rounded-2xl shadow-xl overflow-hidden border border-white/5">
+
+      {/* ✅ ERROR */}
+      {error && (
+        <div className="m-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm flex justify-between items-center">
+          <span>{error}</span>
+          <button
+            onClick={() => setError("")}
+            className="text-xs underline hover:text-white"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
       <div className="overflow-x-auto">
         <table className="w-full text-left whitespace-nowrap">
 
@@ -107,7 +126,11 @@ const SocietyTable = ({ societies = [], reloadSocieties }) => {
                 {/* CREATED */}
                 <td className="p-4 px-6 text-sm text-gray-400">
                   {s.createdAt
-                    ? new Date(s.createdAt).toLocaleDateString()
+                    ? new Date(s.createdAt).toLocaleDateString(undefined, {
+                        year: "numeric",
+                        month: "short",
+                        day: "numeric"
+                      })
                     : "-"}
                 </td>
 
@@ -116,12 +139,16 @@ const SocietyTable = ({ societies = [], reloadSocieties }) => {
                   <button
                     onClick={() => handleToggle(s._id)}
                     disabled={loadingId === s._id}
-                    className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                    className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
                       s.status === "ACTIVE"
                         ? "bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/20"
                         : "bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/20"
                     } ${loadingId === s._id ? "opacity-60 cursor-not-allowed" : ""}`}
                   >
+                    {loadingId === s._id && (
+                      <span className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin"></span>
+                    )}
+
                     {loadingId === s._id
                       ? "Processing..."
                       : s.status === "ACTIVE"
