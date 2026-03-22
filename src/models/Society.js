@@ -28,8 +28,7 @@ const societySchema = new mongoose.Schema(
     ===================================================== */
     totalFlats: {
       type: Number,
-      required: true,
-      min: 1,
+      default: 0
     },
 
     /* =====================================================
