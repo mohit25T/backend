@@ -31,6 +31,7 @@ export const createSociety = async (req, res) => {
       name: name.trim(),
       city,
       wings: normalizedWings,
+      totalFlats: 0, // ✅ FIX ADDED
       createdBy: req.user.userId
     });
 
