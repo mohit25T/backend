@@ -4,47 +4,32 @@ import PageWrapper from "../components/layout/PageWrapper";
 import InviteTable from "../components/invites/InviteTable";
 import {
   fetchInvites,
-  resendInvite,
   cancelInvite
 } from "../api/invites";
 
 const Invites = () => {
   const [invites, setInvites] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [initialLoading, setInitialLoading] = useState(true); // ✅ NEW
-  const [error, setError] = useState(""); // ✅ NEW
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [error, setError] = useState("");
 
   const loadInvites = async () => {
     try {
       setError("");
       const res = await fetchInvites();
 
-      // ensure safe data format
       setInvites(res.data || []);
     } catch (error) {
       console.error("Failed to load invites:", error);
       setError("Failed to load invites");
     } finally {
-      setInitialLoading(false); // ✅ stop initial loader
+      setInitialLoading(false);
     }
   };
 
   useEffect(() => {
     loadInvites();
   }, []);
-
-  const handleResend = async (id) => {
-    try {
-      setLoading(true);
-      await resendInvite(id);
-      await loadInvites();
-    } catch (error) {
-      console.error("Resend failed:", error);
-      setError("Failed to resend invite"); // ✅ NEW
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleCancel = async (id) => {
     try {
@@ -53,7 +38,7 @@ const Invites = () => {
       await loadInvites();
     } catch (error) {
       console.error("Cancel failed:", error);
-      setError("Failed to cancel invite"); // ✅ NEW
+      setError("Failed to cancel invite");
     } finally {
       setLoading(false);
     }
@@ -67,14 +52,14 @@ const Invites = () => {
           Society Invites
         </h1>
 
-        {/* ✅ INITIAL LOADING */}
+        {/* INITIAL LOADING */}
         {initialLoading && (
           <div className="flex justify-center items-center h-32">
             <span className="w-6 h-6 border-2 border-white/20 border-t-primary-500 rounded-full animate-spin"></span>
           </div>
         )}
 
-        {/* ✅ ERROR */}
+        {/* ERROR */}
         {!initialLoading && error && (
           <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm flex justify-between items-center">
             <span>{error}</span>
@@ -87,26 +72,25 @@ const Invites = () => {
           </div>
         )}
 
-        {/* ✅ ACTION LOADING */}
+        {/* ACTION LOADING */}
         {loading && (
           <p className="text-sm text-gray-500 mb-2">
             Updating...
           </p>
         )}
 
-        {/* ✅ EMPTY STATE */}
+        {/* EMPTY STATE */}
         {!initialLoading && invites.length === 0 && !error && (
           <div className="text-center text-gray-500 py-10">
             No invites found
           </div>
         )}
 
-        {/* ✅ TABLE */}
+        {/* TABLE */}
         {!initialLoading && invites.length > 0 && (
           <InviteTable
             invites={invites}
-            onResend={handleResend}
-            onCancel={handleCancel}
+            onCancel={handleCancel} // ✅ only cancel now
           />
         )}
 

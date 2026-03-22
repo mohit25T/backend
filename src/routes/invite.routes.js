@@ -2,7 +2,6 @@ import express from "express";
 import {
   inviteAdmin,
   getAllInvites,
-  resendInvite,
   cancelInvite,
   inviteResident,
   inviteGuard,
@@ -21,7 +20,6 @@ router.use(requireAuth); // 🔥 Global subscription check for all invite routes
 router.get("/", requireSuperAdmin, getAllInvites);
 router.post("/admin", requireSuperAdmin, inviteAdmin);
 router.post("/admin/bulk", requireSuperAdmin, inviteAdminsBulk);
-router.post("/:id/resend", requireSuperAdmin, resendInvite);
 router.post("/:id/cancel", requireSuperAdmin, cancelInvite);
 router.post("/invite-resident", checkSubscriptionStatus, requireAdmin, inviteResident);
 router.post("/invite-guard", checkSubscriptionStatus, requireAdmin, inviteGuard);
