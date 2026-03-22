@@ -47,9 +47,7 @@ const Societies = () => {
       await loadSocieties();
     } catch (error) {
       console.error("Create society failed:", error);
-      setError(
-        error.response?.data?.message || "Failed to create society"
-      );
+      setError(error.response?.data?.message || "Failed to create society");
     } finally {
       setLoading(false);
     }
@@ -58,12 +56,8 @@ const Societies = () => {
   return (
     <AppLayout>
       <PageWrapper>
-
         <div className="flex justify-between items-center mb-6">
-
-          <h1 className="text-2xl font-bold">
-            Societies
-          </h1>
+          <h1 className="text-2xl font-bold">Societies</h1>
 
           <button
             onClick={() => {
@@ -75,7 +69,6 @@ const Societies = () => {
           >
             + Create Society
           </button>
-
         </div>
 
         {/* ✅ SUCCESS */}
@@ -123,10 +116,7 @@ const Societies = () => {
 
         {/* ✅ TABLE */}
         {!initialLoading && societies.length > 0 && (
-          <SocietyTable
-            societies={societies}
-            reloadSocieties={loadSocieties}
-          />
+          <SocietyTable societies={societies} reloadSocieties={loadSocieties} />
         )}
 
         {/* CREATE SOCIETY MODAL */}
@@ -136,12 +126,8 @@ const Societies = () => {
             if (!loading) setOpen(false); // ✅ prevent closing during submit
           }}
         >
-          <CreateSocietyForm
-            onSubmit={handleCreate}
-            loading={loading}
-          />
+          <CreateSocietyForm onSubmit={handleCreate} loading={loading} />
         </Modal>
-
       </PageWrapper>
     </AppLayout>
   );
