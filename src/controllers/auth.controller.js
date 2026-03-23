@@ -230,7 +230,6 @@ export const verifyOtpLogin = async (req, res) => {
  * VERIFY OTP — USER LOGIN
  * =====================================================
  */
-
 export const verifyUserLogin = async (req, res) => {
   try {
 
@@ -273,6 +272,10 @@ export const verifyUserLogin = async (req, res) => {
 
     let user = await User.findOne({ mobile });
 
+    /* =====================================================
+       🆕 CREATE USER
+    ===================================================== */
+
     if (!user) {
 
       user = await User.create({
@@ -292,6 +295,37 @@ export const verifyUserLogin = async (req, res) => {
 
       invite.status = "USED";
       await invite.save();
+    }
+
+    /* =====================================================
+       🔥 NEW: UPDATE FLAT OCCUPANCY (CRITICAL FIX)
+    ===================================================== */
+
+    if (user.flatId) {
+      const flatData = await Flat.findById(user.flatId);
+
+      if (flatData) {
+
+        // 🚫 Prevent double occupancy
+        if (
+          flatData.isOccupied &&
+          flatData.occupiedBy &&
+          flatData.occupiedBy.toString() !== user._id.toString()
+        ) {
+          return res.status(409).json({
+            message: `Flat ${flatData.wing}-${flatData.flatNo} already occupied`
+          });
+        }
+
+        // ✅ Update if not occupied
+        if (!flatData.isOccupied) {
+          flatData.isOccupied = true;
+          flatData.occupiedBy = user._id;
+          flatData.occupiedFrom = new Date();
+
+          await flatData.save();
+        }
+      }
     }
 
     /* =====================================================
@@ -328,7 +362,7 @@ export const verifyUserLogin = async (req, res) => {
       roles: user.roles,
       societyId: user.societyId,
       wing: user.wing,
-      flatId: user.flatId // 🔥 ADDED (important for middleware)
+      flatId: user.flatId
     });
 
     const refreshToken = signRefreshToken({
@@ -357,7 +391,7 @@ export const verifyUserLogin = async (req, res) => {
       shiftStartTime: user.shiftStartTime,
       shiftEndTime: user.shiftEndTime,
       shiftType: user.shiftType,
-      subscriptionStatus // 🔥 ADDED
+      subscriptionStatus
     });
 
   } catch (err) {
