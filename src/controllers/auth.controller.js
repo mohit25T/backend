@@ -295,16 +295,28 @@ export const verifyUserLogin = async (req, res) => {
 
       invite.status = "USED";
       await invite.save();
+
+      console.log("🆕 New user created:", user._id);
+    } else {
+      console.log("👤 Existing user login:", user._id);
     }
 
     /* =====================================================
-       🔥 NEW: UPDATE FLAT OCCUPANCY (CRITICAL FIX)
+       🔥 UPDATE FLAT OCCUPANCY (FINAL FIX)
     ===================================================== */
 
     if (user.flatId) {
+
+      console.log("➡️ Checking flat occupancy for:", user.flatId);
+
       const flatData = await Flat.findById(user.flatId);
 
-      if (flatData) {
+      if (!flatData) {
+        console.log("❌ Flat NOT FOUND for ID:", user.flatId);
+      } else {
+
+        console.log("✅ Flat found:", flatData._id);
+        console.log("📊 Current occupancy:", flatData.isOccupied);
 
         // 🚫 Prevent double occupancy
         if (
@@ -317,19 +329,23 @@ export const verifyUserLogin = async (req, res) => {
           });
         }
 
-        // ✅ Update if not occupied
+        // ✅ Update occupancy if not occupied
         if (!flatData.isOccupied) {
           flatData.isOccupied = true;
           flatData.occupiedBy = user._id;
           flatData.occupiedFrom = new Date();
 
           await flatData.save();
+
+          console.log("🔥 Flat updated successfully:", flatData._id);
+        } else {
+          console.log("⚠️ Flat already occupied");
         }
       }
     }
 
     /* =====================================================
-       🔥 OPTIONAL: SUBSCRIPTION STATUS (DO NOT BLOCK)
+       🔥 SUBSCRIPTION STATUS (DO NOT BLOCK)
     ===================================================== */
 
     let subscriptionStatus = "ACTIVE";
@@ -396,7 +412,7 @@ export const verifyUserLogin = async (req, res) => {
 
   } catch (err) {
 
-    console.error("VERIFY USER LOGIN ERROR:", err);
+    console.error("❌ VERIFY USER LOGIN ERROR:", err);
 
     return res.status(500).json({
       message: "Login failed"
