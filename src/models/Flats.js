@@ -43,17 +43,16 @@ const flatSchema = new mongoose.Schema(
       index: true,
     },
 
-    // 🔥 Subscription Access Control (CRITICAL)
+    // 🔥 Subscription Access Control
     isSubscribed: {
       type: Boolean,
-      default: false, // ❗ IMPORTANT: new flats are NOT auto-allowed
+      default: false,
       index: true,
     },
 
-    // 🔥 NEW: Flat Order Tracking (VERY IMPORTANT FOR LIMIT SYSTEM)
+    // 🔥 FIXED: remove required (IMPORTANT)
     flatIndex: {
       type: Number,
-      required: true,
       index: true,
     },
 
@@ -67,38 +66,33 @@ const flatSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-
 // 🔥 Unique flat per society
 flatSchema.index(
   { societyId: 1, wing: 1, flatNo: 1 },
   { unique: true }
 );
 
-
-// 🔥 Fast queries (subscription + usage checks)
+// 🔥 Fast queries
 flatSchema.index({
   societyId: 1,
   isSubscribed: 1,
 });
 
-
-// 🔥 Occupancy-based queries
+// 🔥 Occupancy queries
 flatSchema.index({
   societyId: 1,
   isOccupied: 1,
 });
 
-
-// 🔥 NEW: Index for limit-based access
+// 🔥 Index for flat ordering
 flatSchema.index({
   societyId: 1,
   flatIndex: 1,
 });
 
-
-// 🔥 AUTO-INCREMENT flatIndex per society
-flatSchema.pre("save", async function (next) {
-  if (this.isNew) {
+// 🔥 AUTO-INCREMENT flatIndex per society (FIXED SAFE VERSION)
+flatSchema.pre("save", async function () {
+  if (this.isNew && !this.flatIndex) {
     const lastFlat = await mongoose.model("Flat").findOne(
       { societyId: this.societyId },
       {},
@@ -107,9 +101,6 @@ flatSchema.pre("save", async function (next) {
 
     this.flatIndex = lastFlat ? lastFlat.flatIndex + 1 : 1;
   }
-
-  next();
 });
-
 
 export default mongoose.model("Flat", flatSchema);
