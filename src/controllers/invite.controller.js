@@ -76,7 +76,7 @@ export const inviteAdmin = async (req, res) => {
     }
 
     /* =====================================================
-       🔥 ADDED: CHECK SUBSCRIPTION LIMIT
+       🔥 CHECK SUBSCRIPTION LIMIT
     ===================================================== */
 
     const limitCheck = await checkFlatLimit(societyId);
@@ -87,7 +87,7 @@ export const inviteAdmin = async (req, res) => {
     }
 
     /* =====================================================
-       🔥 CREATE OR GET FLAT
+       🔥 CREATE OR GET FLAT (FIXED)
     ===================================================== */
 
     let flat = await Flat.findOne({
@@ -97,11 +97,20 @@ export const inviteAdmin = async (req, res) => {
     });
 
     if (!flat) {
+      // 🔥 NEW: generate flatIndex
+      const lastFlat = await Flat.findOne({
+        societyId,
+        wing: normalizedWing
+      }).sort({ flatIndex: -1 });
+
+      const nextIndex = lastFlat ? lastFlat.flatIndex + 1 : 1;
+
       flat = await Flat.create({
         societyId,
         wing: normalizedWing,
         flatNo: normalizedFlatNo,
-        isSubscribed: !!limitCheck.subscription // 🔥 ADDED
+        flatIndex: nextIndex, // ✅ FIX ADDED
+        isSubscribed: !!limitCheck.subscription
       });
     }
 
@@ -137,7 +146,7 @@ export const inviteAdmin = async (req, res) => {
     let invite = await Invite.findOne({
       mobile,
       societyId,
-      roles: { $in: ["ADMIN","OWNER"] }
+      roles: { $in: ["ADMIN", "OWNER"] }
     });
 
     if (invite && invite.status === "USED") {
@@ -159,7 +168,7 @@ export const inviteAdmin = async (req, res) => {
       invite.status = "PENDING";
       invite.expiresAt = expiresAt;
       invite.invitedBy = req.user.userId;
-      invite.roles = ["ADMIN","OWNER"];
+      invite.roles = ["ADMIN", "OWNER"];
 
       await invite.save();
 
@@ -544,7 +553,7 @@ export const inviteAdminsBulk = async (req, res) => {
         }
 
         /* =====================================================
-           🔥 ADDED: CHECK SUBSCRIPTION LIMIT
+           🔥 CHECK SUBSCRIPTION LIMIT
         ===================================================== */
         const limitCheck = await checkFlatLimit(societyId);
         if (!limitCheck.allowed) {
@@ -556,17 +565,26 @@ export const inviteAdminsBulk = async (req, res) => {
         }
 
         /* =========================
-           🔥 CREATE OR GET FLAT
+           🔥 CREATE OR GET FLAT (FIXED)
         ========================= */
 
         let flat = await Flat.findOne({ societyId, wing, flatNo });
 
         if (!flat) {
+          // 🔥 NEW: generate flatIndex
+          const lastFlat = await Flat.findOne({
+            societyId,
+            wing
+          }).sort({ flatIndex: -1 });
+
+          const nextIndex = lastFlat ? lastFlat.flatIndex + 1 : 1;
+
           flat = await Flat.create({
             societyId,
             wing,
             flatNo,
-            isSubscribed: !!limitCheck.subscription // 🔥 ADDED
+            flatIndex: nextIndex, // ✅ FIX ADDED
+            isSubscribed: !!limitCheck.subscription
           });
         }
 
@@ -618,9 +636,7 @@ export const inviteAdminsBulk = async (req, res) => {
           invite.roles = ["ADMIN", "OWNER"];
 
           await invite.save();
-
         } else {
-
           invite = await Invite.create({
             name,
             mobile,
@@ -634,8 +650,6 @@ export const inviteAdminsBulk = async (req, res) => {
             expiresAt
           });
         }
-        console.log("Created invite:", invite);
-        console.log("Error:", errors);
 
         await auditLogger({
           req,
