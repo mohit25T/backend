@@ -202,6 +202,8 @@ export const getMySubscription = async (req, res) => {
       });
     }
 
+    console.log("Current Subscription:", subscription);
+
     // ✅ Send flat response (frontend compatible)
     res.status(200).json({
       status: subscription.status || "ACTIVE",
