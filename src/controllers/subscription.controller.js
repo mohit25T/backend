@@ -202,7 +202,14 @@ export const getMySubscription = async (req, res) => {
       });
     }
 
-    res.status(200).json({ subscription });
+    // ✅ Send flat response (frontend compatible)
+    res.status(200).json({
+      status: subscription.status || "ACTIVE",
+      plan: subscription.plan || "Monthly",
+      amount: subscription.amount || 0,
+      startDate: subscription.startDate,
+      endDate: subscription.endDate,
+    });
 
   } catch (error) {
     console.error("Get Subscription Error:", error);
