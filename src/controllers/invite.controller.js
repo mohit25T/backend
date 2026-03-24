@@ -396,6 +396,7 @@ export const inviteResident = async (req, res) => {
         expiresAt
       });
     }
+    console.log("Invite created/updated:", invite);
 
     await auditLogger({
       req,
