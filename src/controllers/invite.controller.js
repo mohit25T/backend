@@ -8,22 +8,22 @@ import { auditLogger } from "../utils/auditLogger.js";
 const INVITE_EXPIRY_HOURS = 24;
 
 /* 🔥 HELPER: Validate Flat + Subscription */
-const validateFlatAccess = async (societyId, wing, flatNo) => {
-  const flat = await Flat.findOne({ societyId, wing, flatNo });
+// const validateFlatAccess = async (societyId, wing, flatNo) => {
+//   const flat = await Flat.findOne({ societyId, wing, flatNo });
 
-  if (!flat) {
-    return { error: "Flat not found" };
-  }
+//   if (!flat) {
+//     return { error: "Flat not found" };
+//   }
 
-  // 🔥 OPTIONAL: Only check if subscription exists
-  if (flat.isSubscribed === false) {
-    return {
-      error: "Flat not included in subscription. Please upgrade plan."
-    };
-  }
+//   // 🔥 OPTIONAL: Only check if subscription exists
+//   if (flat.isSubscribed === false) {
+//     return {
+//       error: "Flat not included in subscription. Please upgrade plan."
+//     };
+//   }
 
-  return { flat };
-};
+//   return { flat };
+// };
 
 /* 🔥 ADDED: CHECK FLAT LIMIT */
 const checkFlatLimit = async (societyId) => {
@@ -279,9 +279,15 @@ export const cancelInvite = async (req, res) => {
  */
 export const inviteResident = async (req, res) => {
   try {
-    const { name, mobile, email, flatNo, wing, role } = req.body;
+    let { name, mobile, email, flatNo, wing, role } = req.body;
 
     const userRole = role?.toUpperCase();
+
+    // ===============================
+    // 🔥 NORMALIZE INPUT (IMPORTANT)
+    // ===============================
+    wing = wing?.toString().trim().toUpperCase();
+    flatNo = flatNo?.toString().trim();
 
     // ===============================
     // VALIDATION
@@ -307,40 +313,34 @@ export const inviteResident = async (req, res) => {
     }
 
     // ===============================
-    // 🔥 CHECK SUBSCRIPTION LIMIT (UPDATED)
+    // 🔥 CHECK SUBSCRIPTION LIMIT
     // ===============================
     const limitCheck = await checkFlatLimit(inviter.societyId);
 
     if (!limitCheck.allowed) {
       return res.status(403).json({
         message: limitCheck.message,
-        upgradeRequired: true, // 🔥 frontend can use this
+        upgradeRequired: true,
         used: limitCheck.used || 0,
         limit: limitCheck.limit || 0
       });
     }
 
     // ===============================
-    // VALIDATE FLAT
+    // 🔥 NO FLAT MODEL DEPENDENCY
     // ===============================
-    const { flat, error } = await validateFlatAccess(
-      inviter.societyId,
+    const flat = {
       wing,
       flatNo
-    );
-
-    if (error) {
-      return res.status(403).json({
-        message: error,
-        upgradeRequired: true
-      });
-    }
+    };
 
     // ===============================
     // ROLE PERMISSIONS
     // ===============================
+    const isAdmin = inviter.roles.includes("ADMIN");
+
     const isAdminInvitingOwner =
-      inviter.roles.includes("ADMIN") && userRole === "OWNER";
+      isAdmin && userRole === "OWNER";
 
     const isOwnerInvitingTenant =
       inviter.roles.includes("OWNER") &&
@@ -352,6 +352,24 @@ export const inviteResident = async (req, res) => {
       return res.status(403).json({
         message: "Not authorized to invite this role"
       });
+    }
+
+    // ===============================
+    // 🔥 PREVENT DUPLICATE OWNER PER FLAT
+    // ===============================
+    if (userRole === "OWNER") {
+      const existingOwner = await User.findOne({
+        societyId: inviter.societyId,
+        wing,
+        flatNo,
+        roles: "OWNER"
+      });
+
+      if (existingOwner) {
+        return res.status(409).json({
+          message: "Owner already exists for this flat"
+        });
+      }
     }
 
     // ===============================
@@ -411,7 +429,7 @@ export const inviteResident = async (req, res) => {
       invite.email = email;
       invite.flatNo = flatNo;
       invite.wing = wing;
-      invite.flatId = flat._id;
+      invite.flatId = null; // 🔥 removed dependency
       invite.status = "PENDING";
       invite.expiresAt = expiresAt;
       invite.invitedBy = inviter._id;
@@ -425,7 +443,7 @@ export const inviteResident = async (req, res) => {
         email,
         wing,
         flatNo,
-        flatId: flat._id,
+        flatId: null, // 🔥 removed dependency
         roles: [userRole],
         societyId: inviter.societyId,
         invitedBy: inviter._id,
