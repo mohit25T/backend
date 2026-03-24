@@ -4,6 +4,8 @@ import User from "../models/User.js";
 import Flat from "../models/Flats.js";
 import Subscription from "../models/Subscription.js"; // 🔥 ADDED
 import { auditLogger } from "../utils/auditLogger.js";
+import Counter from "../models/Counter.js";
+
 
 const INVITE_EXPIRY_HOURS = 24;
 
@@ -606,6 +608,7 @@ export const inviteGuard = async (req, res) => {
 /**
  * INVITE ADMINS BULK (patched)
  */
+
 export const inviteAdminsBulk = async (req, res) => {
   try {
     const { societyId, admins } = req.body;
@@ -630,6 +633,12 @@ export const inviteAdminsBulk = async (req, res) => {
       });
     }
 
+    // 🔥 Get subscription once (optimization)
+    const subscription = await Subscription.findOne({
+      societyId,
+      status: "active"
+    });
+
     const createdInvites = [];
     const errors = [];
 
@@ -649,46 +658,43 @@ export const inviteAdminsBulk = async (req, res) => {
           continue;
         }
 
-        /* =====================================================
-           🔥 CHECK SUBSCRIPTION LIMIT
-        ===================================================== */
-        const limitCheck = await checkFlatLimit(societyId);
-        if (!limitCheck.allowed) {
-          errors.push({
-            mobile,
-            message: limitCheck.message
-          });
-          continue;
-        }
-
-        /* =========================
-           🔥 CREATE OR GET FLAT (FIXED)
-        ========================= */
-
+        // ===============================
+        // 🔥 CREATE OR FIND FLAT
+        // ===============================
         let flat = await Flat.findOne({ societyId, wing, flatNo });
 
         if (!flat) {
-          // 🔥 NEW: generate flatIndex
-          const lastFlat = await Flat.findOne({
-            societyId,
-            wing
-          }).sort({ flatIndex: -1 });
+          // 🔥 ATOMIC COUNTER (FIX)
+          const counter = await Counter.findOneAndUpdate(
+            { societyId, type: "flat" },
+            { $inc: { value: 1 } },
+            { new: true, upsert: true }
+          );
 
-          const nextIndex = lastFlat ? lastFlat.flatIndex + 1 : 1;
+          const flatIndex = counter.value;
+
+          // 🔥 SUBSCRIPTION LOGIC (DO NOT BLOCK)
+          let isWithinLimit = true;
+          let upgradeRequired = false;
+
+          if (subscription && flatIndex > subscription.allowedFlats) {
+            isWithinLimit = false;
+            upgradeRequired = true;
+          }
 
           flat = await Flat.create({
             societyId,
             wing,
             flatNo,
-            flatIndex: nextIndex, // ✅ FIX ADDED
-            isSubscribed: !!limitCheck.subscription
+            flatIndex,
+            isWithinLimit,
+            isSubscribed: isWithinLimit
           });
         }
 
-        /* =========================
-           🚫 DUPLICATE CHECK
-        ========================= */
-
+        // ===============================
+        // 🚫 DUPLICATE CHECK
+        // ===============================
         const flatExists = await Invite.findOne({
           societyId,
           flatId: flat._id,
@@ -703,6 +709,9 @@ export const inviteAdminsBulk = async (req, res) => {
           continue;
         }
 
+        // ===============================
+        // CREATE INVITE
+        // ===============================
         const expiresAt = new Date(
           Date.now() + INVITE_EXPIRY_HOURS * 60 * 60 * 1000
         );
@@ -748,6 +757,9 @@ export const inviteAdminsBulk = async (req, res) => {
           });
         }
 
+        // ===============================
+        // AUDIT LOG
+        // ===============================
         await auditLogger({
           req,
           action: "CREATE_ADMIN_INVITE",
@@ -757,7 +769,10 @@ export const inviteAdminsBulk = async (req, res) => {
           description: `Admin invited | Wing ${wing} Flat ${flatNo}`
         });
 
-        createdInvites.push(invite);
+        createdInvites.push({
+          invite,
+          upgradeRequired: !flat.isWithinLimit // 🔥 important
+        });
 
       } catch (err) {
         console.error("Error processing admin invite:", err);
