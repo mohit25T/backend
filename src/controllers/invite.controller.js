@@ -15,8 +15,11 @@ const validateFlatAccess = async (societyId, wing, flatNo) => {
     return { error: "Flat not found" };
   }
 
-  if (!flat.isSubscribed) {
-    return { error: "Flat not included in subscription. Please upgrade plan." };
+  // 🔥 OPTIONAL: Only check if subscription exists
+  if (flat.isSubscribed === false) {
+    return {
+      error: "Flat not included in subscription. Please upgrade plan."
+    };
   }
 
   return { flat };
@@ -29,14 +32,19 @@ const checkFlatLimit = async (societyId) => {
     status: "active"
   });
 
-  // Setup mode (no subscription yet)
+  // 🟢 Allow setup if no subscription yet
   if (!subscription) {
     return { allowed: true };
   }
 
-  const totalFlats = await Flat.countDocuments({ societyId });
+  // 🔥 COUNT USED FLATS (IMPORTANT FIX)
+  const usedFlats = await User.countDocuments({
+    societyId,
+    flatNo: { $ne: null },
+    wing: { $ne: null }
+  });
 
-  if (totalFlats >= subscription.allowedFlats) {
+  if (usedFlats >= subscription.allowedFlats) {
     return {
       allowed: false,
       message: "Flat limit reached. Please upgrade your subscription."
@@ -275,6 +283,9 @@ export const inviteResident = async (req, res) => {
 
     const userRole = role?.toUpperCase();
 
+    // ===============================
+    // VALIDATION
+    // ===============================
     if (!userRole || !["OWNER", "TENANT"].includes(userRole)) {
       return res.status(400).json({
         message: "Role must be OWNER or TENANT"
@@ -295,24 +306,39 @@ export const inviteResident = async (req, res) => {
       });
     }
 
-    /* =====================================================
-       🔥 ADDED: CHECK SUBSCRIPTION LIMIT
-    ===================================================== */
+    // ===============================
+    // 🔥 CHECK SUBSCRIPTION LIMIT (UPDATED)
+    // ===============================
     const limitCheck = await checkFlatLimit(inviter.societyId);
+
     if (!limitCheck.allowed) {
       return res.status(403).json({
-        message: limitCheck.message
+        message: limitCheck.message,
+        upgradeRequired: true, // 🔥 frontend can use this
+        used: limitCheck.used || 0,
+        limit: limitCheck.limit || 0
       });
     }
 
-    // 🔥 EXISTING VALIDATION (UNCHANGED)
+    // ===============================
+    // VALIDATE FLAT
+    // ===============================
     const { flat, error } = await validateFlatAccess(
       inviter.societyId,
       wing,
       flatNo
     );
-    if (error) return res.status(403).json({ message: error });
 
+    if (error) {
+      return res.status(403).json({
+        message: error,
+        upgradeRequired: true
+      });
+    }
+
+    // ===============================
+    // ROLE PERMISSIONS
+    // ===============================
     const isAdminInvitingOwner =
       inviter.roles.includes("ADMIN") && userRole === "OWNER";
 
@@ -328,6 +354,9 @@ export const inviteResident = async (req, res) => {
       });
     }
 
+    // ===============================
+    // CHECK EXISTING USER
+    // ===============================
     const existingUser = await User.findOne({
       societyId: inviter.societyId,
       wing,
@@ -341,7 +370,10 @@ export const inviteResident = async (req, res) => {
       });
     }
 
-    const flatExists = await Invite.findOne({
+    // ===============================
+    // CHECK EXISTING INVITE
+    // ===============================
+    const existingInvite = await Invite.findOne({
       societyId: inviter.societyId,
       wing,
       flatNo,
@@ -349,12 +381,15 @@ export const inviteResident = async (req, res) => {
       status: { $in: ["PENDING", "USED"] }
     });
 
-    if (flatExists) {
+    if (existingInvite) {
       return res.status(409).json({
         message: `${userRole} already invited for this flat`
       });
     }
 
+    // ===============================
+    // CREATE / UPDATE INVITE
+    // ===============================
     const expiresAt = new Date(
       Date.now() + INVITE_EXPIRY_HOURS * 60 * 60 * 1000
     );
@@ -381,6 +416,7 @@ export const inviteResident = async (req, res) => {
       invite.expiresAt = expiresAt;
       invite.invitedBy = inviter._id;
       invite.roles = [userRole];
+
       await invite.save();
     } else {
       invite = await Invite.create({
@@ -396,8 +432,12 @@ export const inviteResident = async (req, res) => {
         expiresAt
       });
     }
+
     console.log("Invite created/updated:", invite);
 
+    // ===============================
+    // AUDIT LOG
+    // ===============================
     await auditLogger({
       req,
       action: "INVITE_RESIDENT",
@@ -407,6 +447,9 @@ export const inviteResident = async (req, res) => {
       description: `${userRole} invited: ${name} (${mobile}) | Wing ${wing} Flat ${flatNo}`
     });
 
+    // ===============================
+    // SUCCESS RESPONSE
+    // ===============================
     return res.json({
       success: true,
       message: `${userRole} invite sent successfully`,
@@ -415,11 +458,14 @@ export const inviteResident = async (req, res) => {
 
   } catch (err) {
     console.error("INVITE ERROR:", err);
+
     return res.status(500).json({
       message: "Failed to invite resident"
     });
   }
 };
+
+
 /**
  * INVITE GUARD (unchanged)
  */
