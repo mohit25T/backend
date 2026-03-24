@@ -1,10 +1,10 @@
 import Subscription from "../models/Subscription.js";
-import Flat from "../models/Flats.js"; // 🔥 ADDED
+import Flat from "../models/Flats.js";
 
 export const checkSubscriptionStatus = async (req, res, next) => {
   try {
     const societyId = req.user?.societyId;
-    const flatId = req.user?.flatId; // 🔥 ADDED
+    const flatId = req.user?.flatId;
 
     if (!societyId) {
       return res.status(400).json({
@@ -13,12 +13,14 @@ export const checkSubscriptionStatus = async (req, res, next) => {
       });
     }
 
-    // 🔥 Fetch subscription
+    // ===============================
+    // 🔥 FETCH SUBSCRIPTION
+    // ===============================
     const subscription = await Subscription.findOne({
       societyId,
       status: "active",
     })
-      .select("endDate status plan allowedFlats") // 🔥 ADDED allowedFlats
+      .select("endDate status plan allowedFlats")
       .lean();
 
     // ❌ No subscription
@@ -44,38 +46,47 @@ export const checkSubscriptionStatus = async (req, res, next) => {
       });
     }
 
-    /* =====================================================
-       🔥 NEW: FLAT LEVEL ACCESS CHECK
-    ===================================================== */
-
+    // ===============================
+    // 🔥 FLAT LIMIT LOGIC (MAIN FIX)
+    // ===============================
     if (flatId) {
-      const flat = await Flat.findById(flatId)
-        .select("isSubscribed")
+      // 🔥 Get all flats in order (IMPORTANT)
+      const flats = await Flat.find({ societyId })
+        .sort({ createdAt: 1 }) // oldest first
+        .select("_id")
         .lean();
 
-      // ❌ Flat not allowed in plan
-      if (!flat || !flat.isSubscribed) {
+      // Take only allowed flats
+      const allowedFlatIds = flats
+        .slice(0, subscription.allowedFlats)
+        .map(f => f._id.toString());
+
+      const isAllowed = allowedFlatIds.includes(flatId.toString());
+
+      if (!isAllowed) {
         return res.status(403).json({
-          message: "Your flat is not included in subscription. Please upgrade.",
-          code: "FLAT_NOT_SUBSCRIBED", // 🔥 important for frontend
+          message: "Your flat is not included in current subscription. Please upgrade.",
+          code: "FLAT_LIMIT_EXCEEDED",
+          upgradeRequired: true,
+          allowedFlats: subscription.allowedFlats,
         });
       }
     }
 
-    /* =====================================================
-       ✅ ALLOW REQUEST
-    ===================================================== */
-
+    // ===============================
+    // ✅ ALLOW REQUEST
+    // ===============================
     req.subscription = {
       plan: subscription.plan,
       endDate: subscription.endDate,
-      allowedFlats: subscription.allowedFlats, // 🔥 ADDED
+      allowedFlats: subscription.allowedFlats,
     };
 
     next();
 
   } catch (error) {
     console.error("Subscription Check Error:", error);
+
     res.status(500).json({
       message: "Server Error",
       code: "SERVER_ERROR",
