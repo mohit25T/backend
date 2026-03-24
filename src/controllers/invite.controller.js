@@ -284,7 +284,7 @@ export const inviteResident = async (req, res) => {
     const userRole = role?.toUpperCase();
 
     // ===============================
-    // 🔥 NORMALIZE INPUT (IMPORTANT)
+    // 🔥 NORMALIZE INPUT
     // ===============================
     wing = wing?.toString().trim().toUpperCase();
     flatNo = flatNo?.toString().trim();
@@ -327,12 +327,25 @@ export const inviteResident = async (req, res) => {
     }
 
     // ===============================
-    // 🔥 NO FLAT MODEL DEPENDENCY
+    // 🔥 CREATE OR FIND FLAT
     // ===============================
-    const flat = {
+    let flat = await Flat.findOne({
+      societyId: inviter.societyId,
       wing,
       flatNo
-    };
+    });
+
+    if (!flat) {
+      flat = await Flat.create({
+        societyId: inviter.societyId,
+        wing,
+        flatNo,
+        isSubscribed: true, // 🔥 default true
+        createdBy: inviter._id
+      });
+
+      console.log("✅ Flat created:", flat);
+    }
 
     // ===============================
     // ROLE PERMISSIONS
@@ -355,7 +368,7 @@ export const inviteResident = async (req, res) => {
     }
 
     // ===============================
-    // 🔥 PREVENT DUPLICATE OWNER PER FLAT
+    // 🔥 PREVENT DUPLICATE OWNER
     // ===============================
     if (userRole === "OWNER") {
       const existingOwner = await User.findOne({
@@ -429,7 +442,7 @@ export const inviteResident = async (req, res) => {
       invite.email = email;
       invite.flatNo = flatNo;
       invite.wing = wing;
-      invite.flatId = null; // 🔥 removed dependency
+      invite.flatId = flat._id; // ✅ NOW USING FLAT ID
       invite.status = "PENDING";
       invite.expiresAt = expiresAt;
       invite.invitedBy = inviter._id;
@@ -443,7 +456,7 @@ export const inviteResident = async (req, res) => {
         email,
         wing,
         flatNo,
-        flatId: null, // 🔥 removed dependency
+        flatId: flat._id, // ✅ LINKED
         roles: [userRole],
         societyId: inviter.societyId,
         invitedBy: inviter._id,
@@ -465,9 +478,6 @@ export const inviteResident = async (req, res) => {
       description: `${userRole} invited: ${name} (${mobile}) | Wing ${wing} Flat ${flatNo}`
     });
 
-    // ===============================
-    // SUCCESS RESPONSE
-    // ===============================
     return res.json({
       success: true,
       message: `${userRole} invite sent successfully`,
