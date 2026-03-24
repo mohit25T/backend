@@ -313,17 +313,13 @@ export const inviteResident = async (req, res) => {
     }
 
     // ===============================
-    // 🔥 CHECK SUBSCRIPTION LIMIT
+    // 🔥 CHECK LIMIT (ONLY FOR FLAG)
     // ===============================
     const limitCheck = await checkFlatLimit(inviter.societyId);
 
+    let upgradeRequired = false;
     if (!limitCheck.allowed) {
-      return res.status(403).json({
-        message: limitCheck.message,
-        upgradeRequired: true,
-        used: limitCheck.used || 0,
-        limit: limitCheck.limit || 0
-      });
+      upgradeRequired = true;
     }
 
     // ===============================
@@ -336,13 +332,40 @@ export const inviteResident = async (req, res) => {
     });
 
     if (!flat) {
+      // ❌ DO NOT set isSubscribed here
       flat = await Flat.create({
         societyId: inviter.societyId,
         wing,
         flatNo,
-        isSubscribed: true, // 🔥 default true
         createdBy: inviter._id
       });
+
+      // ===============================
+      // 🔥 AFTER CREATE → APPLY LIMIT LOGIC
+      // ===============================
+      const subscription = await Subscription.findOne({
+        societyId: inviter.societyId,
+        status: "active"
+      });
+
+      let isWithinLimit = true;
+
+      if (subscription && flat.flatIndex > subscription.allowedFlats) {
+        isWithinLimit = false;
+        upgradeRequired = true;
+      }
+
+      // 🔥 UPDATE FLAT CORRECTLY
+      await Flat.updateOne(
+        { _id: flat._id },
+        {
+          isWithinLimit,
+          isSubscribed: isWithinLimit // ✅ FIXED
+        }
+      );
+
+      // refresh flat object
+      flat = await Flat.findById(flat._id);
 
       console.log("✅ Flat created:", flat);
     }
@@ -368,7 +391,7 @@ export const inviteResident = async (req, res) => {
     }
 
     // ===============================
-    // 🔥 PREVENT DUPLICATE OWNER
+    // PREVENT DUPLICATE OWNER
     // ===============================
     if (userRole === "OWNER") {
       const existingOwner = await User.findOne({
@@ -442,7 +465,7 @@ export const inviteResident = async (req, res) => {
       invite.email = email;
       invite.flatNo = flatNo;
       invite.wing = wing;
-      invite.flatId = flat._id; // ✅ NOW USING FLAT ID
+      invite.flatId = flat._id;
       invite.status = "PENDING";
       invite.expiresAt = expiresAt;
       invite.invitedBy = inviter._id;
@@ -456,15 +479,13 @@ export const inviteResident = async (req, res) => {
         email,
         wing,
         flatNo,
-        flatId: flat._id, // ✅ LINKED
+        flatId: flat._id,
         roles: [userRole],
         societyId: inviter.societyId,
         invitedBy: inviter._id,
         expiresAt
       });
     }
-
-    console.log("Invite created/updated:", invite);
 
     // ===============================
     // AUDIT LOG
@@ -481,7 +502,8 @@ export const inviteResident = async (req, res) => {
     return res.json({
       success: true,
       message: `${userRole} invite sent successfully`,
-      invite
+      invite,
+      upgradeRequired // 🔥 FRONTEND WILL USE THIS
     });
 
   } catch (err) {
