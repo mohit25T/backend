@@ -228,18 +228,66 @@ export const getSubscriptionPreview = async (req, res) => {
     const societyId = req.user.societyId;
     const { plan = "monthly" } = req.query;
 
+    // ===============================
+    // 🔥 GET ACTIVE SUBSCRIPTION
+    // ===============================
+    const subscription = await Subscription.findOne({
+      societyId,
+      status: "active",
+    }).lean();
+
+    // ===============================
+    // 🔥 TOTAL FLATS (ALL)
+    // ===============================
     const totalFlats = await Flat.countDocuments({ societyId });
 
+    // ===============================
+    // 🔥 USED FLATS (WITHIN LIMIT)
+    // ===============================
+    const usedFlats = await Flat.countDocuments({
+      societyId,
+      isWithinLimit: true,
+    });
+
+    // ===============================
+    // 🔥 PLAN PRICING
+    // ===============================
     let pricePerFlat = 20;
     if (plan === "yearly") pricePerFlat = 200;
 
-    const totalAmount = totalFlats * pricePerFlat;
+    // ===============================
+    // 🔥 BILLING LOGIC (FIXED)
+    // ===============================
+    let billableFlats = usedFlats;
 
+    // If no subscription yet → allow all
+    if (!subscription) {
+      billableFlats = totalFlats;
+    }
+
+    const totalAmount = billableFlats * pricePerFlat;
+
+    // ===============================
+    // 🔥 EXTRA FLATS (FOR UI)
+    // ===============================
+    const extraFlats = totalFlats - usedFlats;
+
+    // ===============================
+    // ✅ RESPONSE
+    // ===============================
     res.status(200).json({
-      totalFlats,
+      plan,
       pricePerFlat,
       totalAmount,
-      plan,
+
+      // 🔥 IMPORTANT DATA
+      billableFlats,
+      usedFlats,
+      totalFlats,
+      extraFlats,
+
+      // 🔥 OPTIONAL
+      allowedFlats: subscription?.allowedFlats || null,
     });
 
   } catch (error) {
