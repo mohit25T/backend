@@ -28,6 +28,7 @@ export const checkSubscriptionStatus = async (req, res, next) => {
       return res.status(403).json({
         message: "Subscription required",
         code: "SUBSCRIPTION_REQUIRED",
+        upgradeRequired: true, // 🔥 IMPORTANT
       });
     }
 
@@ -43,32 +44,32 @@ export const checkSubscriptionStatus = async (req, res, next) => {
       return res.status(403).json({
         message: "Subscription expired",
         code: "SUBSCRIPTION_EXPIRED",
+        upgradeRequired: true, // 🔥 IMPORTANT
       });
     }
 
     // ===============================
-    // 🔥 FLAT LIMIT LOGIC (MAIN FIX)
+    // 🔥 FLAT LIMIT LOGIC (FINAL)
     // ===============================
     if (flatId) {
-      // 🔥 Get all flats in order (IMPORTANT)
-      const flats = await Flat.find({ societyId })
-        .sort({ createdAt: 1 }) // oldest first
-        .select("_id")
+      const flat = await Flat.findById(flatId)
+        .select("isWithinLimit")
         .lean();
 
-      // Take only allowed flats
-      const allowedFlatIds = flats
-        .slice(0, subscription.allowedFlats)
-        .map(f => f._id.toString());
+      if (!flat) {
+        return res.status(404).json({
+          message: "Flat not found",
+          code: "FLAT_NOT_FOUND",
+        });
+      }
 
-      const isAllowed = allowedFlatIds.includes(flatId.toString());
-
-      if (!isAllowed) {
+      // ❌ Not within limit → FORCE UPGRADE
+      if (!flat.isWithinLimit) {
         return res.status(403).json({
-          message: "Your flat is not included in current subscription. Please upgrade.",
+          message:
+            "Your flat is not included in current subscription. Please upgrade.",
           code: "FLAT_LIMIT_EXCEEDED",
           upgradeRequired: true,
-          allowedFlats: subscription.allowedFlats,
         });
       }
     }
