@@ -1,50 +1,33 @@
 import express from "express";
-
 import {
   createOrder,
   verifyPayment,
   getMySubscription,
   getSubscriptionPreview,
-  upgradeSubscription,
-} from "../controllers/subscription.controller.js";
+} from "../controllers/subscriptionController.js";
 
-import { requireAuth } from "../middlewares/auth.middleware.js";
-import { requireAdmin } from "../middlewares/role.middleware.js";
+import { protect } from "../middleware/authMiddleware.js"; // 🔐 auth middleware
 
 const router = express.Router();
-router.use(requireAuth); // 🔥 Global auth check for all subscription routes
 
+/* =====================================================
+   💳 CREATE ORDER (NEW + UPGRADE)
+   ===================================================== */
+router.post("/create-order", protect, createOrder);
 
-// 💳 Create Razorpay Order
-router.post(
-  "/order",
-  requireAdmin,
-  createOrder
-);
+/* =====================================================
+   ✅ VERIFY PAYMENT
+   ===================================================== */
+router.post("/verify-payment", protect, verifyPayment);
 
+/* =====================================================
+   📊 GET CURRENT SUBSCRIPTION
+   ===================================================== */
+router.get("/me", protect, getMySubscription);
 
-// ✅ Verify Payment
-router.post(
-  "/verify",
-  requireAdmin,
-  verifyPayment
-);
-
-
-// 📊 Get Active Subscription
-router.get(
-  "/my",
-  getMySubscription
-);
-
-
-// 🔍 Preview (pricing)
-router.get(
-  "/preview",
-  getSubscriptionPreview
-);
-
-// ⬆️ Upgrade Subscription 
-router.post("/upgrade", upgradeSubscription);
+/* =====================================================
+   🔍 PREVIEW (PRICE CALCULATION)
+   ===================================================== */
+router.get("/preview", protect, getSubscriptionPreview);
 
 export default router;

@@ -155,7 +155,7 @@ app.use("/api/notices", noticeRoutes);
 app.use("/api/vehicles", vehicleRoutes);
 app.use("/api/sos", sosRoutes);
 app.use("/api/contacts", contactRoutes);
-app.use("/api/subscriptions", subscriptionsRoutes);
+app.use("/api/subscription", subscriptionsRoutes);
 
 /* =========================================
    🔥 MAINTENANCE CRON JOBS
