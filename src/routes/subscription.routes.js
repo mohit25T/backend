@@ -5,6 +5,7 @@ import {
   verifyPayment,
   getMySubscription,
   getSubscriptionPreview,
+  upgradeSubscription,
 } from "../controllers/subscription.controller.js";
 
 import { requireAuth } from "../middlewares/auth.middleware.js";
@@ -42,5 +43,8 @@ router.get(
   "/preview",
   getSubscriptionPreview
 );
+
+// ⬆️ Upgrade Subscription 
+router.post("/upgrade", upgradeSubscription);
 
 export default router;

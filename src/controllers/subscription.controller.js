@@ -228,82 +228,101 @@ export const getSubscriptionPreview = async (req, res) => {
     const societyId = req.user.societyId;
     const { plan = "monthly" } = req.query;
 
-    // ===============================
-    // 🔥 GET ACTIVE SUBSCRIPTION
-    // ===============================
-    const subscription = await Subscription.findOne({
-      societyId,
-      status: "active",
-    }).lean();
-
-    // ===============================
-    // 🔥 TOTAL FLATS (ALL)
-    // ===============================
     const totalFlats = await Flat.countDocuments({ societyId });
 
-    // ===============================
-    // 🔥 USED FLATS (WITHIN LIMIT)
-    // ===============================
-    const usedFlats = await Flat.countDocuments({
-      societyId,
-      isWithinLimit: true,
-    });
-
-    // ===============================
-    // 🔥 PLAN PRICING
-    // ===============================
     let pricePerFlat = 20;
     if (plan === "yearly") pricePerFlat = 200;
 
-    // ===============================
-    // 🔥 BILLING LOGIC (FIXED)
-    // ===============================
-    let billableFlats = usedFlats;
+    const totalAmount = totalFlats * pricePerFlat;
 
-    // If no subscription yet → allow all
-    if (!subscription) {
-      billableFlats = totalFlats;
-    }
-
-    const totalAmount = billableFlats * pricePerFlat;
-
-    // ===============================
-    // 🔥 EXTRA FLATS (FOR UI)
-    // ===============================
-    const extraFlats = totalFlats - usedFlats;
-
-    console.log("Subscription Preview:", {
-      plan,
-      pricePerFlat,
-      totalAmount,
-      billableFlats,
-      usedFlats,
-      totalFlats,
-      extraFlats,
-      allowedFlats: subscription?.allowedFlats || null,
-    });
-
-
-    // ===============================
-    // ✅ RESPONSE
-    // ===============================
     res.status(200).json({
-      plan,
+      totalFlats,
       pricePerFlat,
       totalAmount,
-
-      // 🔥 IMPORTANT DATA
-      billableFlats,
-      usedFlats,
-      totalFlats,
-      extraFlats,
-
-      // 🔥 OPTIONAL
-      allowedFlats: subscription?.allowedFlats || null,
+      plan,
     });
 
   } catch (error) {
     console.error("Preview Error:", error);
+    res.status(500).json({ message: "Server Error" });
+  }
+};
+
+
+// ===============================
+// ⬆️ UPGRADE SUBSCRIPTION
+// ===============================
+
+export const upgradeSubscription = async (req, res) => {
+  try {
+    const societyId = req.user.societyId;
+    const { plan = "monthly" } = req.body;
+
+    // ===============================
+    // 🔥 GET CURRENT SUBSCRIPTION
+    // ===============================
+    const subscription = await Subscription.findOne({
+      societyId,
+      status: "active",
+    });
+
+    if (!subscription) {
+      return res.status(404).json({
+        message: "No active subscription found",
+      });
+    }
+
+    // ===============================
+    // 🔥 GET TOTAL FLATS
+    // ===============================
+    const totalFlats = await Flat.countDocuments({ societyId });
+
+    // ===============================
+    // 🔥 PRICING
+    // ===============================
+    let pricePerFlat = 20;
+    if (plan === "yearly") pricePerFlat = 200;
+
+    const totalAmount = totalFlats * pricePerFlat;
+
+    // ===============================
+    // 🔥 UPDATE SUBSCRIPTION
+    // ===============================
+    subscription.allowedFlats = totalFlats;
+    subscription.totalFlats = totalFlats;
+    subscription.pricePerFlat = pricePerFlat;
+    subscription.totalAmount = totalAmount;
+    subscription.plan = plan;
+
+    // OPTIONAL: extend validity
+    const now = new Date();
+
+    if (plan === "monthly") {
+      subscription.endDate = new Date(now.setMonth(now.getMonth() + 1));
+    } else {
+      subscription.endDate = new Date(now.setFullYear(now.getFullYear() + 1));
+    }
+
+    await subscription.save();
+
+    // ===============================
+    // 🔥 UPDATE FLATS ACCESS
+    // ===============================
+    const flats = await Flat.find({ societyId }).sort({ createdAt: 1 });
+
+    for (let i = 0; i < flats.length; i++) {
+      flats[i].isWithinLimit = i < totalFlats;
+      flats[i].isSubscribed = i < totalFlats;
+      await flats[i].save();
+    }
+
+    return res.status(200).json({
+      message: "Subscription upgraded successfully",
+      subscription,
+    });
+
+  } catch (error) {
+    console.error("Upgrade Error:", error);
     res.status(500).json({ message: "Server Error" });
   }
 };
