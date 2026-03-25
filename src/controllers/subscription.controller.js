@@ -272,6 +272,18 @@ export const getSubscriptionPreview = async (req, res) => {
     // ===============================
     const extraFlats = totalFlats - usedFlats;
 
+    console.log("Subscription Preview:", {
+      plan,
+      pricePerFlat,
+      totalAmount,
+      billableFlats,
+      usedFlats,
+      totalFlats,
+      extraFlats,
+      allowedFlats: subscription?.allowedFlats || null,
+    });
+
+
     // ===============================
     // ✅ RESPONSE
     // ===============================
