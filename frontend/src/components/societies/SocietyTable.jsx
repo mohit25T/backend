@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { toggleSocietyBlock } from "../../api/block";
 import { useState } from "react";
 
-const SocietyTable = ({ societies = [], reloadSocieties }) => {
+const SocietyTable = ({ societies = [], reloadSocieties, onRowClick }) => {
   const [loadingId, setLoadingId] = useState(null);
   const [error, setError] = useState(""); // ✅ NEW
 
@@ -73,7 +73,8 @@ const SocietyTable = ({ societies = [], reloadSocieties }) => {
                 initial={{ opacity: 0, y: 5 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.03 }}
-                className="hover:bg-white/[0.02] transition-colors"
+                onClick={() => onRowClick && onRowClick(s)}
+                className="hover:bg-white/[0.04] transition-colors cursor-pointer"
               >
 
                 {/* NAME */}
@@ -151,7 +152,10 @@ const SocietyTable = ({ societies = [], reloadSocieties }) => {
                 {/* ACTION */}
                 <td className="p-4 px-6">
                   <button
-                    onClick={() => handleToggle(s._id)}
+                    onClick={(e) => {
+                      e.stopPropagation(); // prevent row click
+                      handleToggle(s._id);
+                    }}
                     disabled={loadingId === s._id}
                     className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
                       s.status === "ACTIVE"

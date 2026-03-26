@@ -4,11 +4,14 @@ import PageWrapper from "../components/layout/PageWrapper";
 import Modal from "../components/ui/Modal";
 import CreateSocietyForm from "../components/societies/CreateSocietyForm";
 import SocietyTable from "../components/societies/SocietyTable";
+import SocietyDetails from "../components/societies/SocietyDetails";
 import { fetchSocieties, createSociety } from "../api/societies";
 
 const Societies = () => {
   const [societies, setSocieties] = useState([]);
   const [open, setOpen] = useState(false);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [selectedSociety, setSelectedSociety] = useState(null);
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [error, setError] = useState("");
@@ -116,7 +119,14 @@ const Societies = () => {
 
         {/* ✅ TABLE */}
         {!initialLoading && societies.length > 0 && (
-          <SocietyTable societies={societies} reloadSocieties={loadSocieties} />
+          <SocietyTable 
+            societies={societies} 
+            reloadSocieties={loadSocieties} 
+            onRowClick={(society) => {
+              setSelectedSociety(society);
+              setDetailsOpen(true);
+            }} 
+          />
         )}
 
         {/* CREATE SOCIETY MODAL */}
@@ -127,6 +137,17 @@ const Societies = () => {
           }}
         >
           <CreateSocietyForm onSubmit={handleCreate} loading={loading} />
+        </Modal>
+
+        {/* SOCIETY DETAILS MODAL */}
+        <Modal
+          open={detailsOpen}
+          onClose={() => {
+            setDetailsOpen(false);
+            setTimeout(() => setSelectedSociety(null), 300); // clear after animation
+          }}
+        >
+          <SocietyDetails society={selectedSociety} />
         </Modal>
       </PageWrapper>
     </AppLayout>
