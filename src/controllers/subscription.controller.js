@@ -222,10 +222,46 @@ export const getMySubscription = async (req, res) => {
 export const getSubscriptionPreview = async (req, res) => {
   try {
     const societyId = req.user.societyId;
-    const { plan = "monthly" } = req.query;
+    const { plan = "monthly", extraFlats = 0 } = req.query;
 
-    const totalFlats = await Flat.countDocuments({ societyId });
+    // 🔥 Check existing subscription
+    const existing = await Subscription.findOne({
+      societyId,
+      status: "active",
+    });
 
+    let totalFlats = 0;
+    let isUpgrade = false;
+
+    // ===============================
+    // 🔥 UPGRADE CASE
+    // ===============================
+    if (existing) {
+      isUpgrade = true;
+
+      // 👉 If adding flats → show only extra flats cost
+      if (extraFlats > 0) {
+        totalFlats = Number(extraFlats);
+      } else {
+        // 👉 Only plan change → show current allowed flats
+        totalFlats = existing.allowedFlats;
+      }
+    }
+
+    // ===============================
+    // 🔥 NEW SUBSCRIPTION
+    // ===============================
+    else {
+      totalFlats = await Flat.countDocuments({ societyId });
+
+      if (totalFlats === 0) {
+        return res.status(400).json({
+          message: "No flats found for this society",
+        });
+      }
+    }
+
+    // 💰 Pricing
     const pricePerFlat = plan === "yearly" ? 200 : 20;
     const totalAmount = totalFlats * pricePerFlat;
 
@@ -234,6 +270,8 @@ export const getSubscriptionPreview = async (req, res) => {
       pricePerFlat,
       totalAmount,
       plan,
+      isUpgrade, // 🔥 IMPORTANT (frontend can use this)
+      existingAllowedFlats: existing?.allowedFlats || 0, // 🔥 BONUS
     });
 
   } catch (error) {
