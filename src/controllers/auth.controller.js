@@ -6,7 +6,7 @@ import Subscription from "../models/Subscription.js";
 import EmailChangeRequest from "../models/EmailChangeRequest.js";
 import Flat from "../models/Flats.js";
 import { signToken, signRefreshToken, verifyRefreshToken } from "../utils/jwt.js";
-import { saveOtp, verifyOtp } from "../utils/otpStore.js";
+import { saveOtp, verifyOtp, getOtp } from "../utils/otpStore.js";
 import { generateOtp } from "../utils/generateOtp.js";
 import { auditLogger } from "../utils/auditLogger.js";
 import { sendOtpEmail } from "../utils/sendOtpEmail.js";
@@ -163,6 +163,55 @@ export const sendOtpUser = async (req, res) => {
     return res.status(500).json({
       message: "Failed to send OTP"
     });
+  }
+};
+
+
+/**
+ * =====================================================
+ * RESEND OTP FOR MOBILE USERS
+ * =====================================================
+ */
+export const resendOtpUser = async (req, res) => {
+  try {
+    const { mobile } = req.body;
+
+    if (!mobile) {
+      return res.status(400).json({ message: "Mobile number required" });
+    }
+
+    const invite = await Invite.findOne({ mobile });
+
+    if (!invite) {
+      return res.status(403).json({
+        message: "Account not found or not approved."
+      });
+    }
+
+    if (!invite.email) {
+       return res.status(400).json({ message: "Email not found for resend" });
+    }
+
+    // 1. Check if valid OTP already exists
+    let otp = getOtp({ mobile, email: invite.email });
+
+    // 2. If no valid OTP, generate a new one
+    if (!otp) {
+      otp = generateOtp();
+      saveOtp({ mobile, email: invite.email, otp });
+    }
+
+    // 3. Send the email
+    await sendOtpEmail(invite.email, otp);
+
+    return res.json({
+      success: true,
+      message: "OTP resent successfully to your email"
+    });
+
+  } catch (err) {
+    console.error("RESEND USER OTP ERROR:", err);
+    return res.status(500).json({ message: "Failed to resend OTP" });
   }
 };
 

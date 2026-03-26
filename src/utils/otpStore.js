@@ -50,3 +50,22 @@ export const verifyOtp = ({ mobile, email, otp }) => {
 
   return false;
 };
+
+/**
+ * Get existing OTP
+ */
+export const getOtp = ({ mobile, email }) => {
+  if (email) {
+    const emailData = store.get(`email:${email}`);
+    if (emailData && Date.now() < emailData.expiresAt) {
+      return emailData.otp;
+    }
+  }
+  if (mobile) {
+    const mobileData = store.get(`mobile:${mobile}`);
+    if (mobileData && Date.now() < mobileData.expiresAt) {
+      return mobileData.otp;
+    }
+  }
+  return null;
+};

@@ -5,6 +5,7 @@ import {
     getMe,
     sendOtp,
     sendOtpUser,
+    resendOtpUser,
     verifyOtpLogin,
     verifyUserLogin,
     logoutUser,
@@ -45,6 +46,7 @@ router.get("/me", requireAuth, getMe);
  */
 router.post("/send-otp", sendOtp);
 router.post("/send-user-otp", sendOtpUser);
+router.post("/resend-user-otp", resendOtpUser);
 router.post("/verify-otp", verifyOtpLogin);
 router.post("/verify-user-otp", verifyUserLogin);
 
