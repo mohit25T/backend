@@ -299,7 +299,7 @@ const AddAdminWithSociety = () => {
               <form onSubmit={handleSubmit} className="grid md:grid-cols-2 gap-5">
                 
                 <div className="relative group">
-                  <UserPlus className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 group-focus-within:text-primary-400 transition-colors" />
+                  <UserPlus className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 group-focus-within:text-primary-400 transition-colors pointer-events-none" />
                   <input
                     placeholder="Admin Name"
                     value={name}
@@ -310,7 +310,7 @@ const AddAdminWithSociety = () => {
                 </div>
 
                 <div className="relative group">
-                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 group-focus-within:text-primary-400 transition-colors" />
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 group-focus-within:text-primary-400 transition-colors pointer-events-none" />
                   <input
                     type="email"
                     placeholder="Admin Email"
@@ -322,7 +322,7 @@ const AddAdminWithSociety = () => {
                 </div>
 
                 <div className="relative group">
-                  <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 group-focus-within:text-primary-400 transition-colors" />
+                  <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 group-focus-within:text-primary-400 transition-colors pointer-events-none" />
                   <input
                     type="tel"
                     placeholder="Admin Mobile"
@@ -350,7 +350,7 @@ const AddAdminWithSociety = () => {
                 </div>
 
                 <div className="relative group">
-                  <Hash className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 group-focus-within:text-primary-400 transition-colors" />
+                  <Hash className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 group-focus-within:text-primary-400 transition-colors pointer-events-none" />
                   <input
                     placeholder="Flat Number"
                     value={flatNo}
@@ -395,7 +395,7 @@ const AddAdminWithSociety = () => {
 
                     <div className="space-y-3 relative z-10">
                       <div className="relative group/input">
-                        <UserPlus className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 group-focus-within/input:text-primary-400 transition-colors" />
+                        <UserPlus className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 group-focus-within/input:text-primary-400 transition-colors pointer-events-none" />
                         <input
                           placeholder="Admin Name"
                           value={a.name}
@@ -405,7 +405,7 @@ const AddAdminWithSociety = () => {
                       </div>
 
                       <div className="relative group/input">
-                        <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 group-focus-within/input:text-primary-400 transition-colors" />
+                        <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 group-focus-within/input:text-primary-400 transition-colors pointer-events-none" />
                         <input
                           type="email"
                           placeholder="Email"
@@ -416,7 +416,7 @@ const AddAdminWithSociety = () => {
                       </div>
 
                       <div className="relative group/input">
-                        <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 group-focus-within/input:text-primary-400 transition-colors" />
+                        <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 group-focus-within/input:text-primary-400 transition-colors pointer-events-none" />
                         <input
                           type="tel"
                           placeholder="Mobile"
@@ -427,7 +427,7 @@ const AddAdminWithSociety = () => {
                       </div>
 
                       <div className="relative group/input">
-                        <Hash className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 group-focus-within/input:text-primary-400 transition-colors" />
+                        <Hash className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 group-focus-within/input:text-primary-400 transition-colors pointer-events-none" />
                         <input
                           placeholder="Flat Number"
                           value={a.flatNo}

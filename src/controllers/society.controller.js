@@ -1,5 +1,6 @@
 import Society from "../models/Society.js";
 import User from "../models/User.js";
+import Subscription from "../models/Subscription.js";
 import { auditLogger } from "../utils/auditLogger.js";
 
 /**
@@ -61,22 +62,34 @@ export const createSociety = async (req, res) => {
  * GET ALL SOCIETIES
  */
 export const getAllSocieties = async (req, res) => {
-
   try {
-
     const societies = await Society.find()
+      .lean()
       .sort({ createdAt: -1 });
 
-    res.json(societies);
+    const societyIds = societies.map(s => s._id);
+    const activeSubs = await Subscription.find({
+      societyId: { $in: societyIds },
+      status: "active"
+    }).lean();
+
+    const subMap = {};
+    activeSubs.forEach(sub => {
+      subMap[sub.societyId.toString()] = sub;
+    });
+
+    const societiesWithSubs = societies.map(s => ({
+      ...s,
+      subscription: subMap[s._id.toString()] || null
+    }));
+
+    res.json(societiesWithSubs);
 
   } catch (error) {
-
     console.error("GET SOCIETIES ERROR:", error);
-
     res.status(500).json({
       message: "Failed to fetch societies"
     });
-
   }
 };
 

@@ -100,7 +100,7 @@ const Login = () => {
                 className="space-y-4"
               >
                 <div className="relative group">
-                  <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 group-focus-within:text-primary-500 transition-colors" />
+                  <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 group-focus-within:text-primary-500 transition-colors pointer-events-none" />
                   <input
                     type="text"
                     placeholder="Mobile Number"
@@ -112,7 +112,7 @@ const Login = () => {
                 </div>
 
                 <div className="relative group">
-                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 group-focus-within:text-primary-500 transition-colors" />
+                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 group-focus-within:text-primary-500 transition-colors pointer-events-none" />
                   <input
                     type="email"
                     placeholder="Email Address"
@@ -171,7 +171,7 @@ const Login = () => {
                 </div>
 
                 <div className="relative group">
-                  <KeyRound className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 group-focus-within:text-emerald-500 transition-colors" />
+                  <KeyRound className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 group-focus-within:text-emerald-500 transition-colors pointer-events-none" />
                   <input
                     type="text"
                     placeholder="Enter 6-digit OTP"

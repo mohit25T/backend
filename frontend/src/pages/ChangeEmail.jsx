@@ -158,7 +158,7 @@ const ChangeEmail = () => {
                     Current Enrolled Email
                   </label>
                   <div className="relative">
-                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-600" />
+                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-600 pointer-events-none" />
                     <input
                       type="email"
                       value={oldEmail || "Loading..."}
@@ -173,7 +173,7 @@ const ChangeEmail = () => {
                     New Email Address
                   </label>
                   <div className="relative group">
-                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 group-focus-within:text-primary-400 transition-colors" />
+                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 group-focus-within:text-primary-400 transition-colors pointer-events-none" />
                     <input
                       type="email"
                       placeholder="e.g. yourname@company.com"
@@ -207,7 +207,7 @@ const ChangeEmail = () => {
                 </div>
 
                 <div className="relative group">
-                  <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 group-focus-within:text-emerald-400 transition-colors" />
+                  <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 group-focus-within:text-emerald-400 transition-colors pointer-events-none" />
                   <input
                     type="text"
                     placeholder="Enter 6-digit OTP"

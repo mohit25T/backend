@@ -75,7 +75,7 @@ const GlobalSearch = () => {
           </div>
 
           <div className="relative group">
-            <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-6 h-6 text-gray-500 group-focus-within:text-primary-400 transition-colors" />
+            <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-6 h-6 text-gray-500 group-focus-within:text-primary-400 transition-colors pointer-events-none" />
             <input
               type="text"
               placeholder="Start typing to search..."

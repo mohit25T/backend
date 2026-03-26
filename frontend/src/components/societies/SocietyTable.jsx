@@ -59,6 +59,7 @@ const SocietyTable = ({ societies = [], reloadSocieties }) => {
               <th className="p-4 px-6">Name</th>
               <th className="p-4 px-6">City</th>
               <th className="p-4 px-6">Wings</th>
+              <th className="p-4 px-6">Subscription</th>
               <th className="p-4 px-6">Status</th>
               <th className="p-4 px-6">Created</th>
               <th className="p-4 px-6">Action</th>
@@ -100,6 +101,19 @@ const SocietyTable = ({ societies = [], reloadSocieties }) => {
                     </div>
                   ) : (
                     <span className="text-gray-500">-</span>
+                  )}
+                </td>
+
+                {/* SUBSCRIPTION */}
+                <td className="p-4 px-6">
+                  {s.subscription ? (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium border bg-primary-500/10 text-primary-400 border-primary-500/20 capitalize">
+                      {s.subscription.plan || "Active"}
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium border bg-gray-500/10 text-gray-400 border-gray-500/20">
+                      None
+                    </span>
                   )}
                 </td>
 
