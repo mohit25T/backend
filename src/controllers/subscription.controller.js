@@ -223,13 +223,21 @@ export const getMySubscription = async (req, res) => {
 export const getSubscriptionPreview = async (req, res) => {
   try {
     const societyId = req.user.societyId;
-    const { plan = "monthly", extraFlats = 0 } = req.query;
+    const { plan = "monthly" } = req.query;
 
     // 🔥 Check existing subscription
     const existing = await Subscription.findOne({
       societyId,
       status: "active",
     });
+
+    // 🔥 TOTAL FLATS IN DB
+    const totalFlatsInDB = await Flat.countDocuments({ societyId });
+
+    let allowedFlats = existing?.allowedFlats || 0;
+
+    // 🔥 AUTO CALCULATE EXTRA FLATS
+    const extraFlats = Math.max(totalFlatsInDB - allowedFlats, 0);
 
     let totalFlats = 0;
     let isUpgrade = false;
@@ -240,12 +248,12 @@ export const getSubscriptionPreview = async (req, res) => {
     if (existing) {
       isUpgrade = true;
 
-      // 👉 If adding flats → show only extra flats cost
+      // 👉 If new flats added → only charge extra flats
       if (extraFlats > 0) {
-        totalFlats = Number(extraFlats);
+        totalFlats = extraFlats;
       } else {
-        // 👉 Only plan change → show current allowed flats
-        totalFlats = existing.allowedFlats;
+        // 👉 Only plan change → charge existing flats
+        totalFlats = allowedFlats;
       }
     }
 
@@ -253,7 +261,7 @@ export const getSubscriptionPreview = async (req, res) => {
     // 🔥 NEW SUBSCRIPTION
     // ===============================
     else {
-      totalFlats = await Flat.countDocuments({ societyId });
+      totalFlats = totalFlatsInDB;
 
       if (totalFlats === 0) {
         return res.status(400).json({
@@ -271,8 +279,12 @@ export const getSubscriptionPreview = async (req, res) => {
       pricePerFlat,
       totalAmount,
       plan,
-      isUpgrade, // 🔥 IMPORTANT (frontend can use this)
-      existingAllowedFlats: existing?.allowedFlats || 0, // 🔥 BONUS
+
+      // 🔥 IMPORTANT DATA FOR FRONTEND
+      isUpgrade,
+      totalFlatsInDB,
+      allowedFlats,
+      extraFlats,
     });
 
   } catch (error) {
