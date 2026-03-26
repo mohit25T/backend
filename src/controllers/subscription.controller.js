@@ -149,6 +149,7 @@ export const verifyPayment = async (req, res) => {
       { societyId, status: "active" },
       { status: "expired" }
     );
+    console.log("Extra flats:", extraFlats);
 
     const subscription = await Subscription.create({
       societyId,
