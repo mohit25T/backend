@@ -20,6 +20,7 @@ export const createOrder = async (req, res) => {
 
     let totalFlats;
     let isUpgrade = false;
+    let totalAmount = 0;
 
     if (existing) {
       isUpgrade = true;
@@ -29,10 +30,23 @@ export const createOrder = async (req, res) => {
         0
       );
 
-      totalFlats =
-        extraFlats > 0
-          ? extraFlats
-          : existing.allowedFlats;
+      if (extraFlats === 0) {
+        return res.status(400).json({
+          message: "No new flats found to upgrade",
+        });
+      }
+
+      totalFlats = extraFlats;
+
+      const now = new Date();
+      const remainingMs = existing.endDate.getTime() - now.getTime();
+      const remainingDays = remainingMs > 0 ? Math.ceil(remainingMs / (1000 * 60 * 60 * 24)) : 0;
+
+      const durationDays = existing.plan === "yearly" ? 365 : 30;
+      const pricePerDay = existing.pricePerFlat / durationDays;
+      const proratedPricePerFlat = Math.ceil(pricePerDay * remainingDays);
+
+      totalAmount = totalFlats * proratedPricePerFlat;
     } else {
       totalFlats = totalFlatsInDB;
 
@@ -41,10 +55,10 @@ export const createOrder = async (req, res) => {
           message: "No flats found for this society",
         });
       }
+      
+      const pricePerFlat = plan === "yearly" ? 200 : 20;
+      totalAmount = totalFlats * pricePerFlat;
     }
-
-    const pricePerFlat = plan === "yearly" ? 200 : 20;
-    const totalAmount = totalFlats * pricePerFlat;
 
     const order = await razorpay.orders.create({
       amount: totalAmount * 100,
@@ -118,17 +132,6 @@ export const verifyPayment = async (req, res) => {
 
       existing.allowedFlats = newAllowedFlats;
       existing.totalFlats = totalFlatsInDB;
-
-      existing.plan = plan;
-      existing.pricePerFlat = pricePerFlat;
-
-      const now = new Date();
-      existing.endDate = new Date(
-        now.setDate(now.getDate() + durationDays)
-      );
-
-      existing.totalAmount =
-        newAllowedFlats * pricePerFlat;
 
       await existing.save();
 
@@ -251,14 +254,22 @@ export const getSubscriptionPreview = async (req, res) => {
 
     let totalFlats;
     let isUpgrade = false;
+    let finalPricePerFlat = plan === "yearly" ? 200 : 20;
+    let totalAmount = 0;
 
     if (existing) {
       isUpgrade = true;
+      totalFlats = extraFlats;
 
-      totalFlats =
-        extraFlats > 0
-          ? extraFlats
-          : allowedFlats;
+      const now = new Date();
+      const remainingMs = existing.endDate.getTime() - now.getTime();
+      const remainingDays = remainingMs > 0 ? Math.ceil(remainingMs / (1000 * 60 * 60 * 24)) : 0;
+
+      const durationDays = existing.plan === "yearly" ? 365 : 30;
+      const pricePerDay = existing.pricePerFlat / durationDays;
+      finalPricePerFlat = Math.ceil(pricePerDay * remainingDays);
+
+      totalAmount = totalFlats * finalPricePerFlat;
     } else {
       totalFlats = totalFlatsInDB;
 
@@ -267,16 +278,15 @@ export const getSubscriptionPreview = async (req, res) => {
           message: "No flats found for this society",
         });
       }
-    }
 
-    const pricePerFlat = plan === "yearly" ? 200 : 20;
-    const totalAmount = totalFlats * pricePerFlat;
+      totalAmount = totalFlats * finalPricePerFlat;
+    }
 
     res.status(200).json({
       totalFlats,
-      pricePerFlat,
+      pricePerFlat: finalPricePerFlat,
       totalAmount,
-      plan,
+      plan: existing ? existing.plan : plan,
       isUpgrade,
       totalFlatsInDB,
       allowedFlats,
