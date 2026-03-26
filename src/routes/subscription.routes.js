@@ -6,17 +6,23 @@ import {
   getSubscriptionPreview,
 } from "../controllers/subscription.controller.js";
 
-import { requireAuth } from "../middlewares/auth.middleware.js"; // 🔐 auth middleware
+import { requireAuth } from "../middlewares/auth.middleware.js";
 
 const router = express.Router();
 
 /* =====================================================
-   💳 CREATE ORDER (NEW + UPGRADE)
+   💳 CREATE ORDER (AUTO: NEW + UPGRADE)
    ===================================================== */
 router.post("/create-order", requireAuth, createOrder);
 
 /* =====================================================
-   ✅ VERIFY PAYMENT
+   🔥 OPTIONAL: EXPLICIT UPGRADE ROUTE (BEST PRACTICE)
+   (Uses same controller but clearer intent)
+   ===================================================== */
+router.post("/upgrade-order", requireAuth, createOrder);
+
+/* =====================================================
+   ✅ VERIFY PAYMENT (COMMON FOR BOTH)
    ===================================================== */
 router.post("/verify-payment", requireAuth, verifyPayment);
 
@@ -26,7 +32,7 @@ router.post("/verify-payment", requireAuth, verifyPayment);
 router.get("/me", requireAuth, getMySubscription);
 
 /* =====================================================
-   🔍 PREVIEW (PRICE CALCULATION)
+   🔍 PREVIEW (AUTO CALCULATION)
    ===================================================== */
 router.get("/preview", requireAuth, getSubscriptionPreview);
 

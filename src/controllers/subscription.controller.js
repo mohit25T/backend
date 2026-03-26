@@ -9,12 +9,14 @@ import crypto from "crypto";
 export const createOrder = async (req, res) => {
   try {
     const societyId = req.user.societyId;
-    const { plan = "monthly", extraFlats = 0 } = req.body;
+    const { plan = "monthly" } = req.body;
 
     const existing = await Subscription.findOne({
       societyId,
       status: "active",
     });
+
+    const totalFlatsInDB = await Flat.countDocuments({ societyId });
 
     let totalFlats;
     let isUpgrade = false;
@@ -22,13 +24,17 @@ export const createOrder = async (req, res) => {
     if (existing) {
       isUpgrade = true;
 
-      // Allow plan change OR flat upgrade OR both
+      const extraFlats = Math.max(
+        totalFlatsInDB - existing.allowedFlats,
+        0
+      );
+
       totalFlats =
         extraFlats > 0
           ? extraFlats
           : existing.allowedFlats;
     } else {
-      totalFlats = await Flat.countDocuments({ societyId });
+      totalFlats = totalFlatsInDB;
 
       if (totalFlats === 0) {
         return res.status(400).json({
@@ -72,7 +78,6 @@ export const verifyPayment = async (req, res) => {
       razorpay_payment_id,
       razorpay_signature,
       plan = "monthly",
-      extraFlats = 0,
     } = req.body;
 
     // 🔐 Verify signature
@@ -95,21 +100,28 @@ export const verifyPayment = async (req, res) => {
       status: "active",
     });
 
+    const totalFlatsInDB = await Flat.countDocuments({ societyId });
+
+    let subscription;
+
     // ===============================
-    // 🔥 UPGRADE FLOW
+    // 🔄 UPGRADE
     // ===============================
     if (existing) {
+      const extraFlats = Math.max(
+        totalFlatsInDB - existing.allowedFlats,
+        0
+      );
+
       const newAllowedFlats =
-        existing.allowedFlats + Number(extraFlats || 0);
+        existing.allowedFlats + extraFlats;
 
       existing.allowedFlats = newAllowedFlats;
-      existing.totalFlats = newAllowedFlats;
+      existing.totalFlats = totalFlatsInDB;
 
-      // Update plan
       existing.plan = plan;
       existing.pricePerFlat = pricePerFlat;
 
-      // Extend validity
       const now = new Date();
       existing.endDate = new Date(
         now.setDate(now.getDate() + durationDays)
@@ -120,60 +132,58 @@ export const verifyPayment = async (req, res) => {
 
       await existing.save();
 
-      // Enable flats
-      const flats = await Flat.find({ societyId })
-        .sort({ createdAt: 1 })
-        .limit(newAllowedFlats);
+      subscription = existing;
+    }
 
-      await Flat.updateMany(
-        { _id: { $in: flats.map(f => f._id) } },
-        { isSubscribed: true }
+    // ===============================
+    // 🆕 NEW SUBSCRIPTION
+    // ===============================
+    else {
+      const startDate = new Date();
+      const endDate = new Date();
+      endDate.setDate(startDate.getDate() + durationDays);
+
+      await Subscription.updateMany(
+        { societyId, status: "active" },
+        { status: "expired" }
       );
 
-      return res.status(200).json({
-        message: "Subscription upgraded successfully",
-        subscription: existing,
+      subscription = await Subscription.create({
+        societyId,
+        plan,
+        pricePerFlat,
+        totalFlats: totalFlatsInDB,
+        allowedFlats: totalFlatsInDB,
+        totalAmount: totalFlatsInDB * pricePerFlat,
+        startDate,
+        endDate,
       });
     }
 
     // ===============================
-    // 🔥 NEW SUBSCRIPTION
+    // 🔥 APPLY FLAT LIMITS
     // ===============================
-    const totalFlats = await Flat.countDocuments({ societyId });
-
-    const startDate = new Date();
-    const endDate = new Date();
-    endDate.setDate(startDate.getDate() + durationDays);
-
-    await Subscription.updateMany(
-      { societyId, status: "active" },
-      { status: "expired" }
-    );
-    console.log("Extra flats:", extraFlats);
-
-    const subscription = await Subscription.create({
-      societyId,
-      plan,
-      pricePerFlat,
-      totalFlats,
-      allowedFlats: totalFlats,
-      totalAmount: totalFlats * pricePerFlat,
-      startDate,
-      endDate,
-    });
-
-    // Enable flats
     const flats = await Flat.find({ societyId })
-      .sort({ createdAt: 1 })
-      .limit(totalFlats);
+      .sort({ flatIndex: 1 });
 
+    const allowedIds = flats
+      .slice(0, subscription.allowedFlats)
+      .map(f => f._id);
+
+    // ✅ Enable allowed flats
     await Flat.updateMany(
-      { _id: { $in: flats.map(f => f._id) } },
-      { isSubscribed: true }
+      { _id: { $in: allowedIds } },
+      { isSubscribed: true, isWithinLimit: true }
+    );
+
+    // ❌ Disable remaining flats
+    await Flat.updateMany(
+      { _id: { $nin: allowedIds }, societyId },
+      { isSubscribed: false, isWithinLimit: false }
     );
 
     res.status(200).json({
-      message: "Payment successful & subscription activated",
+      message: "Subscription updated successfully",
       subscription,
     });
 
@@ -202,9 +212,9 @@ export const getMySubscription = async (req, res) => {
     }
 
     res.status(200).json({
-      status: subscription.status || "ACTIVE",
-      plan: subscription.plan || "Monthly",
-      amount: subscription.totalAmount || 0,
+      status: subscription.status,
+      plan: subscription.plan,
+      amount: subscription.totalAmount,
       startDate: subscription.startDate,
       endDate: subscription.endDate,
       allowedFlats: subscription.allowedFlats,
@@ -225,42 +235,31 @@ export const getSubscriptionPreview = async (req, res) => {
     const societyId = req.user.societyId;
     const { plan = "monthly" } = req.query;
 
-    // 🔥 Check existing subscription
     const existing = await Subscription.findOne({
       societyId,
       status: "active",
     });
 
-    // 🔥 TOTAL FLATS IN DB
     const totalFlatsInDB = await Flat.countDocuments({ societyId });
 
-    let allowedFlats = existing?.allowedFlats || 0;
+    const allowedFlats = existing?.allowedFlats || 0;
 
-    // 🔥 AUTO CALCULATE EXTRA FLATS
-    const extraFlats = Math.max(totalFlatsInDB - allowedFlats, 0);
+    const extraFlats = Math.max(
+      totalFlatsInDB - allowedFlats,
+      0
+    );
 
-    let totalFlats = 0;
+    let totalFlats;
     let isUpgrade = false;
 
-    // ===============================
-    // 🔥 UPGRADE CASE
-    // ===============================
     if (existing) {
       isUpgrade = true;
 
-      // 👉 If new flats added → only charge extra flats
-      if (extraFlats > 0) {
-        totalFlats = extraFlats;
-      } else {
-        // 👉 Only plan change → charge existing flats
-        totalFlats = allowedFlats;
-      }
-    }
-
-    // ===============================
-    // 🔥 NEW SUBSCRIPTION
-    // ===============================
-    else {
+      totalFlats =
+        extraFlats > 0
+          ? extraFlats
+          : allowedFlats;
+    } else {
       totalFlats = totalFlatsInDB;
 
       if (totalFlats === 0) {
@@ -270,7 +269,6 @@ export const getSubscriptionPreview = async (req, res) => {
       }
     }
 
-    // 💰 Pricing
     const pricePerFlat = plan === "yearly" ? 200 : 20;
     const totalAmount = totalFlats * pricePerFlat;
 
@@ -279,8 +277,6 @@ export const getSubscriptionPreview = async (req, res) => {
       pricePerFlat,
       totalAmount,
       plan,
-
-      // 🔥 IMPORTANT DATA FOR FRONTEND
       isUpgrade,
       totalFlatsInDB,
       allowedFlats,
