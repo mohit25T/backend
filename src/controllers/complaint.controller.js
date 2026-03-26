@@ -4,6 +4,7 @@ import Flat from "../models/Flats.js"; // 🔥 NEW
 import {
     sendPushNotificationToMany
 } from "../services/notificationService.js";
+import { getIO } from "../config/socket.js";
 
 /* ===============================
    🔧 Helper: Get valid FCM tokens
@@ -95,6 +96,12 @@ export const createComplaint = async (req, res) => {
 
         } catch (pushError) {
             console.error("Complaint Create Push Error:", pushError);
+        }
+
+        try {
+            getIO().to(`society_${user.societyId}`).emit("new_complaint", complaint);
+        } catch (err) {
+            console.error("Socket emission error:", err);
         }
 
         return res.status(201).json({
@@ -258,6 +265,12 @@ export const updateComplaintStatus = async (req, res) => {
 
         } catch (pushError) {
             console.error("Complaint Update Push Error:", pushError);
+        }
+
+        try {
+            getIO().to(`society_${complaint.societyId}`).emit("complaint_updated", complaint);
+        } catch (err) {
+            console.error("Socket emission error:", err);
         }
 
         return res.json({

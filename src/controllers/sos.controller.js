@@ -1,6 +1,7 @@
 import SOS from "../models/SOS.js";
 import User from "../models/User.js";
 import { sendPushNotificationToMany } from "../services/notificationService.js";
+import { getIO } from "../config/socket.js";
 
 /**
  * =====================================================
@@ -42,6 +43,13 @@ export const triggerSOS = async (req, res) => {
     });
 
     console.log("New SOS Triggered:", sos);
+
+    // Emit Socket.io event to the society
+    try {
+      getIO().to(`society_${societyId}`).emit("new_sos", sos);
+    } catch (err) {
+      console.error("Socket emission error:", err);
+    }
 
     /* =====================================================
        📲 Notify Guards
@@ -213,6 +221,13 @@ export const respondSOS = async (req, res) => {
 
     await sos.save();
 
+    // Emit Socket.io event to the society
+    try {
+      getIO().to(`society_${sos.societyId}`).emit("sos_updated", sos);
+    } catch (err) {
+      console.error("Socket emission error:", err);
+    }
+
     const guard = await User.findById(req.user.userId);
 
     /* =====================================================
@@ -299,6 +314,13 @@ export const resolveSOS = async (req, res) => {
     sos.resolvedAt = new Date();
 
     await sos.save();
+
+    // Emit Socket.io event to the society
+    try {
+      getIO().to(`society_${sos.societyId}`).emit("sos_updated", sos);
+    } catch (err) {
+      console.error("Socket emission error:", err);
+    }
 
     /* =====================================================
        📲 Notify Resident

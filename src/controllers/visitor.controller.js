@@ -5,6 +5,7 @@ import {
   sendPushNotificationToMany
 } from "../services/notificationService.js";
 import cloudinary from "../config/cloudinary.js";
+import { getIO } from "../config/socket.js";
 
 /**
  * =====================================================
@@ -190,6 +191,12 @@ export const createVisitorEntry = async (req, res) => {
       console.error("Push Notification Error:", pushError);
     }
 
+    try {
+      getIO().to(`society_${societyId}`).emit("new_visitor", visitor);
+    } catch (err) {
+      console.log("Socket emission error:", err);
+    }
+
     /* =====================================================
        ✅ RESPONSE
     ===================================================== */
@@ -334,6 +341,12 @@ export const approveVisitor = async (req, res) => {
       console.error("Push Notification Error:", pushError);
     }
 
+    try {
+      getIO().to(`society_${visitor.societyId}`).emit("visitor_approved", visitor);
+    } catch (err) {
+      console.log("Socket emission error:", err);
+    }
+
     /* =====================================================
        ✅ RESPONSE
     ===================================================== */
@@ -472,6 +485,12 @@ export const rejectVisitor = async (req, res) => {
       console.error("Push Notification Error:", pushError);
     }
 
+    try {
+      getIO().to(`society_${visitor.societyId}`).emit("visitor_rejected", visitor);
+    } catch (err) {
+      console.log("Socket emission error:", err);
+    }
+
     /* =====================================================
        ✅ RESPONSE
     ===================================================== */
@@ -591,6 +610,12 @@ export const markVisitorEntered = async (req, res) => {
       console.error("Push Notification Error:", pushError);
     }
 
+    try {
+      getIO().to(`society_${visitor.societyId}`).emit("visitor_entered", visitor);
+    } catch (err) {
+      console.log("Socket emission error:", err);
+    }
+
     /* =====================================================
        ✅ RESPONSE
     ===================================================== */
@@ -707,6 +732,12 @@ export const markVisitorExited = async (req, res) => {
       }
     } catch (pushError) {
       console.error("Push Notification Error:", pushError);
+    }
+
+    try {
+      getIO().to(`society_${visitor.societyId}`).emit("visitor_exited", visitor);
+    } catch (err) {
+      console.log("Socket emission error:", err);
     }
 
     /* =====================================================
@@ -1314,6 +1345,12 @@ export const allowOtpGuestEntry = async (req, res) => {
       }
     } catch (pushError) {
       console.error("Push Notification Error:", pushError);
+    }
+
+    try {
+      getIO().to(`society_${visitor.societyId}`).emit("visitor_entered", visitor);
+    } catch (err) {
+      console.log("Socket emission error:", err);
     }
 
     /* =====================================================
