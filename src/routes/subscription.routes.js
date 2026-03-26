@@ -29,7 +29,7 @@ router.post("/verify-payment", requireAuth, verifyPayment);
 /* =====================================================
    📊 GET CURRENT SUBSCRIPTION
    ===================================================== */
-router.get("/me", requireAuth, getMySubscription);
+router.get("/active", requireAuth, getMySubscription);
 
 /* =====================================================
    🔍 PREVIEW (AUTO CALCULATION)
