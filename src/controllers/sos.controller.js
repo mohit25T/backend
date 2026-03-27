@@ -22,21 +22,31 @@ const getUserTokens = (user) => {
 export const triggerSOS = async (req, res) => {
   try {
 
-    const { wing, flatNo, emergencyType } = req.body;
+    const { emergencyType } = req.body;
+    let { wing, flatNo } = req.body;
 
     const userId = req.user.userId;
     const societyId = req.user.societyId;
+    const flatId = req.user.flatId;
 
+    // 🔥 Fallback: If mobile app didn't send wing/flatNo, get from User record
     if (!wing || !flatNo) {
+      const user = await User.findById(userId);
+      wing = wing || user.wing;
+      flatNo = flatNo || user.flatNo;
+    }
+
+    if (!wing || !flatNo || !flatId) {
       return res.status(400).json({
         success: false,
-        message: "Wing and flat number are required"
+        message: "Wing, Flat Number, and Flat Connection are required. Please update your profile."
       });
     }
 
     const sos = await SOS.create({
       userId,
       societyId,
+      flatId,
       wing,
       flatNo,
       emergencyType

@@ -51,7 +51,8 @@ export const requireAuth = async (req, res, next) => {
     req.user = {
       userId: user._id,
       roles: user.roles,
-      societyId: user.societyId
+      societyId: user.societyId,
+      flatId: user.flatId
     };
 
     next();
