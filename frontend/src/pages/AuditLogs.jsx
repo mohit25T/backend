@@ -66,8 +66,8 @@ const AuditLogs = () => {
   return (
     <AppLayout>
       <PageWrapper>
-        <h1 className="text-2xl font-bold mb-4">
-          Audit Logs
+        <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-100 to-gray-400 tracking-tight mb-8">
+          System Audit Logs
         </h1>
 
         <AuditLogFilters
@@ -80,20 +80,28 @@ const AuditLogs = () => {
 
         {/* ERROR */}
         {error && (
-          <p className="text-red-500 mb-4">
+          <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm mb-6 flex items-center gap-3">
             {error}
-          </p>
+          </div>
         )}
 
         {/* LOADING */}
         {loading ? (
-          <p className="text-gray-400 animate-pulse">
-            Loading audit logs...
-          </p>
+          <div className="flex flex-col items-center justify-center p-12 glass-panel rounded-2xl">
+            <div className="w-10 h-10 border-4 border-primary-500/30 border-t-primary-500 rounded-full animate-spin mb-4" />
+            <p className="text-gray-400 font-medium animate-pulse">
+              Loading secure audit logs...
+            </p>
+          </div>
         ) : filteredLogs.length === 0 ? (
-          <p className="text-gray-500">
-            No logs found
-          </p>
+          <div className="glass-panel p-12 rounded-2xl text-center border border-white/5">
+            <p className="text-xl font-medium text-gray-300">
+              No audit records found
+            </p>
+            <p className="text-gray-500 mt-2">
+              Try adjusting your filter criteria.
+            </p>
+          </div>
         ) : (
           <AuditLogTable logs={filteredLogs} />
         )}
