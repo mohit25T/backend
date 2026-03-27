@@ -58,23 +58,23 @@ const ReplaceAdminModal = ({ admin, onClose, onReplaced }) => {
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-      <div className="bg-white rounded-xl w-full max-w-md p-6 animate-fadeIn shadow-lg">
+      <div className="glass-panel p-6 sm:p-8 rounded-2xl w-full max-w-md shadow-2xl relative border-white/20 animate-fadeIn">
 
-        <h2 className="text-xl font-bold text-red-600 mb-2">
+        <h2 className="text-xl font-bold text-red-500 mb-2">
           Replace Admin
         </h2>
 
-        <p className="text-sm text-gray-600 mb-4">
+        <p className="text-sm text-gray-400 mb-6">
           This will remove admin access from the current admin and promote an
           existing resident as the new admin.
         </p>
 
         {/* CURRENT ADMIN DETAILS */}
-        <div className="bg-red-50 border border-red-200 p-3 rounded mb-4 text-sm">
-          <b>Current Admin:</b> {admin.name} <br />
-          <b>Society:</b> {admin.societyId?.name} <br />
-          <b>Wing:</b> {admin.wing || "-"} <br />
-          <b>Flat:</b> {admin.flatNo || "-"}
+        <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-4 rounded-xl mb-6 text-sm">
+          <b className="text-white font-medium">Current Admin:</b> {admin.name} <br />
+          <b className="text-white font-medium">Society:</b> {admin.societyId?.name} <br />
+          <b className="text-white font-medium">Wing:</b> {admin.wing || "-"} <br />
+          <b className="text-white font-medium">Flat:</b> {admin.flatNo || "-"}
         </div>
 
         <form onSubmit={handleReplace} className="space-y-4">
@@ -85,30 +85,30 @@ const ReplaceAdminModal = ({ admin, onClose, onReplaced }) => {
             placeholder="Resident Mobile Number"
             value={mobile}
             onChange={(e) => setMobile(e.target.value)}
-            className="w-full border p-2 rounded
-                       focus:outline-none
-                       focus:ring-2 focus:ring-red-400"
+            className="glass-input"
           />
 
           {/* ERROR */}
           {error && (
-            <p className="text-sm text-red-600">{error}</p>
+            <div className="p-3 text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg text-center">
+              {error}
+            </div>
           )}
 
           {/* SUCCESS */}
           {success && (
-            <p className="text-sm text-green-600">{success}</p>
+            <div className="p-3 text-sm text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-lg text-center">
+              {success}
+            </div>
           )}
 
-          <div className="flex justify-end gap-3 pt-2">
+          <div className="flex justify-end gap-3 pt-4 border-t border-white/5 mt-6">
 
             <button
               type="button"
               onClick={onClose}
               disabled={loading}
-              className="px-4 py-2 border rounded
-                         hover:bg-gray-100
-                         disabled:opacity-60"
+              className="px-5 py-2.5 rounded-lg font-medium text-sm transition-all duration-300 text-gray-400 hover:text-white hover:bg-white/5 disabled:opacity-60"
             >
               Cancel
             </button>
@@ -116,20 +116,11 @@ const ReplaceAdminModal = ({ admin, onClose, onReplaced }) => {
             <button
               type="submit"
               disabled={loading}
-              className="flex items-center gap-2
-                         px-5 py-2 rounded
-                         bg-red-600 text-white
-                         hover:bg-red-700
-                         disabled:opacity-60"
+              className="flex items-center gap-2 px-5 py-2.5 rounded-lg font-medium text-sm transition-all duration-300 bg-red-600 hover:bg-red-500 text-white shadow-lg shadow-red-500/25 active:scale-[0.98] disabled:opacity-70 disabled:pointer-events-none"
             >
               {loading && (
-                <span
-                  className="w-4 h-4 border-2 border-white
-                             border-t-transparent
-                             rounded-full animate-spin"
-                />
+                <span className="w-4 h-4 border-2 border-white/60 border-t-white rounded-full animate-spin" />
               )}
-
               {loading ? "Replacing..." : "Confirm Replace"}
             </button>
 

@@ -28,7 +28,7 @@ const Modal = ({ open, onClose, children }) => {
             animate="visible"
             exit="hidden"
             transition={{ duration: 0.2 }}
-            className="bg-white rounded-xl p-6 w-full max-w-md"
+            className="glass-panel rounded-2xl p-6 sm:p-8 w-full max-w-lg shadow-2xl relative border-white/20"
             onClick={(e) => e.stopPropagation()}
           >
             {children}

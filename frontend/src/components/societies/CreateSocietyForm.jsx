@@ -56,7 +56,7 @@ const CreateSocietyForm = ({ onSubmit, loading }) => {
 
   return (
     <>
-      <h2 className="text-xl font-semibold mb-4">Create Society</h2>
+      <h2 className="text-2xl font-bold text-white mb-6 border-b border-white/10 pb-4">Create Society</h2>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* SOCIETY NAME */}
@@ -65,7 +65,7 @@ const CreateSocietyForm = ({ onSubmit, loading }) => {
           placeholder="Society Name"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          className="w-full border p-2 rounded focus:outline-none focus:ring-2 focus:ring-black"
+          className="glass-input"
         />
 
         {/* CITY */}
@@ -74,12 +74,12 @@ const CreateSocietyForm = ({ onSubmit, loading }) => {
           placeholder="City"
           value={city}
           onChange={(e) => setCity(e.target.value)}
-          className="w-full border p-2 rounded focus:outline-none focus:ring-2 focus:ring-black"
+          className="glass-input"
         />
 
         {/* WING COUNT */}
         <div>
-          <label className="text-sm text-gray-600">Number of Wings</label>
+          <label className="text-sm text-gray-400 mb-2 block">Number of Wings</label>
 
           <input
             type="number"
@@ -87,17 +87,17 @@ const CreateSocietyForm = ({ onSubmit, loading }) => {
             max="26"
             value={wingCount}
             onChange={(e) => handleWingChange(e.target.value)}
-            className="w-full border p-2 rounded mt-1 focus:outline-none focus:ring-2 focus:ring-black"
+            className="glass-input"
           />
         </div>
 
         {/* PREVIEW WINGS */}
-        <div className="text-sm text-gray-600">
+        <div className="text-sm text-gray-400">
           Wings:{" "}
           {Array.from({ length: wingCount }, (_, i) => (
             <span
               key={i}
-              className="inline-block bg-gray-200 px-2 py-1 rounded mr-1 mb-1"
+              className="inline-block bg-dark-800 text-gray-300 border border-white/10 px-2 py-1 rounded mr-1 mb-1"
             >
               {String.fromCharCode(65 + i)}
             </span>
@@ -105,16 +105,18 @@ const CreateSocietyForm = ({ onSubmit, loading }) => {
         </div>
 
         {/* ERROR */}
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && <p className="text-sm text-red-400">{error}</p>}
 
         {/* SUBMIT */}
-        <button
-          type="submit"
-          disabled={loading || !name.trim()}
-          className="w-full bg-black text-white py-2 rounded hover:bg-gray-800 transition disabled:opacity-60"
-        >
-          {loading ? "Creating..." : "Create Society"}
-        </button>
+        <div className="pt-2 border-t border-white/5">
+          <button
+            type="submit"
+            disabled={loading || !name.trim()}
+            className="btn-primary"
+          >
+            {loading ? "Creating..." : "Create Society"}
+          </button>
+        </div>
       </form>
     </>
   );

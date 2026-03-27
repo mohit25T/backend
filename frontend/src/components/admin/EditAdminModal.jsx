@@ -54,9 +54,9 @@ const EditAdminModal = ({ admin, onClose, onUpdated }) => {
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-      <div className="bg-white rounded-xl w-full max-w-md p-6 shadow-lg">
+      <div className="glass-panel p-6 sm:p-8 rounded-2xl w-full max-w-md shadow-2xl relative border-white/20">
 
-        <h2 className="text-xl font-bold mb-4">
+        <h2 className="text-xl font-bold text-white mb-6 border-b border-white/10 pb-4">
           Edit Admin
         </h2>
 
@@ -68,7 +68,7 @@ const EditAdminModal = ({ admin, onClose, onUpdated }) => {
             placeholder="Admin Name"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="w-full border p-2 rounded focus:outline-none focus:ring-2 focus:ring-black"
+            className="glass-input"
           />
 
           {/* EMAIL */}
@@ -77,7 +77,7 @@ const EditAdminModal = ({ admin, onClose, onUpdated }) => {
             placeholder="Email Address"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full border p-2 rounded focus:outline-none focus:ring-2 focus:ring-black"
+            className="glass-input"
           />
 
           {/* MOBILE */}
@@ -86,47 +86,47 @@ const EditAdminModal = ({ admin, onClose, onUpdated }) => {
             placeholder="Mobile Number"
             value={mobile}
             onChange={(e) => setMobile(e.target.value)}
-            className="w-full border p-2 rounded focus:outline-none focus:ring-2 focus:ring-black"
+            className="glass-input"
           />
 
           {/* WING (READ ONLY) */}
           <div>
-            <label className="text-sm text-gray-500">
+            <label className="block text-sm font-medium text-gray-400 mb-2">
               Wing
             </label>
             <input
               type="text"
               value={admin.wing || "-"}
               disabled
-              className="w-full border p-2 rounded bg-gray-100"
+              className="glass-input bg-dark-900/50 text-gray-500 cursor-not-allowed border-white/5 shadow-inner"
             />
           </div>
 
           {/* FLAT (READ ONLY) */}
           <div>
-            <label className="text-sm text-gray-500">
+            <label className="block text-sm font-medium text-gray-400 mb-2">
               Flat Number
             </label>
             <input
               type="text"
               value={admin.flatNo || "-"}
               disabled
-              className="w-full border p-2 rounded bg-gray-100"
+              className="glass-input bg-dark-900/50 text-gray-500 cursor-not-allowed border-white/5 shadow-inner"
             />
           </div>
 
           {message && (
-            <p className="text-sm text-blue-600">
+            <div className="mb-4 p-4 rounded-xl text-sm border flex justify-center items-center bg-blue-500/10 border-blue-500/20 text-blue-400">
               {message}
-            </p>
+            </div>
           )}
 
-          <div className="flex justify-end gap-2">
+          <div className="flex justify-end gap-3 pt-4 border-t border-white/5 mt-6">
 
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 border rounded hover:bg-gray-100 transition"
+              className="px-5 py-2.5 rounded-lg font-medium text-sm transition-all duration-300 text-gray-400 hover:text-white hover:bg-white/5"
             >
               Cancel
             </button>
@@ -134,9 +134,9 @@ const EditAdminModal = ({ admin, onClose, onUpdated }) => {
             <button
               type="submit"
               disabled={loading}
-              className="px-4 py-2 bg-black text-white rounded hover:opacity-90 transition"
+              className="px-5 py-2.5 bg-primary-600 hover:bg-primary-500 text-white font-medium rounded-lg transition-all duration-300 shadow-lg shadow-primary-500/25 active:scale-[0.98] disabled:opacity-70 disabled:pointer-events-none"
             >
-              {loading ? "Saving..." : "Save"}
+              {loading ? "Saving..." : "Save Changes"}
             </button>
 
           </div>
