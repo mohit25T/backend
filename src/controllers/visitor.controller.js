@@ -206,6 +206,8 @@ export const createVisitorEntry = async (req, res) => {
     }
 
     try {
+      console.log("🔥 EMITTING VISITOR_UPDATE:", visitor._id, visitor.status, visitor.personName);
+      getIO().emit("VISITOR_UPDATE", visitor); // 🔥 GLOBAL EMIT FOR DEBUG
       getIO().to(`society_${societyId}`).emit("VISITOR_UPDATE", visitor);
     } catch (err) {
       console.log("Socket emission error:", err);
@@ -1104,11 +1106,11 @@ export const createPreApprovedGuest = async (req, res) => {
     ===================================================== */
     let visitorFlatId = resident.flatId;
     if (!visitorFlatId) {
-       const flatDoc = await Flat.findOne({ societyId, wing: resident.wing, flatNo: resident.flatNo });
-       if (!flatDoc) {
-          return res.status(404).json({ message: "Flat details not found in system" });
-       }
-       visitorFlatId = flatDoc._id;
+      const flatDoc = await Flat.findOne({ societyId, wing: resident.wing, flatNo: resident.flatNo });
+      if (!flatDoc) {
+        return res.status(404).json({ message: "Flat details not found in system" });
+      }
+      visitorFlatId = flatDoc._id;
     }
 
     /* =====================================================
