@@ -1,5 +1,6 @@
 import VisitorLog from "../models/VisitorLog.js";
 import User from "../models/User.js";
+import Flat from "../models/Flats.js";
 import {
   sendPushNotification,
   sendPushNotificationToMany
@@ -147,12 +148,25 @@ export const createVisitorEntry = async (req, res) => {
     }
 
     /* =====================================================
+       🏢 STEP 3.5: Resolve Flat ID
+    ===================================================== */
+    let visitorFlatId = resident.flatId;
+    if (!visitorFlatId) {
+      const flatDoc = await Flat.findOne({ societyId, wing: visitorWing, flatNo: normalizedFlatNo });
+      if (!flatDoc) {
+        return res.status(404).json({ message: "Flat details not found in system" });
+      }
+      visitorFlatId = flatDoc._id;
+    }
+
+    /* =====================================================
        📝 STEP 4: Create Visitor Entry
     ===================================================== */
 
     const visitor = await VisitorLog.create({
       societyId,
       residentId: resident._id,
+      flatId: visitorFlatId,
       personName: personName.trim(),
       personMobile,
       purpose,
@@ -1086,12 +1100,25 @@ export const createPreApprovedGuest = async (req, res) => {
     }
 
     /* =====================================================
+       🏢 RESOLVE FLAT ID
+    ===================================================== */
+    let visitorFlatId = resident.flatId;
+    if (!visitorFlatId) {
+       const flatDoc = await Flat.findOne({ societyId, wing: resident.wing, flatNo: resident.flatNo });
+       if (!flatDoc) {
+          return res.status(404).json({ message: "Flat details not found in system" });
+       }
+       visitorFlatId = flatDoc._id;
+    }
+
+    /* =====================================================
        📝 CREATE ENTRY
     ===================================================== */
 
     const visitor = await VisitorLog.create({
       societyId,
       residentId: resident._id,
+      flatId: visitorFlatId,
       wing: resident.wing,
       flatNo: resident.flatNo,
       personName: guestName,
