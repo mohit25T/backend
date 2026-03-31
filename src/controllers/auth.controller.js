@@ -292,10 +292,13 @@ export const verifyUserLogin = async (req, res) => {
       });
     }
 
-    // 🔥 Get Flat
-    const flat = await Flat.findById(invite.flatId);
+    // 🔥 Get Flat (Optional for GUARD)
+    let flat = null;
+    if (invite.flatId) {
+      flat = await Flat.findById(invite.flatId);
+    }
 
-    if (!flat) {
+    if (!flat && !invite.roles.includes("GUARD")) {
       return res.status(400).json({
         message: "Flat not found"
       });
@@ -334,9 +337,9 @@ export const verifyUserLogin = async (req, res) => {
         roles: invite.roles,
         societyId: invite.societyId,
         invitedBy: invite.invitedBy,
-        flatId: flat._id,
-        wing: flat.wing,
-        flatNo: flat.flatNo,
+        flatId: flat ? flat._id : null,
+        wing: flat ? flat.wing : null,
+        flatNo: flat ? flat.flatNo : null,
         shiftStartTime: invite.shiftStartTime,
         shiftEndTime: invite.shiftEndTime,
         shiftType: invite.shiftType
