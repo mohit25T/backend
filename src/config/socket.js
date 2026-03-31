@@ -10,7 +10,7 @@ export const initSocket = (server) => {
         "https://apexitworld.com",
         "http://localhost:3000",
         // Added standard React Native / Flutter testing hosts if needed
-        "http://localhost:8081" 
+        "http://localhost:8081"
       ],
       methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
       credentials: true
@@ -22,6 +22,19 @@ export const initSocket = (server) => {
 
     // Clients can join specific rooms (e.g., 'society_123_guards', 'user_456')
     socket.on("join_room", (room) => {
+      socket.join(room);
+      console.log(`Client ${socket.id} joined room ${room}`);
+    });
+
+    // Flutter App specific joins
+    socket.on("join_society", (societyId) => {
+      const room = `society_${societyId}`;
+      socket.join(room);
+      console.log(`Client ${socket.id} joined room ${room}`);
+    });
+
+    socket.on("join_user", (userId) => {
+      const room = `user_${userId}`;
       socket.join(room);
       console.log(`Client ${socket.id} joined room ${room}`);
     });

@@ -206,7 +206,7 @@ export const createVisitorEntry = async (req, res) => {
     }
 
     try {
-      getIO().to(`society_${societyId}`).emit("new_visitor", visitor);
+      getIO().to(`society_${societyId}`).emit("VISITOR_UPDATE", visitor);
     } catch (err) {
       console.log("Socket emission error:", err);
     }
@@ -356,7 +356,7 @@ export const approveVisitor = async (req, res) => {
     }
 
     try {
-      getIO().to(`society_${visitor.societyId}`).emit("visitor_approved", visitor);
+      getIO().to(`society_${visitor.societyId}`).emit("VISITOR_UPDATE", visitor);
     } catch (err) {
       console.log("Socket emission error:", err);
     }
@@ -500,7 +500,7 @@ export const rejectVisitor = async (req, res) => {
     }
 
     try {
-      getIO().to(`society_${visitor.societyId}`).emit("visitor_rejected", visitor);
+      getIO().to(`society_${visitor.societyId}`).emit("VISITOR_UPDATE", visitor);
     } catch (err) {
       console.log("Socket emission error:", err);
     }
@@ -625,7 +625,7 @@ export const markVisitorEntered = async (req, res) => {
     }
 
     try {
-      getIO().to(`society_${visitor.societyId}`).emit("visitor_entered", visitor);
+      getIO().to(`society_${visitor.societyId}`).emit("VISITOR_UPDATE", visitor);
     } catch (err) {
       console.log("Socket emission error:", err);
     }
@@ -749,7 +749,7 @@ export const markVisitorExited = async (req, res) => {
     }
 
     try {
-      getIO().to(`society_${visitor.societyId}`).emit("visitor_exited", visitor);
+      getIO().to(`society_${visitor.societyId}`).emit("VISITOR_UPDATE", visitor);
     } catch (err) {
       console.log("Socket emission error:", err);
     }
@@ -1375,7 +1375,7 @@ export const allowOtpGuestEntry = async (req, res) => {
     }
 
     try {
-      getIO().to(`society_${visitor.societyId}`).emit("visitor_entered", visitor);
+      getIO().to(`society_${visitor.societyId}`).emit("VISITOR_UPDATE", visitor);
     } catch (err) {
       console.log("Socket emission error:", err);
     }
