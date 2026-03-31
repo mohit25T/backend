@@ -160,10 +160,78 @@ export default function HomePage() {
             </div>
           </motion.div>
 
-          {/* ... existing Hero Mockup section ... */}
+          {/* HERO MOCKUP */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 1, delay: 0.2 }}
+            className="relative"
+          >
+            <div className="absolute inset-0 bg-amber-500/20 blur-[100px] rounded-full" />
+            <div className="relative glass-panel rounded-[3rem] overflow-hidden border-white/10 shadow-2xl">
+              <img 
+                src={HeroMockup} 
+                alt="DoorPass Dashboard" 
+                className="w-full h-auto object-cover opacity-80 hover:opacity-100 transition-opacity duration-700"
+              />
+              <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-dark-950 via-dark-950/40 to-transparent" />
+              
+              <div className="absolute bottom-8 left-8 right-8 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-full bg-amber-500/10 border border-amber-500/20 flex items-center justify-center backdrop-blur-md">
+                    <ShieldCheck className="w-6 h-6 text-amber-500" />
+                  </div>
+                  <div>
+                    <div className="text-white font-bold text-sm">Security Level: High</div>
+                    <div className="text-amber-500/60 text-xs font-black uppercase tracking-widest">Active Monitor</div>
+                  </div>
+                </div>
+                <div className="bg-white/10 backdrop-blur-md border border-white/10 px-4 py-2 rounded-full flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                  <span className="text-[10px] font-bold text-gray-300 uppercase tracking-widest">System Online</span>
+                </div>
+              </div>
+            </div>
+          </motion.div>
         </section>
 
-        {/* ... existing features and other sections ... */}
+        {/* CORE FEATURES SHOWCASE */}
+        <section className="max-w-7xl mx-auto px-6 md:px-12 py-20">
+          <div className="grid lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2 bento-card border-amber-500/10 bg-gradient-to-br from-amber-500/[0.03] to-transparent">
+              <div className="max-w-md">
+                <h3 className="text-4xl font-bold mb-6 tracking-tighter">Everything your society needs.</h3>
+                <p className="text-gray-400 mb-8 leading-relaxed">
+                  From visitor management to society accounts, DoorPass provides a comprehensive ecosystem for modern residential living.
+                </p>
+                <button 
+                  onClick={() => setShowFeatures(true)}
+                  className="inline-flex items-center gap-3 text-amber-500 font-bold hover:gap-4 transition-all"
+                >
+                  View Full Catalog <ChevronRight className="w-5 h-5" />
+                </button>
+              </div>
+              <div className="absolute -right-20 -bottom-20 w-64 h-64 bg-amber-500/5 blur-[80px] rounded-full" />
+            </div>
+
+            <div className="bento-card group hover:border-amber-500/20 transition-all">
+              <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mb-8 group-hover:scale-110 transition-transform">
+                <Smartphone className="w-8 h-8 text-amber-500" />
+              </div>
+              <div>
+                <h4 className="text-2xl font-bold mb-3">Resident App</h4>
+                <p className="text-gray-400 text-sm leading-relaxed mb-6">
+                  Manage visitors, pay maintenance, and stay updated with your society - all from your smartphone.
+                </p>
+                <div className="flex gap-4">
+                  <div className="h-1 w-12 bg-amber-500 rounded-full" />
+                  <div className="h-1 w-4 bg-white/10 rounded-full" />
+                  <div className="h-1 w-4 bg-white/10 rounded-full" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
 
         {/* UPDATED CONTACT SECTION */}
         <section id="contact" className="max-w-7xl mx-auto px-6 md:px-12 py-32 border-t border-white/5">
@@ -220,7 +288,120 @@ export default function HomePage() {
         <MessageCircle className="w-8 h-8" />
       </motion.button>
 
-      {/* ... existing footer and modal section ... */}
+      {/* FOOTER */}
+      <footer className="max-w-7xl mx-auto px-6 md:px-12 py-20 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-10">
+        <div className="text-2xl font-bold tracking-tighter">
+          <span className="text-amber-500">Apex</span> IT World
+        </div>
+        <div className="flex items-center gap-10 text-xs font-black uppercase tracking-widest text-gray-500">
+          <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>
+          <a href="#" className="hover:text-white transition-colors">Terms of Service</a>
+          <span className="text-white/10">© 2026 apex it world</span>
+        </div>
+      </footer>
+
+      {/* FEATURE CATALOG MODAL */}
+      <AnimatePresence>
+        {showFeatures && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[1000] flex items-center justify-center p-4 md:p-10"
+          >
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="absolute inset-0 bg-dark-950/80 backdrop-blur-3xl"
+              onClick={() => setShowFeatures(false)}
+            />
+
+            <motion.div 
+              initial={{ y: 50, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 50, opacity: 0 }}
+              className="relative w-full max-w-6xl h-full max-h-[85vh] bg-white/[0.02] border border-white/10 shadow-2xl rounded-[3rem] overflow-hidden flex flex-col"
+            >
+              <div className="flex items-center justify-between p-8 md:p-12 border-b border-white/5 bg-white/[0.01]">
+                <div>
+                  <h2 className="text-4xl font-black tracking-tighter mb-2">DoorPass <span className="text-amber-500">Ecosystem</span></h2>
+                  <p className="text-gray-400 font-medium">Explore the full range of powerful security and management features.</p>
+                </div>
+                <button 
+                  onClick={() => setShowFeatures(false)}
+                  className="w-14 h-14 rounded-2xl border border-white/10 flex items-center justify-center hover:bg-white/10 transition-colors"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-8 md:p-12 custom-scrollbar">
+                <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+                  {[
+                    {
+                      title: "Security",
+                      icon: ShieldCheck,
+                      features: ["Visitor Management", "SOS Emergency", "Child Safety", "Vehicle Management", "Entry Records"]
+                    },
+                    {
+                      title: "Management",
+                      icon: Settings,
+                      features: ["Maintenance Management", "Society Management", "Data Analytics", "Permission Control", "Staff Tracking"]
+                    },
+                    {
+                      title: "Community",
+                      icon: Users,
+                      features: ["Vote Polling", "Feedback System", "Notice Bulletin", "Helper Contacts", "Resident Directory"]
+                    },
+                    {
+                      title: "Digital",
+                      icon: Smartphone,
+                      features: ["Mobile & Web App", "Personal App", "Real-time Alerts", "Payment Gateway", "Multi-society Access"]
+                    }
+                  ].map((cat, i) => (
+                    <motion.div 
+                      key={i}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.1 }}
+                      className="space-y-8"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
+                          <cat.icon className="w-5 h-5 text-amber-500" />
+                        </div>
+                        <h3 className="text-xs uppercase tracking-widest font-black text-amber-500/60">{cat.title}</h3>
+                      </div>
+                      <div className="space-y-4">
+                        {cat.features.map((feat, j) => (
+                          <div key={j} className="flex items-start gap-3 group">
+                            <CheckCircle2 className="w-4 h-4 text-amber-500/30 group-hover:text-amber-500 transition-colors mt-0.5" />
+                            <span className="text-sm text-gray-400 group-hover:text-white transition-colors">{feat}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+
+                <div className="mt-20 glass-panel rounded-3xl p-10 flex flex-col md:flex-row items-center justify-between gap-8 border-amber-500/20 bg-amber-500/5">
+                  <div className="text-center md:text-left">
+                    <h4 className="text-2xl font-bold mb-2">Need a private demo?</h4>
+                    <p className="text-gray-400">Schedule a 1-on-1 walkthrough with our security experts.</p>
+                  </div>
+                  <button 
+                    onClick={() => { setShowFeatures(false); handleWhatsAppInquiry(); }}
+                    className="bg-amber-500 text-white font-black px-10 py-5 rounded-2xl shadow-xl shadow-amber-500/20 hover:scale-105 active:scale-95 transition-all whitespace-nowrap"
+                  >
+                    Request Demo Now
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
