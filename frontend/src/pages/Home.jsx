@@ -149,38 +149,71 @@ export default function HomePage() {
   });
 
   const toggleTheme = (e) => {
-    if (!document.startViewTransition) {
-      setIsDark((prev) => !prev);
-      return;
-    }
-
-    const x = e.clientX || window.innerWidth / 2;
-    const y = e.clientY || window.innerHeight / 2;
+    const x = e?.clientX ?? window.innerWidth / 2;
+    const y = e?.clientY ?? window.innerHeight / 2;
     const endRadius = Math.hypot(
       Math.max(x, window.innerWidth - x),
       Math.max(y, window.innerHeight - y)
     );
-
-    document.documentElement.style.setProperty("--x", `${x}px`);
-    document.documentElement.style.setProperty("--y", `${y}px`);
-    document.documentElement.style.setProperty("--r", `${endRadius}px`);
-
     const isTransitioningToDark = !isDark;
-    if (isTransitioningToDark) {
-      document.documentElement.classList.add("theme-transition-dark");
-      document.documentElement.classList.remove("theme-transition-light");
-    } else {
-      document.documentElement.classList.add("theme-transition-light");
-      document.documentElement.classList.remove("theme-transition-dark");
+
+    // Use View Transitions API if supported (Chrome/Edge desktop)
+    if (document.startViewTransition) {
+      document.documentElement.style.setProperty("--x", `${x}px`);
+      document.documentElement.style.setProperty("--y", `${y}px`);
+      document.documentElement.style.setProperty("--r", `${endRadius}px`);
+
+      if (isTransitioningToDark) {
+        document.documentElement.classList.add("theme-transition-dark");
+        document.documentElement.classList.remove("theme-transition-light");
+      } else {
+        document.documentElement.classList.add("theme-transition-light");
+        document.documentElement.classList.remove("theme-transition-dark");
+      }
+
+      const transition = document.startViewTransition(() => {
+        setIsDark((prev) => !prev);
+      });
+
+      transition.finished.then(() => {
+        document.documentElement.classList.remove("theme-transition-dark", "theme-transition-light");
+      });
+      return;
     }
 
-    const transition = document.startViewTransition(() => {
-      setIsDark((prev) => !prev);
-    });
+    // iOS / Safari fallback: overlay div animation
+    const overlay = document.createElement("div");
+    // Size the overlay so it covers the whole viewport from the click point
+    const diameter = endRadius * 2;
+    overlay.className = `theme-overlay ${isTransitioningToDark ? "dark-overlay" : "light-overlay"}`;
+    overlay.style.cssText = `
+      width: ${diameter}px;
+      height: ${diameter}px;
+      left: ${x}px;
+      top: ${y}px;
+      --scale: 1;
+    `;
+    document.body.appendChild(overlay);
 
-    transition.finished.then(() => {
-      document.documentElement.classList.remove("theme-transition-dark", "theme-transition-light");
-    });
+    if (isTransitioningToDark) {
+      // Dark mode: circle expands from click point outward
+      overlay.classList.add("expanding");
+      overlay.addEventListener("animationend", () => {
+        setIsDark(true);
+        overlay.remove();
+      }, { once: true });
+    } else {
+      // Light mode: circle collapses inward to click point
+      // Apply theme first, then animate old overlay collapsing
+      setIsDark(false);
+      // Small timeout so browser renders the new light theme underneath
+      requestAnimationFrame(() => {
+        overlay.classList.add("collapsing");
+        overlay.addEventListener("animationend", () => {
+          overlay.remove();
+        }, { once: true });
+      });
+    }
   };
 
   // Mobile menu toggle

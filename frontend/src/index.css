@@ -9,6 +9,8 @@
 
   body {
     @apply bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans antialiased selection:bg-blue-500/30 selection:text-blue-900 dark:selection:text-white transition-colors duration-300;
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
   }
 }
 
@@ -73,9 +75,10 @@
 
 /* 1. Light -> Dark Transition: New page expands outwards */
 .theme-transition-dark::view-transition-new(root) {
-  animation: reveal-theme-out 0.65s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: reveal-theme-out 0.55s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   clip-path: circle(var(--r) at var(--x) var(--y));
   z-index: 9999;
+  will-change: clip-path;
 }
 .theme-transition-dark::view-transition-old(root) {
   z-index: 1;
@@ -83,9 +86,10 @@
 
 /* 2. Dark -> Light Transition: Old page shrinks inwards */
 .theme-transition-light::view-transition-old(root) {
-  animation: reveal-theme-in 0.65s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: reveal-theme-in 0.55s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   clip-path: circle(0px at var(--x) var(--y));
   z-index: 9999;
+  will-change: clip-path;
 }
 .theme-transition-light::view-transition-new(root) {
   z-index: 1;
@@ -107,5 +111,36 @@
   to {
     clip-path: circle(0px at var(--x) var(--y));
   }
+}
+
+/* iOS / Safari fallback: overlay-based radial animation */
+.theme-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  pointer-events: none;
+  border-radius: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  will-change: transform;
+}
+.theme-overlay.dark-overlay {
+  background: #020617; /* slate-950 */
+}
+.theme-overlay.light-overlay {
+  background: #f8fafc; /* slate-50 */
+}
+@keyframes overlay-expand {
+  from { transform: translate(-50%, -50%) scale(0); opacity: 1; }
+  to   { transform: translate(-50%, -50%) scale(var(--scale)); opacity: 1; }
+}
+@keyframes overlay-collapse {
+  from { transform: translate(-50%, -50%) scale(var(--scale)); opacity: 1; }
+  to   { transform: translate(-50%, -50%) scale(0); opacity: 1; }
+}
+.theme-overlay.expanding {
+  animation: overlay-expand 0.55s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+.theme-overlay.collapsing {
+  animation: overlay-collapse 0.55s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
 }
 
