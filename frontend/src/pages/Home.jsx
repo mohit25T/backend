@@ -524,7 +524,7 @@ export default function HomePage() {
             { label: "Line 3", val: 89, color: "#6366f1", trail: "stroke-indigo-500/10" }
           ].map((gauge, i) => (
             <div key={i} className="flex flex-col items-center">
-              <div className="relative w-24 h-24 flex items-center justify-center">
+              <div className="relative w-16 h-16 sm:w-24 sm:h-24 flex items-center justify-center">
                 <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
                   <circle cx="50" cy="50" r="40" strokeWidth="8" stroke="transparent" className={`${gauge.trail} fill-none`} />
                   <circle 
@@ -533,7 +533,7 @@ export default function HomePage() {
                   />
                 </svg>
                 <div className="absolute text-center">
-                  <span className="text-base font-bold text-slate-850 dark:text-slate-100">{gauge.val}%</span>
+                  <span className="text-xs sm:text-base font-bold text-slate-850 dark:text-slate-100">{gauge.val}%</span>
                 </div>
               </div>
               <span className="text-xs font-bold text-slate-500 dark:text-slate-400 mt-2">{gauge.label}</span>
@@ -706,7 +706,7 @@ export default function HomePage() {
 
       {/* 2. STICKY NAVIGATION BAR */}
       <nav className="fixed top-0 w-full z-50 border-b border-slate-200/50 dark:border-slate-800/40 bg-white/70 dark:bg-slate-950/60 backdrop-blur-xl transition-all duration-300">
-        <div className="max-w-7xl mx-auto px-6 md:px-12 py-4 flex justify-between items-center">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 py-4 flex justify-between items-center">
           <a href="#" className="flex items-center space-x-2 text-2xl font-bold tracking-tight">
             <span className="bg-gradient-to-r from-blue-600 to-cyan-500 bg-clip-text text-transparent">Apex</span>
             <span className="text-slate-800 dark:text-white font-medium">IT World</span>
@@ -811,12 +811,12 @@ export default function HomePage() {
       <main className="relative z-10 pt-24">
         
         {/* 3. HERO SECTION */}
-        <section id="home" className="max-w-7xl mx-auto px-6 md:px-12 py-16 lg:py-24 grid lg:grid-cols-2 gap-12 items-center">
+        <section id="home" className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 py-16 lg:py-24 grid lg:grid-cols-2 gap-12 items-center">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
-            className="text-left"
+            className="text-left min-w-0"
           >
             <div className="inline-flex items-center space-x-2 bg-blue-500/10 dark:bg-cyan-500/10 border border-blue-500/20 dark:border-cyan-500/20 px-4 py-2 rounded-full text-blue-600 dark:text-cyan-400 text-xs font-bold uppercase tracking-wider mb-6">
               <Zap className="w-3.5 h-3.5 fill-current" />
@@ -824,7 +824,7 @@ export default function HomePage() {
             </div>
             
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-tight tracking-tight mb-6">
-              Transform Your Business With <br />
+              Transform Your Business With <br className="hidden sm:inline" />{" "}
               <span className="text-gradient">Smart ERP Solutions</span>
             </h1>
 
@@ -850,7 +850,7 @@ export default function HomePage() {
             </div>
 
             {/* TRUST INDICATORS */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 border-t border-slate-200/60 dark:border-slate-800/40 pt-10">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 border-t border-slate-200/60 dark:border-slate-800/40 pt-10">
               {stats.map((stat, i) => (
                 <div key={i} className="text-left">
                   <div className="text-2xl font-bold text-slate-900 dark:text-white">{stat.value}</div>
@@ -866,7 +866,7 @@ export default function HomePage() {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 1, delay: 0.2 }}
-            className="relative"
+            className="relative min-w-0"
           >
             {/* Soft decorative glow */}
             <div className="absolute inset-0 bg-gradient-to-tr from-blue-500/10 to-cyan-500/10 blur-[90px] rounded-full z-0" />
@@ -923,7 +923,7 @@ export default function HomePage() {
                   >
                     {activeHeroTab === "sales" && (
                       <div className="space-y-6">
-                        <div className="grid grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                           <div className="bg-slate-100/50 dark:bg-slate-900/40 p-4 rounded-2xl border border-slate-200 dark:border-slate-800/50">
                             <span className="text-[10px] text-slate-400 uppercase font-extrabold tracking-wider">Quotations</span>
                             <div className="text-xl font-bold mt-1 text-slate-800 dark:text-white">₹342.8k</div>
@@ -994,7 +994,7 @@ export default function HomePage() {
 
                     {activeHeroTab === "production" && (
                       <div className="space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                           <div className="p-4 bg-slate-100/50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 rounded-xl">
                             <div className="text-xs text-slate-400 font-semibold">OEE (Overall Equipment Effectiveness)</div>
                             <div className="text-2xl font-bold mt-1 text-slate-800 dark:text-white">91.4%</div>
@@ -1010,12 +1010,12 @@ export default function HomePage() {
                             </div>
                           </div>
                         </div>
-                        <div className="bg-slate-100/50 dark:bg-slate-950/20 p-4 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center justify-between">
-                          <div>
-                            <div className="text-xs font-bold text-slate-800 dark:text-slate-200">Active Work Order: WO-48201</div>
+                        <div className="bg-slate-100/50 dark:bg-slate-950/20 p-4 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col xs:flex-row justify-between items-start xs:items-center gap-3">
+                          <div className="min-w-0">
+                            <div className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">Active Work Order: WO-48201</div>
                             <div className="text-[10px] text-slate-400 mt-1">Target Quantity: 10,000 units | Completed: 6,400</div>
                           </div>
-                          <div className="flex items-center space-x-2">
+                          <div className="flex items-center space-x-2 shrink-0">
                             <div className="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse" />
                             <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400">Line Active</span>
                           </div>
@@ -1025,7 +1025,7 @@ export default function HomePage() {
 
                     {activeHeroTab === "staff" && (
                       <div className="space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                           <div className="p-4 bg-slate-100/50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 rounded-xl flex items-center justify-between">
                             <div>
                               <span className="text-[10px] text-slate-400 uppercase font-black">Present Count</span>
@@ -1043,9 +1043,9 @@ export default function HomePage() {
                         </div>
                         <div className="p-3 bg-slate-100/50 dark:bg-slate-950/20 border border-slate-200 dark:border-slate-800 rounded-xl text-xs space-y-2">
                           <div className="font-bold text-slate-700 dark:text-slate-300">Upcoming Leave Approvals</div>
-                          <div className="flex justify-between items-center text-[11px] text-slate-600 dark:text-slate-400">
-                            <span>S. Kumar (Sales ERP) - 3 Days Personal</span>
-                            <button className="bg-blue-600 text-white font-bold px-2 py-0.5 rounded text-[9px]">Approve</button>
+                          <div className="flex flex-col xs:flex-row justify-between items-start xs:items-center gap-2 text-[11px] text-slate-600 dark:text-slate-400">
+                            <span className="truncate">S. Kumar (Sales ERP) - 3 Days Personal</span>
+                            <button className="bg-blue-600 text-white font-bold px-2 py-0.5 rounded text-[9px] shrink-0">Approve</button>
                           </div>
                         </div>
                       </div>
@@ -1067,7 +1067,7 @@ export default function HomePage() {
         </section>
 
         {/* 4. FEATURES GRID SECTION */}
-        <section id="features" className="max-w-7xl mx-auto px-6 md:px-12 py-20 border-t border-slate-200/60 dark:border-slate-800/40">
+        <section id="features" className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 py-20 border-t border-slate-200/60 dark:border-slate-800/40">
           <div className="text-center max-w-2xl mx-auto mb-16">
             <h2 className="text-xs uppercase font-extrabold tracking-widest text-blue-600 dark:text-cyan-400 mb-3">Enterprise Core Features</h2>
             <h3 className="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white">
@@ -1100,7 +1100,7 @@ export default function HomePage() {
         </section>
 
         {/* 5. ERP MODULES SHOWCASE */}
-        <section id="modules" className="max-w-7xl mx-auto px-6 md:px-12 py-20 border-t border-slate-200/60 dark:border-slate-800/40">
+        <section id="modules" className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 py-20 border-t border-slate-200/60 dark:border-slate-800/40">
           <div className="text-center max-w-2xl mx-auto mb-16">
             <h2 className="text-xs uppercase font-extrabold tracking-widest text-blue-600 dark:text-cyan-400 mb-3">Enterprise ERP Modules</h2>
             <h3 className="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white">
@@ -1154,7 +1154,7 @@ export default function HomePage() {
                   animate={{ y: 0, scale: 1, opacity: 1 }}
                   exit={{ y: 30, scale: 0.95, opacity: 0 }}
                   transition={{ type: "spring", stiffness: 150, damping: 20 }}
-                  className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-3xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-2xl p-8 z-10 text-left"
+                  className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl p-6 sm:p-8 z-10 text-left"
                 >
                   <div className="flex justify-between items-start mb-6">
                     <div className="flex items-center space-x-3">
@@ -1210,7 +1210,7 @@ export default function HomePage() {
         </section>
 
         {/* 6. INDUSTRIES WE SERVE */}
-        <section id="industries" className="max-w-7xl mx-auto px-6 md:px-12 py-20 border-t border-slate-200/60 dark:border-slate-800/40">
+        <section id="industries" className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 py-20 border-t border-slate-200/60 dark:border-slate-800/40">
           <div className="text-center max-w-2xl mx-auto mb-16">
             <h2 className="text-xs uppercase font-extrabold tracking-widest text-blue-600 dark:text-cyan-400 mb-3">Sectors We Service</h2>
             <h3 className="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white">
@@ -1221,11 +1221,11 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
             {industries.map((ind, idx) => (
               <div 
                 key={idx}
-                className={`glass-card rounded-2xl p-6 bg-white dark:bg-slate-900/30 border ${ind.color} hover:scale-[1.03] transition-all flex flex-col justify-between`}
+                className={`glass-card rounded-2xl p-4 sm:p-6 bg-white dark:bg-slate-900/30 border ${ind.color} hover:scale-[1.03] transition-all flex flex-col justify-between`}
               >
                 <div>
                   <div className="w-9 h-9 rounded-lg bg-blue-500/10 dark:bg-cyan-500/10 flex items-center justify-center text-blue-600 dark:text-cyan-400 mb-4">
@@ -1242,7 +1242,7 @@ export default function HomePage() {
         </section>
 
         {/* 7. WHY CHOOSE APEX ERP */}
-        <section className="max-w-7xl mx-auto px-6 md:px-12 py-20 border-t border-slate-200/60 dark:border-slate-800/40">
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 py-20 border-t border-slate-200/60 dark:border-slate-800/40">
           <div className="grid lg:grid-cols-3 gap-12 items-center">
             <div className="lg:col-span-1 text-left">
               <h2 className="text-xs uppercase font-extrabold tracking-widest text-blue-600 dark:text-cyan-400 mb-3">Why Partner With Us</h2>
@@ -1287,7 +1287,7 @@ export default function HomePage() {
         </section>
 
         {/* 8. ERP DASHBOARD SHOWCASE CAROUSEL */}
-        <section className="max-w-7xl mx-auto px-6 md:px-12 py-20 border-t border-slate-200/60 dark:border-slate-800/40">
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 py-20 border-t border-slate-200/60 dark:border-slate-800/40">
           <div className="text-center max-w-2xl mx-auto mb-12">
             <h2 className="text-xs uppercase font-extrabold tracking-widest text-blue-600 dark:text-cyan-400 mb-3">Live Reports Showcase</h2>
             <h3 className="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white">
@@ -1301,7 +1301,7 @@ export default function HomePage() {
           <div className="grid lg:grid-cols-3 gap-8 items-stretch">
             
             {/* Left Carousel Navigation Panel */}
-            <div className="lg:col-span-1 flex flex-col justify-center space-y-3">
+            <div className="lg:col-span-1 min-w-0 flex flex-col justify-center space-y-3">
               {showcaseSlides.map((slide, idx) => (
                 <button
                   key={idx}
@@ -1322,7 +1322,7 @@ export default function HomePage() {
             </div>
 
             {/* Right Showcase Live Preview Board */}
-            <div className="lg:col-span-2 relative glass-panel rounded-[2rem] border border-slate-200/80 dark:border-slate-850/50 p-6 flex flex-col justify-between bg-white dark:bg-slate-900/35 overflow-hidden">
+            <div className="lg:col-span-2 min-w-0 relative glass-panel rounded-[2rem] border border-slate-200/80 dark:border-slate-850/50 p-6 flex flex-col justify-between bg-white dark:bg-slate-900/35 overflow-hidden">
               
               <AnimatePresence mode="wait">
                 <ShowcaseCard
@@ -1347,7 +1347,7 @@ export default function HomePage() {
         </section>
 
         {/* 9. TESTIMONIALS SECTION */}
-        <section className="max-w-7xl mx-auto px-6 md:px-12 py-20 border-t border-slate-200/60 dark:border-slate-800/40 bg-slate-100/30 dark:bg-slate-950/20">
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 py-20 border-t border-slate-200/60 dark:border-slate-800/40 bg-slate-100/30 dark:bg-slate-950/20">
           <div className="text-center max-w-2xl mx-auto mb-16">
             <h2 className="text-xs uppercase font-extrabold tracking-widest text-blue-600 dark:text-cyan-400 mb-3">Customer Success</h2>
             <h3 className="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white">
@@ -1383,7 +1383,7 @@ export default function HomePage() {
         </section>
 
         {/* 10. IMPLEMENTATION PROCESS SECTION */}
-        <section className="max-w-7xl mx-auto px-6 md:px-12 py-20 border-t border-slate-200/60 dark:border-slate-800/40">
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 py-20 border-t border-slate-200/60 dark:border-slate-800/40">
           <div className="text-center max-w-2xl mx-auto mb-16">
             <h2 className="text-xs uppercase font-extrabold tracking-widest text-blue-600 dark:text-cyan-400 mb-3">Onboarding Roadmap</h2>
             <h3 className="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white">
@@ -1434,7 +1434,7 @@ export default function HomePage() {
           </div>
         </section>
         {/* 11. PRICING SECTION */}
-        <section id="pricing" className="max-w-7xl mx-auto px-6 md:px-12 py-20 border-t border-slate-200/60 dark:border-slate-800/40">
+        <section id="pricing" className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 py-20 border-t border-slate-200/60 dark:border-slate-800/40">
           <div className="text-center max-w-2xl mx-auto mb-12">
             <h2 className="text-xs uppercase font-extrabold tracking-widest text-blue-600 dark:text-cyan-400 mb-3">Pricing Plans</h2>
             <h3 className="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white">
@@ -1665,7 +1665,7 @@ export default function HomePage() {
                 </p>
               </div>
               
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-2 gap-4 w-full lg:w-auto shrink-0">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-2 gap-3 w-full lg:w-auto shrink-0">
                 {[
                   "Free ERP Demo",
                   "Free Business Requirement Analysis",
@@ -1684,7 +1684,7 @@ export default function HomePage() {
 
           {/* Trust Indicators Section */}
           <div className="max-w-6xl mx-auto border-t border-slate-200 dark:border-slate-800/40 pt-12">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
               {[
                 { title: "Secure Cloud Infrastructure", icon: Shield, desc: "Row-level permissions, TLS encryption, hourly backups." },
                 { title: "GST Compliant", icon: CheckCircle, desc: "Auto E-Invoice, E-Way bills, live GST matching." },
@@ -1705,7 +1705,7 @@ export default function HomePage() {
         </section>
 
         {/* 12. FAQs SECTION (ACCORDION STYLE) */}
-        <section id="faq" className="max-w-7xl mx-auto px-6 md:px-12 py-20 border-t border-slate-200/60 dark:border-slate-800/40">
+        <section id="faq" className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 py-20 border-t border-slate-200/60 dark:border-slate-800/40">
           <div className="text-center max-w-2xl mx-auto mb-16">
             <h2 className="text-xs uppercase font-extrabold tracking-widest text-blue-600 dark:text-cyan-400 mb-3">Have Questions?</h2>
             <h3 className="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white">
@@ -1750,7 +1750,7 @@ export default function HomePage() {
         </section>
 
         {/* 13. LEAD GENERATION CONTACT FORM */}
-        <section id="contact" className="max-w-7xl mx-auto px-6 md:px-12 py-20 border-t border-slate-200/60 dark:border-slate-800/40">
+        <section id="contact" className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 py-20 border-t border-slate-200/60 dark:border-slate-800/40">
           <div className="glass-panel rounded-[3rem] p-8 md:p-16 flex flex-col lg:flex-row gap-16 bg-white dark:bg-slate-900/40 shadow-2xl relative overflow-hidden">
             
             {/* Grid Mesh lines in background */}
@@ -1759,7 +1759,7 @@ export default function HomePage() {
             <div className="flex-1 text-left relative z-10">
               <h2 className="text-xs uppercase font-extrabold tracking-widest text-blue-600 dark:text-cyan-400 mb-3">Connect With Us</h2>
               <h3 className="text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-tight">
-                Ready to Optimize <br />Your Business?
+                Ready to Optimize <br className="hidden sm:inline" />{" "}Your Business?
               </h3>
               <p className="text-slate-500 dark:text-slate-400 mt-4 leading-relaxed text-sm">
                 Submit an inquiry or request a custom-tailored product demo. An implementation expert will reach out within 15 minutes.
@@ -1802,7 +1802,7 @@ export default function HomePage() {
             <div className="flex-1 relative z-10">
               <form onSubmit={handleContactSubmit} className="space-y-5 bg-slate-50 dark:bg-slate-900/60 p-6 md:p-10 border border-slate-200 dark:border-slate-800/80 rounded-2xl">
                 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1">
                     <label htmlFor="name" className="text-[10px] uppercase font-bold text-slate-500">Contact Name</label>
                     <input 
@@ -1831,7 +1831,7 @@ export default function HomePage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1">
                     <label htmlFor="email" className="text-[10px] uppercase font-bold text-slate-500">Email Address</label>
                     <input 
@@ -1920,7 +1920,7 @@ export default function HomePage() {
 
       {/* 14. FOOTER */}
       <footer className="border-t border-slate-200 dark:border-slate-900 bg-white dark:bg-slate-950/40 relative z-10">
-        <div className="max-w-7xl mx-auto px-6 md:px-12 py-16 grid grid-cols-2 md:grid-cols-5 gap-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 py-16 grid grid-cols-2 md:grid-cols-5 gap-10">
           
           {/* Col 1 Brand detail */}
           <div className="col-span-2 space-y-4">
@@ -2040,7 +2040,7 @@ export default function HomePage() {
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="relative w-full max-w-3xl bg-white dark:bg-slate-900 rounded-3xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-2xl z-10 p-6 flex flex-col justify-between"
+              className="relative w-full max-w-3xl max-h-[90vh] overflow-y-auto bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl z-10 p-6 flex flex-col justify-between"
             >
               <div className="flex justify-between items-center mb-4">
                 <h4 className="text-base font-bold text-slate-800 dark:text-white">Apex ERP Interactive Platform Tour</h4>
@@ -2089,7 +2089,7 @@ export default function HomePage() {
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="relative w-full max-w-md bg-white dark:bg-slate-900 rounded-[2rem] overflow-hidden border border-slate-200 dark:border-slate-800 shadow-2xl z-10 p-8 text-center"
+              className="relative w-full max-w-md max-h-[90vh] overflow-y-auto bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-2xl z-10 p-6 sm:p-8 text-center"
             >
               <div className="w-16 h-16 rounded-full bg-green-500/10 border border-green-500/30 flex items-center justify-center text-green-500 mx-auto mb-6">
                 <CheckCircle2 className="w-8 h-8" />
