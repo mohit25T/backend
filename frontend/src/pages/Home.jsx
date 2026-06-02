@@ -148,6 +148,41 @@ export default function HomePage() {
       (!localStorage.getItem("theme") && window.matchMedia("(prefers-color-scheme: dark)").matches);
   });
 
+  const toggleTheme = (e) => {
+    if (!document.startViewTransition) {
+      setIsDark((prev) => !prev);
+      return;
+    }
+
+    const x = e.clientX || window.innerWidth / 2;
+    const y = e.clientY || window.innerHeight / 2;
+    const endRadius = Math.hypot(
+      Math.max(x, window.innerWidth - x),
+      Math.max(y, window.innerHeight - y)
+    );
+
+    document.documentElement.style.setProperty("--x", `${x}px`);
+    document.documentElement.style.setProperty("--y", `${y}px`);
+    document.documentElement.style.setProperty("--r", `${endRadius}px`);
+
+    const isTransitioningToDark = !isDark;
+    if (isTransitioningToDark) {
+      document.documentElement.classList.add("theme-transition-dark");
+      document.documentElement.classList.remove("theme-transition-light");
+    } else {
+      document.documentElement.classList.add("theme-transition-light");
+      document.documentElement.classList.remove("theme-transition-dark");
+    }
+
+    const transition = document.startViewTransition(() => {
+      setIsDark((prev) => !prev);
+    });
+
+    transition.finished.then(() => {
+      document.documentElement.classList.remove("theme-transition-dark", "theme-transition-light");
+    });
+  };
+
   // Mobile menu toggle
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -726,7 +761,7 @@ export default function HomePage() {
           <div className="hidden lg:flex items-center space-x-4">
             {/* Theme Toggle */}
             <button 
-              onClick={() => setIsDark(!isDark)}
+              onClick={toggleTheme}
               className="p-2.5 rounded-full border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-900 transition-all text-slate-650 dark:text-slate-350"
               aria-label="Toggle theme"
             >
@@ -749,7 +784,7 @@ export default function HomePage() {
           {/* Hamburger / Menu buttons */}
           <div className="flex lg:hidden items-center space-x-3">
             <button 
-              onClick={() => setIsDark(!isDark)}
+              onClick={toggleTheme}
               className="p-2 rounded-full border border-slate-200 dark:border-slate-800 text-slate-650 dark:text-slate-350"
               aria-label="Toggle theme"
             >

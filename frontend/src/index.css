@@ -59,3 +59,53 @@
   }
 }
 
+/* Custom View Transitions for Radial theme toggle reveal */
+::view-transition-image-pair(root) {
+  isolation: auto;
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+  display: block;
+}
+
+/* 1. Light -> Dark Transition: New page expands outwards */
+.theme-transition-dark::view-transition-new(root) {
+  animation: reveal-theme-out 0.65s cubic-bezier(0.4, 0, 0.2, 1);
+  clip-path: circle(var(--r) at var(--x) var(--y));
+  z-index: 9999;
+}
+.theme-transition-dark::view-transition-old(root) {
+  z-index: 1;
+}
+
+/* 2. Dark -> Light Transition: Old page shrinks inwards */
+.theme-transition-light::view-transition-old(root) {
+  animation: reveal-theme-in 0.65s cubic-bezier(0.4, 0, 0.2, 1);
+  clip-path: circle(0px at var(--x) var(--y));
+  z-index: 9999;
+}
+.theme-transition-light::view-transition-new(root) {
+  z-index: 1;
+}
+
+@keyframes reveal-theme-out {
+  from {
+    clip-path: circle(0px at var(--x) var(--y));
+  }
+  to {
+    clip-path: circle(var(--r) at var(--x) var(--y));
+  }
+}
+
+@keyframes reveal-theme-in {
+  from {
+    clip-path: circle(var(--r) at var(--x) var(--y));
+  }
+  to {
+    clip-path: circle(0px at var(--x) var(--y));
+  }
+}
+
