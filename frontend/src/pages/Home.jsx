@@ -46,6 +46,98 @@ import {
   Target
 } from "lucide-react";
 
+// Testimonial Card Component to preserve props during AnimatePresence exit transitions
+const TestimonialCard = ({ testimonial }) => {
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.96, y: 15 }}
+      animate={{ opacity: 1, scale: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.96, y: -15 }}
+      transition={{ 
+        type: "spring", 
+        stiffness: 100, 
+        damping: 18, 
+        mass: 0.8
+      }}
+      className="glass-card rounded-[2.5rem] p-8 md:p-12 bg-white dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800/50 shadow-2xl relative"
+    >
+      <div className="flex items-center space-x-4 mb-6">
+        <img 
+          src={testimonial.photo} 
+          alt={testimonial.name}
+          className="w-14 h-14 rounded-full object-cover border-2 border-blue-500/20"
+        />
+        <div>
+          <h4 className="text-base font-bold text-slate-850 dark:text-white">
+            {testimonial.name}
+          </h4>
+          <span className="text-xs text-blue-600 dark:text-cyan-400 font-semibold">
+            {testimonial.company}
+          </span>
+        </div>
+      </div>
+
+      {/* Rating stars */}
+      <div className="flex space-x-1 mb-6 text-amber-400">
+        {[...Array(testimonial.rating)].map((_, i) => (
+          <Star key={i} className="w-4 h-4 fill-current" />
+        ))}
+      </div>
+
+      <p className="text-base md:text-lg text-slate-650 dark:text-slate-300 italic leading-relaxed">
+        "{testimonial.review}"
+      </p>
+    </motion.div>
+  );
+};
+
+// Showcase Card Component to preserve props during AnimatePresence exit transitions
+const ShowcaseCard = ({ slide }) => {
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: 30 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -30 }}
+      transition={{ 
+        type: "spring", 
+        stiffness: 90, 
+        damping: 16, 
+        mass: 0.8
+      }}
+      className="space-y-6 flex-1 flex flex-col justify-between"
+    >
+      <div>
+        <div className="flex justify-between items-start">
+          <div>
+            <h4 className="text-xl font-bold text-slate-850 dark:text-white">{slide.title}</h4>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-md">
+              {slide.desc}
+            </p>
+          </div>
+          <div className={`text-base font-extrabold ${slide.statColor} bg-slate-100 dark:bg-slate-800/50 px-3 py-1.5 rounded-lg`}>
+            {slide.metric}
+          </div>
+        </div>
+
+        {/* Chart Container */}
+        <div className="mt-8 bg-slate-50/50 dark:bg-slate-950/20 p-4 border border-slate-200 dark:border-slate-800/40 rounded-2xl">
+          {slide.chartContent}
+        </div>
+      </div>
+
+      {/* Micro stats indicators */}
+      <div className="grid grid-cols-3 gap-4 border-t border-slate-200/60 dark:border-slate-800/40 pt-6 mt-6">
+        {slide.details.map((det, index) => (
+          <div key={index} className="text-center md:text-left">
+            <span className="text-[10px] text-slate-400 dark:text-slate-500 uppercase font-extrabold tracking-widest">{det.label}</span>
+            <div className="text-sm font-bold mt-0.5 text-slate-800 dark:text-slate-300">{det.val}</div>
+          </div>
+        ))}
+      </div>
+    </motion.div>
+  );
+};
+
 export default function HomePage() {
   // Preloader state
   const [isLoading, setIsLoading] = useState(true);
@@ -358,7 +450,7 @@ export default function HomePage() {
     {
       title: "Sales Analytics Dashboard",
       desc: "Oversee team pipelines, contract valuations, and historical forecasts in real time.",
-      metric: "$4.82M Annual Revenue",
+      metric: "₹4.82M Annual Revenue",
       statColor: "text-blue-500",
       details: [
         { label: "Active Deals", val: "142" },
@@ -390,7 +482,7 @@ export default function HomePage() {
       metric: "42,850 Total Skus",
       statColor: "text-cyan-500",
       details: [
-        { label: "Stock Value", val: "$1.2M" },
+        { label: "Stock Value", val: "₹1.2M" },
         { label: "Reorder Alerts", val: "3 Active" },
         { label: "Fulfillment", val: "99.4%" }
       ],
@@ -485,9 +577,9 @@ export default function HomePage() {
       metric: "24.5% Profit Margin",
       statColor: "text-emerald-500",
       details: [
-        { label: "Cash Inflow", val: "$380k" },
-        { label: "Expenses", val: "$286k" },
-        { label: "Net Earnings", val: "+$94,000" }
+        { label: "Cash Inflow", val: "₹380k" },
+        { label: "Expenses", val: "₹286k" },
+        { label: "Net Earnings", val: "+₹94,000" }
       ],
       chartContent: (
         <div className="h-44 w-full flex items-center justify-center p-4">
@@ -541,28 +633,24 @@ export default function HomePage() {
   // FAQs list
   const faqs = [
     {
-      q: "What is ERP?",
-      a: "ERP stands for Enterprise Resource Planning. It is a suite of integrated software applications that businesses use to collect, store, manage, and interpret data from diverse business units (like finance, sales, inventory, HR, manufacturing, and customer service) in one unified database."
+      q: "What is Apex ERP?",
+      a: "Apex ERP is a premium, all-in-one cloud ERP solution by Apex IT World engineered to sync your entire business operation. It integrates sales, purchases, inventory, advanced manufacturing (BOM & shop floor), CRM, HR & payroll, and GST-compliant accounting into a single, unified database."
     },
     {
-      q: "How long does implementation take?",
-      a: "Typically, full deployment and staff onboarding take between 4 to 12 weeks, depending on the scale of custom development required, database imports, and the number of active modules you choose. We supply dedicated consultants to coordinate the transition."
+      q: "Is E-Way Bill included?",
+      a: "Yes! Direct E-Way Bill and E-Invoice generation are built directly into our Professional and Enterprise ERP plans. You can generate government-registered IRN numbers and E-Way bills directly from sales dispatch bills with a single click, automating your GST compliance."
     },
     {
-      q: "Is cloud deployment available?",
-      a: "Yes. Our ERP solutions are fully hosted on secure cloud infrastructure, guaranteeing a 99.9% uptime SLA. We perform encrypted hourly backups and manage OS patches so your internal IT staff doesn't have to."
+      q: "Can I upgrade later?",
+      a: "Absolutely. You can start with the Basic ERP plan and scale to the Professional or Enterprise plans as your business operations grow. All of your historical data, inventory catalogs, database settings, and configurations will carry over seamlessly with zero downtime."
     },
     {
-      q: "Can the ERP be customized?",
-      a: "Absolutely. One of our primary strengths is Custom ERP Development. We adapt database records, design custom PDF layouts, build tailor-made approval hierarchies, and sync with your third-party tools via REST APIs."
+      q: "Do you provide training?",
+      a: "Yes, hands-on user training and system setup are part of our implementation blueprint. We provide live guided webinars, role-based tutorial manuals, and self-paced video libraries so your staff adapts quickly and comfortably."
     },
     {
-      q: "What support do you provide?",
-      a: "We offer dedicated 24/7 technical support. Each customer is assigned an Implementation Manager during setup, followed by direct email, phone, and WhatsApp channels for rapid assistance under our 15-minute SLA."
-    },
-    {
-      q: "Is data secure?",
-      a: "We implement enterprise-grade security including TLS 1.3 encryption, standard SSL certificates, detailed database audit logs, row-level access permissions, and automated firewall checks."
+      q: "Is customization available?",
+      a: "Yes. Our core value is tailoring ERP architectures to match unique business workflows. We customize database fields, approval checklists, layout PDFs (like tax invoices, delivery challenges, packing slips), custom reporting matrices, and sync with third-party tools via REST APIs."
     }
   ];
 
@@ -575,7 +663,7 @@ export default function HomePage() {
           <motion.div 
             initial={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.5 }}
+            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
             className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-slate-950 text-white"
           >
             <div className="relative w-28 h-28 flex items-center justify-center">
@@ -683,6 +771,7 @@ export default function HomePage() {
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: "auto", opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
               className="lg:hidden border-t border-slate-200 dark:border-slate-850 bg-white dark:bg-slate-950 overflow-hidden"
             >
               <div className="flex flex-col space-y-4 px-6 py-8">
@@ -827,22 +916,22 @@ export default function HomePage() {
                 <AnimatePresence mode="wait">
                   <motion.div
                     key={activeHeroTab}
-                    initial={{ opacity: 0, y: 10 }}
+                    initial={{ opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.3 }}
+                    exit={{ opacity: 0, y: -12 }}
+                    transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
                   >
                     {activeHeroTab === "sales" && (
                       <div className="space-y-6">
                         <div className="grid grid-cols-3 gap-4">
                           <div className="bg-slate-100/50 dark:bg-slate-900/40 p-4 rounded-2xl border border-slate-200 dark:border-slate-800/50">
                             <span className="text-[10px] text-slate-400 uppercase font-extrabold tracking-wider">Quotations</span>
-                            <div className="text-xl font-bold mt-1 text-slate-800 dark:text-white">$342.8k</div>
+                            <div className="text-xl font-bold mt-1 text-slate-800 dark:text-white">₹342.8k</div>
                             <span className="text-[9px] text-green-500 font-bold flex items-center mt-1">↑ 12% vs LW</span>
                           </div>
                           <div className="bg-slate-100/50 dark:bg-slate-900/40 p-4 rounded-2xl border border-slate-200 dark:border-slate-800/50">
                             <span className="text-[10px] text-slate-400 uppercase font-extrabold tracking-wider">Invoiced</span>
-                            <div className="text-xl font-bold mt-1 text-slate-800 dark:text-white">$218.4k</div>
+                            <div className="text-xl font-bold mt-1 text-slate-800 dark:text-white">₹218.4k</div>
                             <span className="text-[9px] text-green-500 font-bold flex items-center mt-1">↑ 8% vs LW</span>
                           </div>
                           <div className="bg-slate-100/50 dark:bg-slate-900/40 p-4 rounded-2xl border border-slate-200 dark:border-slate-800/50">
@@ -1055,14 +1144,16 @@ export default function HomePage() {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
+                  transition={{ duration: 0.35, ease: "easeOut" }}
                   onClick={() => setSelectedModule(null)}
                   className="absolute inset-0 bg-slate-950/60 backdrop-blur-md"
                 />
                 
                 <motion.div 
-                  initial={{ y: 50, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  exit={{ y: 50, opacity: 0 }}
+                  initial={{ y: 30, scale: 0.95, opacity: 0 }}
+                  animate={{ y: 0, scale: 1, opacity: 1 }}
+                  exit={{ y: 30, scale: 0.95, opacity: 0 }}
+                  transition={{ type: "spring", stiffness: 150, damping: 20 }}
                   className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-3xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-2xl p-8 z-10 text-left"
                 >
                   <div className="flex justify-between items-start mb-6">
@@ -1234,44 +1325,10 @@ export default function HomePage() {
             <div className="lg:col-span-2 relative glass-panel rounded-[2rem] border border-slate-200/80 dark:border-slate-850/50 p-6 flex flex-col justify-between bg-white dark:bg-slate-900/35 overflow-hidden">
               
               <AnimatePresence mode="wait">
-                <motion.div
+                <ShowcaseCard
                   key={activeShowcaseSlide}
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  transition={{ duration: 0.4 }}
-                  className="space-y-6 flex-1 flex flex-col justify-between"
-                >
-                  <div>
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h4 className="text-xl font-bold text-slate-850 dark:text-white">{showcaseSlides[activeShowcaseSlide].title}</h4>
-                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-md">
-                          {showcaseSlides[activeShowcaseSlide].desc}
-                        </p>
-                      </div>
-                      <div className={`text-base font-extrabold ${showcaseSlides[activeShowcaseSlide].statColor} bg-slate-100 dark:bg-slate-800/50 px-3 py-1.5 rounded-lg`}>
-                        {showcaseSlides[activeShowcaseSlide].metric}
-                      </div>
-                    </div>
-
-                    {/* Chart Container */}
-                    <div className="mt-8 bg-slate-50/50 dark:bg-slate-950/20 p-4 border border-slate-200 dark:border-slate-800/40 rounded-2xl">
-                      {showcaseSlides[activeShowcaseSlide].chartContent}
-                    </div>
-                  </div>
-
-                  {/* Micro stats indicators */}
-                  <div className="grid grid-cols-3 gap-4 border-t border-slate-200/60 dark:border-slate-800/40 pt-6 mt-6">
-                    {showcaseSlides[activeShowcaseSlide].details.map((det, index) => (
-                      <div key={index} className="text-center md:text-left">
-                        <span className="text-[10px] text-slate-400 dark:text-slate-500 uppercase font-extrabold tracking-widest">{det.label}</span>
-                        <div className="text-sm font-bold mt-0.5 text-slate-800 dark:text-slate-300">{det.val}</div>
-                      </div>
-                    ))}
-                  </div>
-
-                </motion.div>
+                  slide={showcaseSlides[activeShowcaseSlide]}
+                />
               </AnimatePresence>
 
               {/* Progress Bar indicator for active slide */}
@@ -1303,41 +1360,10 @@ export default function HomePage() {
 
           <div className="relative max-w-3xl mx-auto">
             <AnimatePresence mode="wait">
-              <motion.div
+              <TestimonialCard
                 key={activeTestimonialSlide}
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={{ duration: 0.4 }}
-                className="glass-card rounded-[2.5rem] p-8 md:p-12 bg-white dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800/50 shadow-2xl relative"
-              >
-                <div className="flex items-center space-x-4 mb-6">
-                  <img 
-                    src={testimonials[activeTestimonialSlide].photo} 
-                    alt={testimonials[activeTestimonialSlide].name}
-                    className="w-14 h-14 rounded-full object-cover border-2 border-blue-500/20"
-                  />
-                  <div>
-                    <h4 className="text-base font-bold text-slate-850 dark:text-white">
-                      {testimonials[activeTestimonialSlide].name}
-                    </h4>
-                    <span className="text-xs text-blue-600 dark:text-cyan-400 font-semibold">
-                      {testimonials[activeTestimonialSlide].company}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Rating stars */}
-                <div className="flex space-x-1 mb-6 text-amber-400">
-                  {[...Array(testimonials[activeTestimonialSlide].rating)].map((_, i) => (
-                    <Star key={i} className="w-4 h-4 fill-current" />
-                  ))}
-                </div>
-
-                <p className="text-base md:text-lg text-slate-650 dark:text-slate-300 italic leading-relaxed">
-                  "{testimonials[activeTestimonialSlide].review}"
-                </p>
-              </motion.div>
+                testimonial={testimonials[activeTestimonialSlide]}
+              />
             </AnimatePresence>
 
             {/* Testimonials dot selector navigation */}
@@ -1407,16 +1433,15 @@ export default function HomePage() {
             </div>
           </div>
         </section>
-
         {/* 11. PRICING SECTION */}
         <section id="pricing" className="max-w-7xl mx-auto px-6 md:px-12 py-20 border-t border-slate-200/60 dark:border-slate-800/40">
           <div className="text-center max-w-2xl mx-auto mb-12">
-            <h2 className="text-xs uppercase font-extrabold tracking-widest text-blue-600 dark:text-cyan-400 mb-3">Flexible Billing</h2>
+            <h2 className="text-xs uppercase font-extrabold tracking-widest text-blue-600 dark:text-cyan-400 mb-3">Pricing Plans</h2>
             <h3 className="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white">
-              Transparent, Value-Driven Subscriptions
+              Transparent, Scale-as-You-Grow Pricing
             </h3>
             <p className="text-slate-500 dark:text-slate-400 mt-4 text-sm">
-              Select the pricing tier tailored to your active user base and modules complexity. Save 20% on annual commitments.
+              Deploy our modular ERP configured directly for your business operations. Save 10% on monthly subscriptions with an annual commitment.
             </p>
 
             {/* Month/Year toggle */}
@@ -1435,58 +1460,170 @@ export default function HomePage() {
               </button>
               <span className={`text-xs font-bold flex items-center space-x-1.5 ${isAnnualBilling ? "text-blue-600 dark:text-cyan-400" : "text-slate-400"}`}>
                 <span>Billed Annually</span>
-                <span className="text-[10px] bg-green-500/10 dark:bg-green-500/20 text-green-500 font-bold px-2 py-0.5 rounded-full">Save 20%</span>
+                <span className="text-[10px] bg-green-500/10 dark:bg-green-500/20 text-green-500 font-bold px-2 py-0.5 rounded-full">10% Off Sub.</span>
               </span>
             </div>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8 items-stretch max-w-6xl mx-auto">
-            {/* Starter Plan */}
-            <div className="glass-card rounded-[2rem] p-8 bg-white dark:bg-slate-900/30 border border-slate-200 dark:border-slate-850/40 flex flex-col justify-between">
+          <div className="grid md:grid-cols-3 gap-8 items-stretch max-w-6xl mx-auto mb-16">
+            
+            {/* 1. Basic ERP */}
+            <div className="glass-card rounded-[2rem] p-8 bg-white dark:bg-slate-900/30 border border-slate-200 dark:border-slate-850/40 flex flex-col justify-between transition-all hover:scale-[1.02] hover:shadow-xl">
               <div>
-                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Starter Plan</span>
-                <h4 className="text-3xl font-bold text-slate-850 dark:text-white mt-4">
-                  ${isAnnualBilling ? "39" : "49"}
-                  <span className="text-xs text-slate-450 font-normal"> / user / month</span>
-                </h4>
+                <div className="flex justify-between items-center mb-4">
+                  <span className="text-xs font-extrabold text-slate-400 uppercase tracking-widest">Basic ERP</span>
+                  <span className="text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-bold px-2.5 py-1 rounded-md">Essential Modules</span>
+                </div>
+                
+                <div className="mt-4">
+                  <div className="text-3xl font-extrabold text-slate-850 dark:text-white">
+                    ₹{isAnnualBilling ? "4,499" : "4,999"}
+                    <span className="text-xs text-slate-400 font-normal"> / month</span>
+                  </div>
+                  <div className="text-xs text-slate-500 dark:text-slate-400 mt-1 font-semibold">
+                    + ₹1,00,000 One-Time License Fee
+                  </div>
+                </div>
+                
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-4 leading-relaxed">
-                  Best for growing local manufacturing plants and shops needing basic sales, inventory, and purchase modules.
+                  Best for growing businesses looking to centralize their main operations with essential ERP workflows.
                 </p>
+                
                 <div className="h-px bg-slate-200 dark:bg-slate-800 my-6" />
-                <ul className="space-y-3.5">
-                  {["Up to 15 active users", "Sales & Purchase modules", "Standard Inventory ERP", "Real-Time basic reports", "Shared Cloud Hosting", "Email & Web Tickets Support"].map((feat, i) => (
-                    <li key={i} className="flex items-center space-x-2.5 text-xs text-slate-700 dark:text-slate-350">
+                
+                <ul className="space-y-3">
+                  {[
+                    "Sales Management",
+                    "Purchase Management",
+                    "Inventory Management",
+                    "Accounts & Finance",
+                    "CRM",
+                    "HR & Payroll",
+                    "Reports & Analytics",
+                    "User Management",
+                    "Installation & Setup",
+                    "Staff Training",
+                    "3 Months Support"
+                  ].map((feat, i) => (
+                    <li key={i} className="flex items-center space-x-2.5 text-xs text-slate-700 dark:text-slate-305">
                       <Check className="w-4 h-4 text-green-500 shrink-0" />
                       <span>{feat}</span>
                     </li>
                   ))}
                 </ul>
               </div>
-              <a 
-                href="#contact"
-                className="w-full text-center py-3 bg-slate-100 dark:bg-slate-850 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold rounded-xl text-xs mt-8 transition-colors block"
-              >
-                Request Starter Demo
-              </a>
+              <div className="mt-8 space-y-2">
+                <a 
+                  href="#contact"
+                  className="w-full text-center py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-xs transition-colors block"
+                >
+                  Get Started
+                </a>
+                <a 
+                  href="#contact"
+                  className="w-full text-center py-3 border border-slate-200 dark:border-slate-850 hover:bg-slate-50 dark:hover:bg-slate-800/40 text-slate-700 dark:text-slate-300 font-semibold rounded-xl text-xs transition-colors block"
+                >
+                  Request Demo
+                </a>
+              </div>
             </div>
 
-            {/* Business Plan (Recommended) */}
-            <div className="glass-card rounded-[2rem] p-8 bg-white dark:bg-slate-900/35 border-2 border-blue-600 dark:border-cyan-500/50 flex flex-col justify-between relative shadow-xl shadow-blue-600/[0.03]">
+            {/* 2. Professional ERP (Most Popular) */}
+            <div className="glass-card rounded-[2rem] p-8 bg-white dark:bg-slate-900/35 border-2 border-blue-600 dark:border-cyan-500/50 flex flex-col justify-between relative shadow-xl shadow-blue-600/[0.04] transition-all hover:scale-[1.02]">
               <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-blue-600 dark:bg-cyan-500 text-white dark:text-slate-950 text-[10px] uppercase font-black tracking-widest px-4 py-1 rounded-full">
                 Most Popular
               </div>
               <div>
-                <span className="text-xs font-bold text-blue-600 dark:text-cyan-400 uppercase tracking-widest">Business Plan</span>
-                <h4 className="text-3xl font-bold text-slate-850 dark:text-white mt-4">
-                  ${isAnnualBilling ? "119" : "149"}
-                  <span className="text-xs text-slate-450 font-normal"> / user / month</span>
-                </h4>
+                <div className="flex justify-between items-center mb-4">
+                  <span className="text-xs font-extrabold text-blue-600 dark:text-cyan-400 uppercase tracking-widest">Professional ERP</span>
+                  <span className="text-[10px] bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-cyan-400 font-bold px-2.5 py-1 rounded-md">Growth Suite</span>
+                </div>
+                
+                <div className="mt-4">
+                  <div className="text-3xl font-extrabold text-slate-850 dark:text-white">
+                    ₹{isAnnualBilling ? "7,199" : "7,999"}
+                    <span className="text-xs text-slate-400 font-normal"> / month</span>
+                  </div>
+                  <div className="text-xs text-slate-500 dark:text-slate-400 mt-1 font-bold">
+                    + ₹1,50,000 One-Time License Fee
+                  </div>
+                </div>
+                
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-4 leading-relaxed">
-                  Best for multi-branch companies needing production controls, complete finance, asset monitoring, and CRM.
+                  Engineered for businesses needing automated taxation compliance, multiple branches syncing, and advanced automation.
                 </p>
+                
                 <div className="h-px bg-slate-200 dark:bg-slate-800 my-6" />
-                <ul className="space-y-3.5">
-                  {["Unlimited active users", "All 8 Core ERP modules", "Multi-warehouse allocations", "Advanced OEE & production plans", "Dedicated database instance", "24/7 Phone & WhatsApp Support", "1 Custom PDF Invoice layout"].map((feat, i) => (
+                
+                <ul className="space-y-3">
+                  {[
+                    "Everything in Basic ERP",
+                    "E-Invoice Integration",
+                    "E-Way Bill Integration",
+                    "GST Automation",
+                    "Multi-Branch Management",
+                    "Advanced Reporting",
+                    "Priority Support",
+                    "6 Months Support"
+                  ].map((feat, i) => (
+                    <li key={i} className="flex items-center space-x-2.5 text-xs text-slate-700 dark:text-slate-350 font-semibold">
+                      <Check className="w-4 h-4 text-green-500 shrink-0" />
+                      <span>{feat}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div className="mt-8 space-y-2">
+                <a 
+                  href="#contact"
+                  className="w-full text-center py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-xs transition-all shadow-lg shadow-blue-600/20 block"
+                >
+                  Get Started
+                </a>
+                <a 
+                  href="#contact"
+                  className="w-full text-center py-3 border border-slate-200 dark:border-slate-850 hover:bg-slate-50 dark:hover:bg-slate-800/40 text-slate-700 dark:text-slate-300 font-semibold rounded-xl text-xs transition-colors block"
+                >
+                  Request Demo
+                </a>
+              </div>
+            </div>
+
+            {/* 3. Enterprise ERP */}
+            <div className="glass-card rounded-[2rem] p-8 bg-white dark:bg-slate-900/30 border border-slate-200 dark:border-slate-850/40 flex flex-col justify-between transition-all hover:scale-[1.02] hover:shadow-xl">
+              <div>
+                <div className="flex justify-between items-center mb-4">
+                  <span className="text-xs font-extrabold text-slate-400 uppercase tracking-widest">Enterprise ERP</span>
+                  <span className="text-[10px] bg-indigo-500/10 text-indigo-500 dark:text-indigo-400 font-bold px-2.5 py-1 rounded-md">Unlimited Scale</span>
+                </div>
+                
+                <div className="mt-4">
+                  <div className="text-3xl font-extrabold text-slate-850 dark:text-white">
+                    Custom Pricing
+                  </div>
+                  <div className="text-xs text-slate-500 dark:text-slate-400 mt-1 font-semibold">
+                    Starting from ₹{isAnnualBilling ? "13,499" : "14,999"}/month
+                  </div>
+                </div>
+                
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-4 leading-relaxed">
+                  Best for manufacturers, multi-company corporate entities, and businesses requiring customized workflows and deep integrations.
+                </p>
+                
+                <div className="h-px bg-slate-200 dark:bg-slate-800 my-6" />
+                
+                <ul className="space-y-3">
+                  {[
+                    "Everything in Professional ERP",
+                    "Manufacturing Module",
+                    "Production Planning",
+                    "Multi-Company Management",
+                    "Approval Workflows",
+                    "API Integrations",
+                    "Custom Development",
+                    "Dedicated Account Manager",
+                    "Priority Support"
+                  ].map((feat, i) => (
                     <li key={i} className="flex items-center space-x-2.5 text-xs text-slate-700 dark:text-slate-350 font-medium">
                       <Check className="w-4 h-4 text-green-500 shrink-0" />
                       <span>{feat}</span>
@@ -1494,43 +1631,77 @@ export default function HomePage() {
                   ))}
                 </ul>
               </div>
-              <a 
-                href="#contact"
-                className="w-full text-center py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-xs mt-8 transition-all shadow-lg shadow-blue-600/20 block"
-              >
-                Get Started Now
-              </a>
+              <div className="mt-8 space-y-2">
+                <a 
+                  href="#contact"
+                  className="w-full text-center py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-xs transition-colors block"
+                >
+                  Contact Sales
+                </a>
+                <a 
+                  href="#contact"
+                  className="w-full text-center py-3 border border-slate-200 dark:border-slate-850 hover:bg-slate-50 dark:hover:bg-slate-800/40 text-slate-700 dark:text-slate-300 font-semibold rounded-xl text-xs transition-colors block"
+                >
+                  Request Demo
+                </a>
+              </div>
             </div>
 
-            {/* Enterprise Plan */}
-            <div className="glass-card rounded-[2rem] p-8 bg-white dark:bg-slate-900/30 border border-slate-200 dark:border-slate-850/40 flex flex-col justify-between">
-              <div>
-                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Enterprise</span>
-                <h4 className="text-3xl font-bold text-slate-850 dark:text-white mt-4">
-                  Custom
-                  <span className="text-xs text-slate-450 font-normal"> / quotation</span>
+          </div>
+
+          {/* Special Launch Offers Section */}
+          <div className="glass-panel rounded-[2.5rem] p-8 md:p-12 bg-blue-600/5 dark:bg-cyan-500/5 border border-blue-500/10 dark:border-cyan-500/10 max-w-6xl mx-auto mb-16 relative overflow-hidden">
+            <div className="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-500/10 blur-[80px] rounded-full pointer-events-none" />
+            <div className="relative z-10 flex flex-col lg:flex-row justify-between items-center gap-8">
+              <div className="text-left max-w-xl">
+                <span className="text-[10px] bg-blue-600 text-white dark:bg-cyan-500 dark:text-slate-950 px-3 py-1 rounded-full uppercase font-black tracking-widest">
+                  Special Launch Offers
+                </span>
+                <h4 className="text-2xl font-bold text-slate-850 dark:text-white mt-4">
+                  Exclusive Onboarding Benefits & Discounts
                 </h4>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-4 leading-relaxed">
-                  Best for heavy manufacturing plants, multi-country holdings, or groups needing custom database architectures.
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
+                  Take advantage of our temporary launch promotions designed to accelerate your ERP integration and minimize upfront setup friction.
                 </p>
-                <div className="h-px bg-slate-200 dark:bg-slate-800 my-6" />
-                <ul className="space-y-3.5">
-                  {["Custom user volume scale", "Any number of custom modules", "API gateway access integrations", "On-premise deployment option", "Dedicated onboarding manager", "Custom backup retention policies", "Full SLA system guarantees"].map((feat, i) => (
-                    <li key={i} className="flex items-center space-x-2.5 text-xs text-slate-700 dark:text-slate-350">
-                      <Check className="w-4 h-4 text-green-500 shrink-0" />
-                      <span>{feat}</span>
-                    </li>
-                  ))}
-                </ul>
               </div>
-              <a 
-                href="#contact"
-                className="w-full text-center py-3 bg-slate-100 dark:bg-slate-850 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold rounded-xl text-xs mt-8 transition-colors block"
-              >
-                Request Custom Quote
-              </a>
+              
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-2 gap-4 w-full lg:w-auto shrink-0">
+                {[
+                  "Free ERP Demo",
+                  "Free Business Requirement Analysis",
+                  "Free Data Migration Assistance",
+                  "20% Discount for First 10 Customers",
+                  "10% Discount on Annual Subscription"
+                ].map((offer, i) => (
+                  <div key={i} className="flex items-center space-x-2 bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 px-4 py-2.5 rounded-xl">
+                    <Check className="w-3.5 h-3.5 text-blue-600 dark:text-cyan-400" />
+                    <span className="text-[11px] font-bold text-slate-700 dark:text-slate-350">{offer}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
+
+          {/* Trust Indicators Section */}
+          <div className="max-w-6xl mx-auto border-t border-slate-200 dark:border-slate-800/40 pt-12">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+              {[
+                { title: "Secure Cloud Infrastructure", icon: Shield, desc: "Row-level permissions, TLS encryption, hourly backups." },
+                { title: "GST Compliant", icon: CheckCircle, desc: "Auto E-Invoice, E-Way bills, live GST matching." },
+                { title: "Dedicated Support", icon: Users, desc: "24/7 client helpline & direct implementation managers." },
+                { title: "Scalable Architecture", icon: Layers, desc: "Easily grow from 10 to 1,000+ active user sessions." }
+              ].map((ind, i) => (
+                <div key={i} className="flex flex-col items-center md:items-start text-center md:text-left">
+                  <div className="w-10 h-10 rounded-xl bg-blue-500/10 dark:bg-cyan-500/10 flex items-center justify-center text-blue-600 dark:text-cyan-400 mb-4">
+                    <ind.icon className="w-5 h-5" />
+                  </div>
+                  <h4 className="text-sm font-bold text-slate-850 dark:text-white">{ind.title}</h4>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">{ind.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+          
         </section>
 
         {/* 12. FAQs SECTION (ACCORDION STYLE) */}
@@ -1564,7 +1735,7 @@ export default function HomePage() {
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: "auto", opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.3 }}
+                        transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
                       >
                         <div className="p-6 pt-0 border-t border-slate-100 dark:border-slate-800 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
                           {faq.a}
