@@ -865,7 +865,7 @@ export default function HomePage() {
                                   className="bg-blue-600 dark:bg-cyan-500 rounded-t-sm" 
                                   style={{ height: `${val}%` }}
                                 />
-                                <span className="text-[8px] text-slate-405 dark:text-slate-500 text-center mt-1">D{i+1}</span>
+                                <span className="text-[8px] text-slate-400 dark:text-slate-500 text-center mt-1">D{i+1}</span>
                               </div>
                             ))}
                           </div>
@@ -878,7 +878,7 @@ export default function HomePage() {
                         <div className="flex justify-between items-center bg-blue-500/10 border border-blue-500/20 p-3 rounded-xl">
                           <div className="flex items-center space-x-2">
                             <Database className="w-4 h-4 text-blue-600 dark:text-cyan-400" />
-                            <span className="text-xs font-bold text-slate-700 dark:text-slate-350">Optimal Stock Level: 92%</span>
+                            <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Optimal Stock Level: 92%</span>
                           </div>
                           <span className="text-[10px] font-bold text-green-500">Auto-balanced</span>
                         </div>
@@ -894,7 +894,7 @@ export default function HomePage() {
                                 <div className="font-semibold text-slate-800 dark:text-slate-100">{item.name}</div>
                                 <div className={`text-[10px] mt-0.5 ${item.sColor}`}>{item.status}</div>
                               </div>
-                              <div className="text-right font-mono font-bold text-slate-750 dark:text-slate-300">
+                              <div className="text-right font-mono font-bold text-slate-700 dark:text-slate-300">
                                 {item.stock}
                               </div>
                             </div>
@@ -906,14 +906,14 @@ export default function HomePage() {
                     {activeHeroTab === "production" && (
                       <div className="space-y-4">
                         <div className="grid grid-cols-2 gap-4">
-                          <div className="p-4 bg-slate-100/50 dark:bg-slate-905/40 border border-slate-200 dark:border-slate-800 rounded-xl">
+                          <div className="p-4 bg-slate-100/50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 rounded-xl">
                             <div className="text-xs text-slate-400 font-semibold">OEE (Overall Equipment Effectiveness)</div>
                             <div className="text-2xl font-bold mt-1 text-slate-800 dark:text-white">91.4%</div>
                             <div className="w-full h-1.5 bg-slate-200 dark:bg-slate-850 rounded-full mt-2 overflow-hidden">
                               <div className="h-full bg-cyan-500 rounded-full" style={{ width: "91.4%" }} />
                             </div>
                           </div>
-                          <div className="p-4 bg-slate-100/50 dark:bg-slate-905/40 border border-slate-200 dark:border-slate-800 rounded-xl">
+                          <div className="p-4 bg-slate-100/50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 rounded-xl">
                             <div className="text-xs text-slate-400 font-semibold">Scrap Rate</div>
                             <div className="text-2xl font-bold mt-1 text-slate-800 dark:text-white">1.08%</div>
                             <div className="w-full h-1.5 bg-slate-200 dark:bg-slate-850 rounded-full mt-2 overflow-hidden">
@@ -939,14 +939,14 @@ export default function HomePage() {
                         <div className="grid grid-cols-2 gap-4">
                           <div className="p-4 bg-slate-100/50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 rounded-xl flex items-center justify-between">
                             <div>
-                              <span className="text-[10px] text-slate-450 uppercase font-black">Present Count</span>
+                              <span className="text-[10px] text-slate-400 uppercase font-black">Present Count</span>
                               <div className="text-xl font-bold text-slate-800 dark:text-white">92 / 95</div>
                             </div>
                             <Users className="w-8 h-8 text-blue-500/30" />
                           </div>
                           <div className="p-4 bg-slate-100/50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 rounded-xl flex items-center justify-between">
                             <div>
-                              <span className="text-[10px] text-slate-450 uppercase font-black">Payroll Status</span>
+                              <span className="text-[10px] text-slate-400 uppercase font-black">Payroll Status</span>
                               <div className="text-xl font-bold text-green-500">Disbursed</div>
                             </div>
                             <DollarSign className="w-8 h-8 text-green-500/30" />
@@ -1002,7 +1002,7 @@ export default function HomePage() {
                     <feat.icon className="w-6 h-6" />
                   </div>
                   <h4 className="text-lg font-bold text-slate-850 dark:text-white mb-3">{feat.title}</h4>
-                  <p className="text-slate-500 dark:text-slate-405 text-sm leading-relaxed">{feat.desc}</p>
+                  <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed">{feat.desc}</p>
                 </div>
                 <div className="w-full h-1 bg-gradient-to-r from-blue-500/20 to-cyan-500/20 rounded-full mt-6" />
               </motion.div>
@@ -1017,7 +1017,7 @@ export default function HomePage() {
             <h3 className="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white">
               Interactive Module Catalog
             </h3>
-            <p className="text-slate-500 dark:text-slate-404 mt-4">
+            <p className="text-slate-500 dark:text-slate-400 mt-4">
               Click "Learn More" on any module to review standard bullet features and functional descriptions.
             </p>
           </div>
@@ -1026,7 +1026,7 @@ export default function HomePage() {
             {modules.map((mod) => (
               <div 
                 key={mod.id}
-                className="glass-card rounded-2xl p-6 bg-white dark:bg-slate-900/30 border border-slate-200/60 dark:border-slate-805/40 flex flex-col justify-between"
+                className="glass-card rounded-2xl p-6 bg-white dark:bg-slate-900/30 border border-slate-200/60 dark:border-slate-850/40 flex flex-col justify-between"
               >
                 <div>
                   <div className="w-10 h-10 rounded-lg bg-blue-500/10 dark:bg-cyan-500/10 flex items-center justify-center text-blue-600 dark:text-cyan-400 mb-4">
@@ -1141,7 +1141,7 @@ export default function HomePage() {
                     <ind.icon className="w-5 h-5" />
                   </div>
                   <h4 className="text-sm font-bold text-slate-850 dark:text-white mb-2">{ind.name}</h4>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-405 leading-relaxed">
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
                     {ind.desc}
                   </p>
                 </div>
@@ -1231,7 +1231,7 @@ export default function HomePage() {
             </div>
 
             {/* Right Showcase Live Preview Board */}
-            <div className="lg:col-span-2 relative glass-panel rounded-[2rem] border border-slate-200/80 dark:border-slate-805/50 p-6 flex flex-col justify-between bg-white dark:bg-slate-900/35 overflow-hidden">
+            <div className="lg:col-span-2 relative glass-panel rounded-[2rem] border border-slate-200/80 dark:border-slate-850/50 p-6 flex flex-col justify-between bg-white dark:bg-slate-900/35 overflow-hidden">
               
               <AnimatePresence mode="wait">
                 <motion.div
@@ -1256,7 +1256,7 @@ export default function HomePage() {
                     </div>
 
                     {/* Chart Container */}
-                    <div className="mt-8 bg-slate-50/50 dark:bg-slate-950/20 p-4 border border-slate-150 dark:border-slate-800/40 rounded-2xl">
+                    <div className="mt-8 bg-slate-50/50 dark:bg-slate-950/20 p-4 border border-slate-200 dark:border-slate-800/40 rounded-2xl">
                       {showcaseSlides[activeShowcaseSlide].chartContent}
                     </div>
                   </div>
@@ -1266,7 +1266,7 @@ export default function HomePage() {
                     {showcaseSlides[activeShowcaseSlide].details.map((det, index) => (
                       <div key={index} className="text-center md:text-left">
                         <span className="text-[10px] text-slate-400 dark:text-slate-500 uppercase font-extrabold tracking-widest">{det.label}</span>
-                        <div className="text-sm font-bold mt-0.5 text-slate-800 dark:text-slate-250">{det.val}</div>
+                        <div className="text-sm font-bold mt-0.5 text-slate-800 dark:text-slate-300">{det.val}</div>
                       </div>
                     ))}
                   </div>
@@ -1296,7 +1296,7 @@ export default function HomePage() {
             <h3 className="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white">
               Trusted by Leading Industrialists
             </h3>
-            <p className="text-slate-500 dark:text-slate-404 mt-4 text-sm">
+            <p className="text-slate-500 dark:text-slate-400 mt-4 text-sm">
               Read how Apex IT World ERP has helped companies digitize operations and achieve data accuracy.
             </p>
           </div>
@@ -1334,7 +1334,7 @@ export default function HomePage() {
                   ))}
                 </div>
 
-                <p className="text-base md:text-lg text-slate-655 dark:text-slate-300 italic leading-relaxed">
+                <p className="text-base md:text-lg text-slate-650 dark:text-slate-300 italic leading-relaxed">
                   "{testimonials[activeTestimonialSlide].review}"
                 </p>
               </motion.div>
@@ -1455,7 +1455,7 @@ export default function HomePage() {
                 <div className="h-px bg-slate-200 dark:bg-slate-800 my-6" />
                 <ul className="space-y-3.5">
                   {["Up to 15 active users", "Sales & Purchase modules", "Standard Inventory ERP", "Real-Time basic reports", "Shared Cloud Hosting", "Email & Web Tickets Support"].map((feat, i) => (
-                    <li key={i} className="flex items-center space-x-2.5 text-xs text-slate-700 dark:text-slate-355">
+                    <li key={i} className="flex items-center space-x-2.5 text-xs text-slate-700 dark:text-slate-350">
                       <Check className="w-4 h-4 text-green-500 shrink-0" />
                       <span>{feat}</span>
                     </li>
@@ -1487,7 +1487,7 @@ export default function HomePage() {
                 <div className="h-px bg-slate-200 dark:bg-slate-800 my-6" />
                 <ul className="space-y-3.5">
                   {["Unlimited active users", "All 8 Core ERP modules", "Multi-warehouse allocations", "Advanced OEE & production plans", "Dedicated database instance", "24/7 Phone & WhatsApp Support", "1 Custom PDF Invoice layout"].map((feat, i) => (
-                    <li key={i} className="flex items-center space-x-2.5 text-xs text-slate-700 dark:text-slate-355 font-medium">
+                    <li key={i} className="flex items-center space-x-2.5 text-xs text-slate-700 dark:text-slate-350 font-medium">
                       <Check className="w-4 h-4 text-green-500 shrink-0" />
                       <span>{feat}</span>
                     </li>
@@ -1516,7 +1516,7 @@ export default function HomePage() {
                 <div className="h-px bg-slate-200 dark:bg-slate-800 my-6" />
                 <ul className="space-y-3.5">
                   {["Custom user volume scale", "Any number of custom modules", "API gateway access integrations", "On-premise deployment option", "Dedicated onboarding manager", "Custom backup retention policies", "Full SLA system guarantees"].map((feat, i) => (
-                    <li key={i} className="flex items-center space-x-2.5 text-xs text-slate-700 dark:text-slate-355">
+                    <li key={i} className="flex items-center space-x-2.5 text-xs text-slate-700 dark:text-slate-350">
                       <Check className="w-4 h-4 text-green-500 shrink-0" />
                       <span>{feat}</span>
                     </li>
@@ -1548,7 +1548,7 @@ export default function HomePage() {
               return (
                 <div 
                   key={index} 
-                  className="rounded-2xl border border-slate-205 dark:border-slate-800 bg-white dark:bg-slate-900/30 overflow-hidden transition-all duration-300"
+                  className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/30 overflow-hidden transition-all duration-300"
                 >
                   <button
                     onClick={() => toggleFaq(index)}
@@ -1590,7 +1590,7 @@ export default function HomePage() {
               <h3 className="text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-tight">
                 Ready to Optimize <br />Your Business?
               </h3>
-              <p className="text-slate-550 dark:text-slate-400 mt-4 leading-relaxed text-sm">
+              <p className="text-slate-500 dark:text-slate-400 mt-4 leading-relaxed text-sm">
                 Submit an inquiry or request a custom-tailored product demo. An implementation expert will reach out within 15 minutes.
               </p>
 
@@ -1757,7 +1757,7 @@ export default function HomePage() {
               <span className="bg-gradient-to-r from-blue-600 to-cyan-500 bg-clip-text text-transparent">Apex</span>
               <span className="text-slate-800 dark:text-white font-medium">IT World</span>
             </a>
-            <p className="text-xs text-slate-550 dark:text-slate-400 max-w-sm leading-relaxed">
+            <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm leading-relaxed">
               We design and configure cloud-native ERP solutions optimized for manufacturing, logistics, and retail business sectors.
             </p>
             {/* Social Icons links */}
@@ -1797,11 +1797,11 @@ export default function HomePage() {
           <div className="space-y-4">
             <h4 className="text-xs uppercase font-extrabold tracking-widest text-slate-400">Quick Links</h4>
             <div className="flex flex-col space-y-2.5 text-xs text-slate-500 dark:text-slate-400">
-              <a href="#home" className="hover:text-blue-600 dark:hover:text-cyan-405 transition-colors">Home</a>
-              <a href="#features" className="hover:text-blue-600 dark:hover:text-cyan-405 transition-colors">Features</a>
-              <a href="#modules" className="hover:text-blue-600 dark:hover:text-cyan-405 transition-colors">Modules</a>
-              <a href="#industries" className="hover:text-blue-600 dark:hover:text-cyan-405 transition-colors">Industries</a>
-              <a href="#pricing" className="hover:text-blue-600 dark:hover:text-cyan-405 transition-colors">Pricing</a>
+              <a href="#home" className="hover:text-blue-600 dark:hover:text-cyan-400 transition-colors">Home</a>
+              <a href="#features" className="hover:text-blue-600 dark:hover:text-cyan-400 transition-colors">Features</a>
+              <a href="#modules" className="hover:text-blue-600 dark:hover:text-cyan-400 transition-colors">Modules</a>
+              <a href="#industries" className="hover:text-blue-600 dark:hover:text-cyan-400 transition-colors">Industries</a>
+              <a href="#pricing" className="hover:text-blue-600 dark:hover:text-cyan-400 transition-colors">Pricing</a>
             </div>
           </div>
 
@@ -1809,11 +1809,11 @@ export default function HomePage() {
           <div className="space-y-4">
             <h4 className="text-xs uppercase font-extrabold tracking-widest text-slate-400">ERP Modules</h4>
             <div className="flex flex-col space-y-2.5 text-xs text-slate-500 dark:text-slate-400">
-              <a href="#modules" className="hover:text-blue-600 dark:hover:text-cyan-405 transition-colors">Sales ERP</a>
-              <a href="#modules" className="hover:text-blue-600 dark:hover:text-cyan-405 transition-colors">Purchase ERP</a>
-              <a href="#modules" className="hover:text-blue-600 dark:hover:text-cyan-405 transition-colors">Inventory ERP</a>
-              <a href="#modules" className="hover:text-blue-600 dark:hover:text-cyan-405 transition-colors">Manufacturing ERP</a>
-              <a href="#modules" className="hover:text-blue-600 dark:hover:text-cyan-405 transition-colors">HR ERP</a>
+              <a href="#modules" className="hover:text-blue-600 dark:hover:text-cyan-400 transition-colors">Sales ERP</a>
+              <a href="#modules" className="hover:text-blue-600 dark:hover:text-cyan-400 transition-colors">Purchase ERP</a>
+              <a href="#modules" className="hover:text-blue-600 dark:hover:text-cyan-400 transition-colors">Inventory ERP</a>
+              <a href="#modules" className="hover:text-blue-600 dark:hover:text-cyan-400 transition-colors">Manufacturing ERP</a>
+              <a href="#modules" className="hover:text-blue-600 dark:hover:text-cyan-400 transition-colors">HR ERP</a>
             </div>
           </div>
 
@@ -1925,7 +1925,7 @@ export default function HomePage() {
               </div>
 
               <h4 className="text-xl font-bold text-slate-850 dark:text-white">Inquiry Sent Successfully!</h4>
-              <p className="text-xs text-slate-500 dark:text-slate-405 leading-relaxed mt-3 max-w-sm mx-auto">
+              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed mt-3 max-w-sm mx-auto">
                 Thank you. Your request details have been dispatched to our Gmail server. An email confirmation has been logged, and our team will get in touch with you shortly.
               </p>
 
