@@ -879,7 +879,7 @@ export default function HomePage() {
       <main className="relative z-10 pt-24">
         
         {/* 3. HERO SECTION */}
-        <section id="home" className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 py-16 lg:py-24 grid lg:grid-cols-2 gap-12 items-center">
+        <section id="home" className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 py-12 lg:py-24 grid lg:grid-cols-2 gap-12 items-center">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
@@ -1366,31 +1366,50 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div className="grid lg:grid-cols-3 gap-8 items-stretch">
+          <div className="grid lg:grid-cols-3 gap-6 lg:gap-8 items-stretch">
             
-            {/* Left Carousel Navigation Panel */}
-            <div className="lg:col-span-1 min-w-0 flex flex-col justify-center space-y-3">
-              {showcaseSlides.map((slide, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => setActiveShowcaseSlide(idx)}
-                  className={`text-left p-4 rounded-xl border transition-all flex items-center justify-between ${
-                    activeShowcaseSlide === idx
-                      ? "bg-blue-600 dark:bg-slate-900/60 border-blue-600 dark:border-cyan-500/50 text-white shadow-xl shadow-blue-600/10"
-                      : "bg-white dark:bg-slate-900/20 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900/40"
-                  }`}
-                >
-                  <div>
-                    <div className="text-xs font-extrabold uppercase tracking-widest opacity-60">Preview Slide {idx+1}</div>
-                    <div className="text-sm font-bold mt-1">{slide.title}</div>
-                  </div>
-                  <ChevronRight className="w-5 h-5 shrink-0" />
-                </button>
-              ))}
+            {/* Mobile: horizontal scrollable tabs; Desktop: vertical list */}
+            <div className="lg:col-span-1 min-w-0">
+              {/* Mobile horizontal scroll */}
+              <div className="flex lg:hidden gap-2 overflow-x-auto pb-2 scrollbar-none -mx-1 px-1">
+                {showcaseSlides.map((slide, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setActiveShowcaseSlide(idx)}
+                    className={`shrink-0 text-left px-4 py-2.5 rounded-xl border transition-all text-xs font-bold whitespace-nowrap ${
+                      activeShowcaseSlide === idx
+                        ? "bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-600/10"
+                        : "bg-white dark:bg-slate-900/20 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400"
+                    }`}
+                  >
+                    {slide.title}
+                  </button>
+                ))}
+              </div>
+              {/* Desktop vertical list */}
+              <div className="hidden lg:flex flex-col justify-center space-y-3 h-full">
+                {showcaseSlides.map((slide, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setActiveShowcaseSlide(idx)}
+                    className={`text-left p-4 rounded-xl border transition-all flex items-center justify-between ${
+                      activeShowcaseSlide === idx
+                        ? "bg-blue-600 dark:bg-slate-900/60 border-blue-600 dark:border-cyan-500/50 text-white shadow-xl shadow-blue-600/10"
+                        : "bg-white dark:bg-slate-900/20 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900/40"
+                    }`}
+                  >
+                    <div>
+                      <div className="text-xs font-extrabold uppercase tracking-widest opacity-60">Preview Slide {idx+1}</div>
+                      <div className="text-sm font-bold mt-1">{slide.title}</div>
+                    </div>
+                    <ChevronRight className="w-5 h-5 shrink-0" />
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* Right Showcase Live Preview Board */}
-            <div className="lg:col-span-2 min-w-0 relative glass-panel rounded-[2rem] border border-slate-200/80 dark:border-slate-850/50 p-6 flex flex-col justify-between bg-white dark:bg-slate-900/35 overflow-hidden">
+            <div className="lg:col-span-2 min-w-0 relative glass-panel rounded-[2rem] border border-slate-200/80 dark:border-slate-850/50 p-5 sm:p-6 flex flex-col justify-between bg-white dark:bg-slate-900/35 overflow-hidden">
               
               <AnimatePresence mode="wait">
                 <ShowcaseCard
@@ -1819,7 +1838,7 @@ export default function HomePage() {
 
         {/* 13. LEAD GENERATION CONTACT FORM */}
         <section id="contact" className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 py-20 border-t border-slate-200/60 dark:border-slate-800/40">
-          <div className="glass-panel rounded-[3rem] p-8 md:p-16 flex flex-col lg:flex-row gap-16 bg-white dark:bg-slate-900/40 shadow-2xl relative overflow-hidden">
+          <div className="glass-panel rounded-[2rem] sm:rounded-[3rem] p-6 sm:p-8 md:p-16 flex flex-col lg:flex-row gap-10 lg:gap-16 bg-white dark:bg-slate-900/40 shadow-2xl relative overflow-hidden">
             
             {/* Grid Mesh lines in background */}
             <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none" />
@@ -1988,10 +2007,10 @@ export default function HomePage() {
 
       {/* 14. FOOTER */}
       <footer className="border-t border-slate-200 dark:border-slate-900 bg-white dark:bg-slate-950/40 relative z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 py-16 grid grid-cols-2 md:grid-cols-5 gap-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 py-12 md:py-16 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-8 md:gap-10">
           
           {/* Col 1 Brand detail */}
-          <div className="col-span-2 space-y-4">
+          <div className="sm:col-span-2 space-y-4">
             <a href="#" className="flex items-center space-x-2 text-xl font-bold tracking-tight">
               <span className="bg-gradient-to-r from-blue-600 to-cyan-500 bg-clip-text text-transparent">Apex</span>
               <span className="text-slate-800 dark:text-white font-medium">IT World</span>
@@ -2061,15 +2080,15 @@ export default function HomePage() {
             <h4 className="text-xs uppercase font-extrabold tracking-widest text-slate-400">Contact Info</h4>
             <div className="flex flex-col space-y-2.5 text-xs text-slate-500 dark:text-slate-400">
               <span className="flex items-center space-x-1.5">
-                <Phone className="w-3.5 h-3.5 text-blue-600 dark:text-cyan-400" />
+                <Phone className="w-3.5 h-3.5 text-blue-600 dark:text-cyan-400 shrink-0" />
                 <span>+91 9106807472</span>
               </span>
-              <span className="flex items-center space-x-1.5">
-                <Mail className="w-3.5 h-3.5 text-blue-600 dark:text-cyan-400" />
-                <span>info@apexitworld.com</span>
+              <span className="flex items-start space-x-1.5">
+                <Mail className="w-3.5 h-3.5 text-blue-600 dark:text-cyan-400 shrink-0 mt-0.5" />
+                <span className="break-all">info@apexitworld.com</span>
               </span>
               <span className="flex items-center space-x-1.5">
-                <MapPin className="w-3.5 h-3.5 text-blue-600 dark:text-cyan-400" />
+                <MapPin className="w-3.5 h-3.5 text-blue-600 dark:text-cyan-400 shrink-0" />
                 <span>Gujarat, India</span>
               </span>
             </div>
@@ -2086,10 +2105,10 @@ export default function HomePage() {
       {/* Floating Demo Inquiry Button (Conversion Optimiser) */}
       <a
         href="#contact"
-        className="fixed bottom-6 right-6 z-40 bg-blue-600 dark:bg-cyan-500 text-white dark:text-slate-950 font-bold px-5 py-3 rounded-full flex items-center space-x-2 shadow-2xl hover:scale-105 active:scale-95 transition-all"
+        className="fixed bottom-5 right-4 sm:bottom-6 sm:right-6 z-40 bg-blue-600 dark:bg-cyan-500 text-white dark:text-slate-950 font-bold px-4 py-2.5 sm:px-5 sm:py-3 rounded-full flex items-center space-x-2 shadow-2xl hover:scale-105 active:scale-95 transition-all"
       >
-        <MessageSquare className="w-4.5 h-4.5" />
-        <span className="text-xs">Request Demo</span>
+        <MessageSquare className="w-4 h-4" />
+        <span className="text-xs hidden xs:inline">Request Demo</span>
       </a>
 
       {/* WATCH PRODUCT TOUR GLASS MODAL */}

@@ -59,6 +59,15 @@
   .custom-scrollbar::-webkit-scrollbar-thumb {
     @apply bg-slate-300 dark:bg-slate-800 rounded-full hover:bg-blue-500/30 transition-colors;
   }
+
+  /* Hide scrollbar while keeping scroll functionality */
+  .scrollbar-none {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 /* Custom View Transitions for Radial theme toggle reveal */
