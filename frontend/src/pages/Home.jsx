@@ -231,8 +231,8 @@ export default function HomePage() {
   // Testimonials Carousel active slide
   const [activeTestimonialSlide, setActiveTestimonialSlide] = useState(0);
 
-  // Pricing Cycle state
-  const [isAnnualBilling, setIsAnnualBilling] = useState(false);
+  // Pricing Cycle state ("subscription" or "license")
+  const [activePricingTab, setActivePricingTab] = useState("subscription");
 
   // FAQs active states (indexes of open questions)
   const [openFaqIndexes, setOpenFaqIndexes] = useState([0]);
@@ -1605,275 +1605,507 @@ export default function HomePage() {
             </div>
           </div>
         </section>
+
         {/* 11. PRICING SECTION */}
-        <section id="pricing" className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 py-10 sm:py-20 border-t border-slate-200/60 dark:border-slate-800/40">
-          <div className="text-center max-w-2xl mx-auto mb-6 sm:mb-12">
+        <section id="pricing" className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 py-10 sm:py-20 border-t border-slate-200/60 dark:border-slate-800/40 relative overflow-hidden">
+          <div className="absolute top-[10%] left-[-10%] w-[30%] h-[30%] bg-blue-500/5 dark:bg-cyan-500/5 blur-[120px] rounded-full pointer-events-none" />
+          <div className="absolute bottom-[10%] right-[-10%] w-[30%] h-[30%] bg-cyan-500/5 dark:bg-blue-500/5 blur-[120px] rounded-full pointer-events-none" />
+          
+          <div className="text-center max-w-2xl mx-auto mb-8 sm:mb-14 relative z-10">
             <h2 className="text-xs uppercase font-extrabold tracking-widest text-blue-600 dark:text-cyan-400 mb-3">Pricing Plans</h2>
             <h3 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white">
-              Transparent, Scale-as-You-Grow Pricing
+              Apex ERP Pricing Packages
             </h3>
-            <p className="text-slate-500 dark:text-slate-400 mt-3 text-sm hidden sm:block">
-              Deploy our modular ERP configured directly for your business operations. Save 10% on monthly subscriptions with an annual commitment.
+            <p className="text-blue-600/90 dark:text-cyan-400/90 mt-3 text-xs sm:text-sm font-extrabold tracking-wide uppercase">
+              "Apex ERP – Simplify Operations. Accelerate Growth."
             </p>
+            <p className="text-slate-500 dark:text-slate-400 mt-2 text-xs sm:text-sm max-w-lg mx-auto">
+              Choose the license that fits your business model. Select from our flexible monthly subscription plan or permanent one-time license.
+            </p>
+          </div>
 
-            {/* Month/Year toggle */}
-            <div className="flex items-center justify-center space-x-3 mt-8">
-              <span className={`text-xs font-bold ${!isAnnualBilling ? "text-blue-600 dark:text-cyan-400" : "text-slate-400"}`}>Billed Monthly</span>
-              <button 
-                onClick={() => setIsAnnualBilling(!isAnnualBilling)}
-                className="w-12 h-6 bg-slate-200 dark:bg-slate-800 rounded-full p-1 transition-colors duration-300 relative"
-                aria-label="Toggle annual billing"
+          {/* Pricing Option Toggle Switch */}
+          <div className="flex justify-center mb-10 sm:mb-12 relative z-10">
+            <div className="inline-flex p-1.5 bg-slate-100 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-inner">
+              <button
+                onClick={() => setActivePricingTab("subscription")}
+                className={`px-5 sm:px-8 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 ${
+                  activePricingTab === "subscription"
+                    ? "bg-blue-600 text-white shadow-md dark:bg-cyan-500 dark:text-slate-950"
+                    : "text-slate-650 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                }`}
               >
-                <div 
-                  className={`w-4 h-4 rounded-full bg-blue-600 dark:bg-cyan-500 transition-all duration-300 ${
-                    isAnnualBilling ? "translate-x-6" : "translate-x-0"
-                  }`} 
-                />
+                Subscription Plan
               </button>
-              <span className={`text-xs font-bold flex items-center space-x-1.5 ${isAnnualBilling ? "text-blue-600 dark:text-cyan-400" : "text-slate-400"}`}>
-                <span>Billed Annually</span>
-                <span className="text-[10px] bg-green-500/10 dark:bg-green-500/20 text-green-500 font-bold px-2 py-0.5 rounded-full">10% Off Sub.</span>
-              </span>
+              <button
+                onClick={() => setActivePricingTab("license")}
+                className={`px-5 sm:px-8 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 ${
+                  activePricingTab === "license"
+                    ? "bg-blue-600 text-white shadow-md dark:bg-cyan-500 dark:text-slate-950"
+                    : "text-slate-650 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                }`}
+              >
+                One-Time License
+              </button>
             </div>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-4 sm:gap-8 items-stretch max-w-6xl mx-auto mb-8 sm:mb-16">
-            
-            {/* 1. Basic ERP */}
-            <div className="glass-card rounded-[1.5rem] sm:rounded-[2rem] p-5 sm:p-8 bg-white dark:bg-slate-900/30 border border-slate-200 dark:border-slate-850/40 flex flex-col justify-between transition-all hover:scale-[1.02] hover:shadow-xl">
-              <div>
-                <div className="flex justify-between items-center mb-4">
-                  <span className="text-xs font-extrabold text-slate-400 uppercase tracking-widest">Basic ERP</span>
-                  <span className="text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-bold px-2.5 py-1 rounded-md">Essential Modules</span>
-                </div>
-                
-                <div className="mt-3 sm:mt-4">
-                  <div className="text-2xl sm:text-3xl font-extrabold text-slate-850 dark:text-white">
-                    ₹{isAnnualBilling ? "4,499" : "4,999"}
-                    <span className="text-xs text-slate-400 font-normal"> / month</span>
-                  </div>
-                  <div className="text-xs text-slate-500 dark:text-slate-400 mt-1 font-semibold">
-                    + ₹1,00,000 One-Time License Fee
-                  </div>
-                </div>
-                
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-4 leading-relaxed">
-                  Best for growing businesses looking to centralize their main operations with essential ERP workflows.
-                </p>
-                
-                <div className="h-px bg-slate-200 dark:bg-slate-800 my-4 sm:my-6" />
-                
-                <ul className="space-y-3">
-                  {[
-                    "Sales Management",
-                    "Purchase Management",
-                    "Inventory Management",
-                    "Accounts & Finance",
-                    "CRM",
-                    "HR & Payroll",
-                    "Reports & Analytics",
-                    "User Management",
-                    "Installation & Setup",
-                    "Staff Training",
-                    "3 Months Support"
-                  ].map((feat, i) => (
-                    <li key={i} className="flex items-center space-x-2.5 text-xs text-slate-700 dark:text-slate-305">
-                      <Check className="w-4 h-4 text-green-500 shrink-0" />
-                      <span>{feat}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div className="mt-8 space-y-2">
-                <a 
-                  href="#contact"
-                  className="w-full text-center py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-xs transition-colors block"
+          {/* Pricing Cards Grid */}
+          <div className="relative z-10">
+            <AnimatePresence mode="wait">
+              {activePricingTab === "subscription" ? (
+                <motion.div
+                  key="subscription"
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -15 }}
+                  transition={{ duration: 0.25 }}
+                  className="grid md:grid-cols-3 gap-6 sm:gap-8 items-stretch max-w-6xl mx-auto mb-8 sm:mb-16"
                 >
-                  Get Started
-                </a>
-                <a 
-                  href="#contact"
-                  className="w-full text-center py-3 border border-slate-200 dark:border-slate-850 hover:bg-slate-50 dark:hover:bg-slate-800/40 text-slate-700 dark:text-slate-300 font-semibold rounded-xl text-xs transition-colors block"
+                  {/* Basic ERP - Subscription */}
+                  <div className="glass-card rounded-[1.5rem] sm:rounded-[2rem] p-5 sm:p-8 bg-white dark:bg-slate-900/30 border border-slate-200 dark:border-slate-850/40 flex flex-col justify-between transition-all hover:scale-[1.02] hover:shadow-xl duration-300 hover:border-blue-500/20 dark:hover:border-cyan-400/20">
+                    <div>
+                      <div className="flex justify-between items-center mb-4">
+                        <span className="text-xs font-extrabold text-slate-400 uppercase tracking-widest">Basic ERP</span>
+                        <span className="text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-650 dark:text-slate-400 font-bold px-2.5 py-1 rounded-md">Subscription</span>
+                      </div>
+
+                      <div className="mt-3 sm:mt-4">
+                        <div className="text-[10px] uppercase font-extrabold tracking-widest text-slate-400 mb-1">Monthly Plan</div>
+                        <div className="flex items-baseline gap-1">
+                          <div className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white">₹4,999</div>
+                          <span className="text-xs text-slate-400 font-normal">/ month</span>
+                        </div>
+                      </div>
+
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-4 leading-relaxed hidden sm:block">
+                        Perfect for starting cloud-hosted ERP with key modules and standard hosting.
+                      </p>
+
+                      <div className="h-px bg-slate-200 dark:bg-slate-800 my-4 sm:my-5" />
+
+                      <div className="mb-3">
+                        <div className="text-[9px] sm:text-[10px] uppercase font-extrabold tracking-widest text-slate-400 mb-2.5">Features & Modules</div>
+                        <ul className="space-y-2">
+                          {[
+                            "Sales Management",
+                            "Purchase Management",
+                            "Inventory Management",
+                            "Accounts",
+                            "CRM",
+                            "HR & Payroll",
+                            "Reports & Analytics",
+                            "Cloud Hosting",
+                            "Software Updates",
+                            "Technical Support"
+                          ].map((feat, i) => (
+                            <li key={i} className="flex items-center space-x-2 text-xs text-slate-700 dark:text-slate-300">
+                              <Check className="w-3.5 h-3.5 text-green-500 shrink-0" />
+                              <span>{feat}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+
+                    <div className="mt-6 space-y-2">
+                      <a href="#contact" className="w-full text-center py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-xs transition-colors block dark:bg-cyan-500 dark:text-slate-950 dark:hover:bg-cyan-400">
+                        Get Started
+                      </a>
+                      <a href="#contact" className="w-full text-center py-3 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/40 text-slate-700 dark:text-slate-300 font-semibold rounded-xl text-xs transition-colors block">
+                        Book Free Demo
+                      </a>
+                    </div>
+                  </div>
+
+                  {/* Professional ERP - Subscription */}
+                  <div className="glass-card rounded-[1.5rem] sm:rounded-[2rem] p-5 sm:p-8 bg-white dark:bg-slate-900/35 border-2 border-blue-600 dark:border-cyan-500/60 flex flex-col justify-between relative shadow-2xl shadow-blue-600/[0.07] transition-all hover:scale-[1.02] duration-300">
+                    <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-blue-600 dark:bg-cyan-500 text-white dark:text-slate-950 text-[10px] uppercase font-black tracking-widest px-4 py-1 rounded-full whitespace-nowrap">
+                      ⭐ Recommended Plan
+                    </div>
+                    <div>
+                      <div className="flex justify-between items-center mb-4">
+                        <span className="text-xs font-extrabold text-blue-600 dark:text-cyan-400 uppercase tracking-widest">Professional ERP</span>
+                        <span className="text-[10px] bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-cyan-400 font-bold px-2.5 py-1 rounded-md">Growth Suite</span>
+                      </div>
+
+                      <div className="mt-3 sm:mt-4">
+                        <div className="text-[10px] uppercase font-extrabold tracking-widest text-slate-400 mb-1">Monthly Plan</div>
+                        <div className="flex items-baseline gap-1">
+                          <div className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white">₹7,999</div>
+                          <span className="text-xs text-slate-400 font-normal">/ month</span>
+                        </div>
+                      </div>
+
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-4 leading-relaxed hidden sm:block">
+                        Advanced compliance, multi-branch operations, and priority support.
+                      </p>
+
+                      <div className="h-px bg-slate-200 dark:bg-slate-800 my-4 sm:my-5" />
+
+                      <div className="mb-3">
+                        <div className="text-[9px] sm:text-[10px] uppercase font-extrabold tracking-widest text-slate-400 mb-2.5">Features & Modules</div>
+                        <ul className="space-y-2">
+                          {[
+                            "Everything in Basic",
+                            "E-Invoice Integration",
+                            "E-Way Bill Integration",
+                            "GST Automation",
+                            "Multi-Branch Management",
+                            "Advanced Reports",
+                            "Priority Support"
+                          ].map((feat, i) => (
+                            <li key={i} className="flex items-center space-x-2 text-xs text-slate-700 dark:text-slate-300 font-medium">
+                              <Check className="w-3.5 h-3.5 text-green-500 shrink-0" />
+                              <span>{feat}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+
+                    <div className="mt-6 space-y-2">
+                      <a href="#contact" className="w-full text-center py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-xs transition-all shadow-lg shadow-blue-600/25 block dark:bg-cyan-500 dark:text-slate-950 dark:hover:bg-cyan-400 dark:shadow-cyan-500/10">
+                        Get Started
+                      </a>
+                      <a href="#contact" className="w-full text-center py-3 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/40 text-slate-700 dark:text-slate-300 font-semibold rounded-xl text-xs transition-colors block">
+                        Book Free Demo
+                      </a>
+                    </div>
+                  </div>
+
+                  {/* Enterprise ERP - Subscription */}
+                  <div className="glass-card rounded-[1.5rem] sm:rounded-[2rem] p-5 sm:p-8 bg-white dark:bg-slate-900/30 border border-slate-200 dark:border-slate-850/40 flex flex-col justify-between transition-all hover:scale-[1.02] hover:shadow-xl duration-300 hover:border-blue-500/20 dark:hover:border-cyan-400/20">
+                    <div>
+                      <div className="flex justify-between items-center mb-4">
+                        <span className="text-xs font-extrabold text-slate-400 uppercase tracking-widest">Enterprise ERP</span>
+                        <span className="text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-650 dark:text-slate-400 font-bold px-2.5 py-1 rounded-md">Tailored Solution</span>
+                      </div>
+
+                      <div className="mt-3 sm:mt-4">
+                        <div className="text-[10px] uppercase font-extrabold tracking-widest text-slate-400 mb-1">Custom Implementation</div>
+                        <div className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white">
+                          Custom Pricing
+                        </div>
+                      </div>
+
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-4 leading-relaxed hidden sm:block">
+                        Designed for complex manufacturing operations and deeply customized workflows.
+                      </p>
+
+                      <div className="h-px bg-slate-200 dark:bg-slate-800 my-4 sm:my-5" />
+
+                      <div className="mb-3">
+                        <div className="text-[9px] sm:text-[10px] uppercase font-extrabold tracking-widest text-slate-400 mb-2.5">Features & Modules</div>
+                        <ul className="space-y-2">
+                          {[
+                            "Manufacturing Module",
+                            "Multi-Company Management",
+                            "Custom Workflows",
+                            "API Integrations",
+                            "Dedicated Support"
+                          ].map((feat, i) => (
+                            <li key={i} className="flex items-center space-x-2 text-xs text-slate-700 dark:text-slate-300">
+                              <Check className="w-3.5 h-3.5 text-green-500 shrink-0" />
+                              <span>{feat}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+
+                    <div className="mt-6 space-y-2">
+                      <a href="#contact" className="w-full text-center py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-xs transition-colors block dark:bg-cyan-500 dark:text-slate-950 dark:hover:bg-cyan-400">
+                        Contact Sales
+                      </a>
+                      <a href="#contact" className="w-full text-center py-3 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/40 text-slate-700 dark:text-slate-300 font-semibold rounded-xl text-xs transition-colors block">
+                        Book Free Demo
+                      </a>
+                    </div>
+                  </div>
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="license"
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -15 }}
+                  transition={{ duration: 0.25 }}
+                  className="grid md:grid-cols-3 gap-6 sm:gap-8 items-stretch max-w-6xl mx-auto mb-8 sm:mb-16"
                 >
-                  Request Demo
-                </a>
+                  {/* Basic ERP - License */}
+                  <div className="glass-card rounded-[1.5rem] sm:rounded-[2rem] p-5 sm:p-8 bg-white dark:bg-slate-900/30 border border-slate-200 dark:border-slate-850/40 flex flex-col justify-between transition-all hover:scale-[1.02] hover:shadow-xl duration-300 hover:border-blue-500/20 dark:hover:border-cyan-400/20">
+                    <div>
+                      <div className="flex justify-between items-center mb-4">
+                        <span className="text-xs font-extrabold text-slate-400 uppercase tracking-widest">Basic ERP</span>
+                        <span className="text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-650 dark:text-slate-400 font-bold px-2.5 py-1 rounded-md">Lifetime Ownership</span>
+                      </div>
+
+                      <div className="mt-3 sm:mt-4">
+                        <div className="text-[10px] uppercase font-extrabold tracking-widest text-slate-400 mb-1">One-Time License</div>
+                        <div className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white">
+                          ₹1,00,000
+                        </div>
+                      </div>
+
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-4 leading-relaxed hidden sm:block">
+                        Complete code ownership and operational modules with no ongoing monthly costs.
+                      </p>
+
+                      <div className="h-px bg-slate-200 dark:bg-slate-800 my-4 sm:my-5" />
+
+                      <div className="mb-3">
+                        <div className="text-[9px] sm:text-[10px] uppercase font-extrabold tracking-widest text-slate-400 mb-2.5">Features & Modules</div>
+                        <ul className="space-y-2">
+                          {[
+                            "Complete ERP Ownership",
+                            "Sales",
+                            "Purchase",
+                            "Inventory",
+                            "Accounts",
+                            "CRM",
+                            "HR & Payroll",
+                            "Reports & Analytics"
+                          ].map((feat, i) => (
+                            <li key={i} className="flex items-center space-x-2 text-xs text-slate-700 dark:text-slate-300">
+                              <Check className="w-3.5 h-3.5 text-green-500 shrink-0" />
+                              <span>{feat}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+
+                    <div className="mt-6 space-y-2">
+                      <a href="#contact" className="w-full text-center py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-xs transition-colors block dark:bg-cyan-500 dark:text-slate-950 dark:hover:bg-cyan-400">
+                        Get Started
+                      </a>
+                      <a href="#contact" className="w-full text-center py-3 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/40 text-slate-700 dark:text-slate-300 font-semibold rounded-xl text-xs transition-colors block">
+                        Book Free Demo
+                      </a>
+                    </div>
+                  </div>
+
+                  {/* Professional ERP - License */}
+                  <div className="glass-card rounded-[1.5rem] sm:rounded-[2rem] p-5 sm:p-8 bg-white dark:bg-slate-900/35 border-2 border-blue-600 dark:border-cyan-500/60 flex flex-col justify-between relative shadow-2xl shadow-blue-600/[0.07] transition-all hover:scale-[1.02] duration-300">
+                    <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-blue-600 dark:bg-cyan-500 text-white dark:text-slate-950 text-[10px] uppercase font-black tracking-widest px-4 py-1 rounded-full whitespace-nowrap">
+                      ⭐ Recommended Plan
+                    </div>
+                    <div>
+                      <div className="flex justify-between items-center mb-4">
+                        <span className="text-xs font-extrabold text-blue-600 dark:text-cyan-400 uppercase tracking-widest">Professional ERP</span>
+                        <span className="text-[10px] bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-cyan-400 font-bold px-2.5 py-1 rounded-md">Growth Suite</span>
+                      </div>
+
+                      <div className="mt-3 sm:mt-4">
+                        <div className="text-[10px] uppercase font-extrabold tracking-widest text-slate-400 mb-1">One-Time License</div>
+                        <div className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white">
+                          ₹1,50,000
+                        </div>
+                      </div>
+
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-4 leading-relaxed hidden sm:block">
+                        Our most popular license for businesses ready for comprehensive growth and full compliance.
+                      </p>
+
+                      <div className="h-px bg-slate-200 dark:bg-slate-800 my-4 sm:my-5" />
+
+                      <div className="mb-3">
+                        <div className="text-[9px] sm:text-[10px] uppercase font-extrabold tracking-widest text-slate-400 mb-2.5">Features & Modules</div>
+                        <ul className="space-y-2">
+                          {[
+                            "Everything in Basic ERP",
+                            "E-Invoice Integration",
+                            "E-Way Bill Integration",
+                            "GST Compliance Automation",
+                            "Multi-Branch Support"
+                          ].map((feat, i) => (
+                            <li key={i} className="flex items-center space-x-2 text-xs text-slate-700 dark:text-slate-300 font-medium">
+                              <Check className="w-3.5 h-3.5 text-green-500 shrink-0" />
+                              <span>{feat}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+
+                    <div className="mt-6 space-y-2">
+                      <a href="#contact" className="w-full text-center py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-xs transition-all shadow-lg shadow-blue-600/25 block dark:bg-cyan-500 dark:text-slate-950 dark:hover:bg-cyan-400 dark:shadow-cyan-500/10">
+                        Get Started
+                      </a>
+                      <a href="#contact" className="w-full text-center py-3 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/40 text-slate-700 dark:text-slate-300 font-semibold rounded-xl text-xs transition-colors block">
+                        Book Free Demo
+                      </a>
+                    </div>
+                  </div>
+
+                  {/* Enterprise ERP - License */}
+                  <div className="glass-card rounded-[1.5rem] sm:rounded-[2rem] p-5 sm:p-8 bg-white dark:bg-slate-900/30 border border-slate-200 dark:border-slate-850/40 flex flex-col justify-between transition-all hover:scale-[1.02] hover:shadow-xl duration-300 hover:border-blue-500/20 dark:hover:border-cyan-400/20">
+                    <div>
+                      <div className="flex justify-between items-center mb-4">
+                        <span className="text-xs font-extrabold text-slate-400 uppercase tracking-widest">Enterprise ERP</span>
+                        <span className="text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-650 dark:text-slate-400 font-bold px-2.5 py-1 rounded-md">Tailored Solution</span>
+                      </div>
+
+                      <div className="mt-3 sm:mt-4">
+                        <div className="text-[10px] uppercase font-extrabold tracking-widest text-slate-400 mb-1">Custom License</div>
+                        <div className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white">
+                          Custom Pricing
+                        </div>
+                      </div>
+
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-4 leading-relaxed hidden sm:block">
+                        Designed for complex manufacturing operations, custom development, and full integrations.
+                      </p>
+
+                      <div className="h-px bg-slate-200 dark:bg-slate-800 my-4 sm:my-5" />
+
+                      <div className="mb-3">
+                        <div className="text-[9px] sm:text-[10px] uppercase font-extrabold tracking-widest text-slate-400 mb-2.5">Features & Modules</div>
+                        <ul className="space-y-2">
+                          {[
+                            "Manufacturing Module",
+                            "Production Planning",
+                            "Custom Development",
+                            "API Integrations",
+                            "Multi-Company Support"
+                          ].map((feat, i) => (
+                            <li key={i} className="flex items-center space-x-2 text-xs text-slate-700 dark:text-slate-300">
+                              <Check className="w-3.5 h-3.5 text-green-500 shrink-0" />
+                              <span>{feat}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+
+                    <div className="mt-6 space-y-2">
+                      <a href="#contact" className="w-full text-center py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-xs transition-colors block dark:bg-cyan-500 dark:text-slate-950 dark:hover:bg-cyan-400">
+                        Contact Sales
+                      </a>
+                      <a href="#contact" className="w-full text-center py-3 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/40 text-slate-700 dark:text-slate-300 font-semibold rounded-xl text-xs transition-colors block">
+                        Book Free Demo
+                      </a>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* Comparison Table */}
+          <div className="max-w-4xl mx-auto my-14 sm:my-20 relative z-10">
+            <div className="glass-card rounded-[2rem] p-6 sm:p-8 bg-slate-50/50 dark:bg-slate-900/20 border border-slate-200 dark:border-slate-800/60 shadow-xl">
+              <h4 className="text-lg sm:text-xl font-extrabold text-slate-850 dark:text-white text-center mb-8 tracking-tight">
+                Subscription Plan vs One-Time License Comparison
+              </h4>
+              <div className="grid md:grid-cols-2 gap-6 sm:gap-8">
+                {/* Subscription column */}
+                <div className="bg-white dark:bg-slate-900/60 border border-slate-150 dark:border-slate-800/80 p-5 sm:p-6 rounded-2xl transition-all hover:border-blue-500/20 dark:hover:border-cyan-400/20">
+                  <div className="flex items-center space-x-2.5 mb-4 text-blue-600 dark:text-cyan-400">
+                    <span className="font-extrabold uppercase tracking-widest text-xs">Subscription Option</span>
+                  </div>
+                  <ul className="space-y-4">
+                    {[
+                      { title: "Low Initial Cost", desc: "Start running with minimal upfront software expense, preserving operational capital." },
+                      { title: "Automatic Updates", desc: "Enjoy regular patches, feature releases, and technical upgrades seamlessly." },
+                      { title: "Cloud Hosting Included", desc: "Hosted fully in secure environments with backups managed by Apex IT World." }
+                    ].map((item, i) => (
+                      <li key={i} className="flex items-start space-x-3 text-xs sm:text-sm text-slate-750 dark:text-slate-300">
+                        <CheckCircle className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
+                        <div>
+                          <span className="font-extrabold block text-slate-850 dark:text-white text-xs sm:text-sm">{item.title}</span>
+                          <span className="text-slate-500 dark:text-slate-400 text-xs mt-0.5 block leading-normal">{item.desc}</span>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {/* One-Time column */}
+                <div className="bg-white dark:bg-slate-900/60 border border-slate-150 dark:border-slate-800/80 p-5 sm:p-6 rounded-2xl transition-all hover:border-blue-500/20 dark:hover:border-cyan-400/20">
+                  <div className="flex items-center space-x-2.5 mb-4 text-blue-600 dark:text-cyan-400">
+                    <span className="font-extrabold uppercase tracking-widest text-xs">One-Time License Option</span>
+                  </div>
+                  <ul className="space-y-4">
+                    {[
+                      { title: "Lifetime Ownership", desc: "Secure permanent use of the core software package without operational halts." },
+                      { title: "No Monthly Charges", desc: "Protect your cashflow from repeating billing cycles and price hikes." },
+                      { title: "Higher Long-Term Savings", desc: "Significantly lower aggregate total cost of ownership (TCO) beyond 2 years." }
+                    ].map((item, i) => (
+                      <li key={i} className="flex items-start space-x-3 text-xs sm:text-sm text-slate-750 dark:text-slate-300">
+                        <CheckCircle className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
+                        <div>
+                          <span className="font-extrabold block text-slate-850 dark:text-white text-xs sm:text-sm">{item.title}</span>
+                          <span className="text-slate-500 dark:text-slate-400 text-xs mt-0.5 block leading-normal">{item.desc}</span>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               </div>
             </div>
-
-            {/* 2. Professional ERP (Most Popular) */}
-            <div className="glass-card rounded-[1.5rem] sm:rounded-[2rem] p-5 sm:p-8 bg-white dark:bg-slate-900/35 border-2 border-blue-600 dark:border-cyan-500/50 flex flex-col justify-between relative shadow-xl shadow-blue-600/[0.04] transition-all hover:scale-[1.02]">
-              <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-blue-600 dark:bg-cyan-500 text-white dark:text-slate-950 text-[10px] uppercase font-black tracking-widest px-4 py-1 rounded-full">
-                Most Popular
-              </div>
-              <div>
-                <div className="flex justify-between items-center mb-4">
-                  <span className="text-xs font-extrabold text-blue-600 dark:text-cyan-400 uppercase tracking-widest">Professional ERP</span>
-                  <span className="text-[10px] bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-cyan-400 font-bold px-2.5 py-1 rounded-md">Growth Suite</span>
-                </div>
-                
-                <div className="mt-4">
-                  <div className="text-3xl font-extrabold text-slate-850 dark:text-white">
-                    ₹{isAnnualBilling ? "7,199" : "7,999"}
-                    <span className="text-xs text-slate-400 font-normal"> / month</span>
-                  </div>
-                  <div className="text-xs text-slate-500 dark:text-slate-400 mt-1 font-bold">
-                    + ₹1,50,000 One-Time License Fee
-                  </div>
-                </div>
-                
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-4 leading-relaxed">
-                  Engineered for businesses needing automated taxation compliance, multiple branches syncing, and advanced automation.
-                </p>
-                
-                <div className="h-px bg-slate-200 dark:bg-slate-800 my-6" />
-                
-                <ul className="space-y-3">
-                  {[
-                    "Everything in Basic ERP",
-                    "E-Invoice Integration",
-                    "E-Way Bill Integration",
-                    "GST Automation",
-                    "Multi-Branch Management",
-                    "Advanced Reporting",
-                    "Priority Support",
-                    "6 Months Support"
-                  ].map((feat, i) => (
-                    <li key={i} className="flex items-center space-x-2.5 text-xs text-slate-700 dark:text-slate-350 font-semibold">
-                      <Check className="w-4 h-4 text-green-500 shrink-0" />
-                      <span>{feat}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div className="mt-8 space-y-2">
-                <a 
-                  href="#contact"
-                  className="w-full text-center py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-xs transition-all shadow-lg shadow-blue-600/20 block"
-                >
-                  Get Started
-                </a>
-                <a 
-                  href="#contact"
-                  className="w-full text-center py-3 border border-slate-200 dark:border-slate-850 hover:bg-slate-50 dark:hover:bg-slate-800/40 text-slate-700 dark:text-slate-300 font-semibold rounded-xl text-xs transition-colors block"
-                >
-                  Request Demo
-                </a>
-              </div>
-            </div>
-
-            {/* 3. Enterprise ERP */}
-            <div className="glass-card rounded-[1.5rem] sm:rounded-[2rem] p-5 sm:p-8 bg-white dark:bg-slate-900/30 border border-slate-200 dark:border-slate-850/40 flex flex-col justify-between transition-all hover:scale-[1.02] hover:shadow-xl">
-              <div>
-                <div className="flex justify-between items-center mb-4">
-                  <span className="text-xs font-extrabold text-slate-400 uppercase tracking-widest">Enterprise ERP</span>
-                  <span className="text-[10px] bg-indigo-500/10 text-indigo-500 dark:text-indigo-400 font-bold px-2.5 py-1 rounded-md">Unlimited Scale</span>
-                </div>
-                
-                <div className="mt-4">
-                  <div className="text-3xl font-extrabold text-slate-850 dark:text-white">
-                    Custom Pricing
-                  </div>
-                  <div className="text-xs text-slate-500 dark:text-slate-400 mt-1 font-semibold">
-                    Starting from ₹{isAnnualBilling ? "13,499" : "14,999"}/month
-                  </div>
-                </div>
-                
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-4 leading-relaxed">
-                  Best for manufacturers, multi-company corporate entities, and businesses requiring customized workflows and deep integrations.
-                </p>
-                
-                <div className="h-px bg-slate-200 dark:bg-slate-800 my-6" />
-                
-                <ul className="space-y-3">
-                  {[
-                    "Everything in Professional ERP",
-                    "Manufacturing Module",
-                    "Production Planning",
-                    "Multi-Company Management",
-                    "Approval Workflows",
-                    "API Integrations",
-                    "Custom Development",
-                    "Dedicated Account Manager",
-                    "Priority Support"
-                  ].map((feat, i) => (
-                    <li key={i} className="flex items-center space-x-2.5 text-xs text-slate-700 dark:text-slate-350 font-medium">
-                      <Check className="w-4 h-4 text-green-500 shrink-0" />
-                      <span>{feat}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div className="mt-8 space-y-2">
-                <a 
-                  href="#contact"
-                  className="w-full text-center py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-xs transition-colors block"
-                >
-                  Contact Sales
-                </a>
-                <a 
-                  href="#contact"
-                  className="w-full text-center py-3 border border-slate-200 dark:border-slate-850 hover:bg-slate-50 dark:hover:bg-slate-800/40 text-slate-700 dark:text-slate-300 font-semibold rounded-xl text-xs transition-colors block"
-                >
-                  Request Demo
-                </a>
-              </div>
-            </div>
-
           </div>
 
           {/* Special Launch Offers Section */}
-          <div className="glass-panel rounded-[1.5rem] sm:rounded-[2.5rem] p-5 sm:p-8 md:p-12 bg-blue-600/5 dark:bg-cyan-500/5 border border-blue-500/10 dark:border-cyan-500/10 max-w-6xl mx-auto mb-8 sm:mb-16 relative overflow-hidden">
+          <div className="glass-panel rounded-[1.5rem] sm:rounded-[2.5rem] p-5 sm:p-8 md:p-12 bg-blue-600/5 dark:bg-cyan-500/5 border border-blue-500/10 dark:border-cyan-500/10 max-w-6xl mx-auto mb-8 sm:mb-16 relative overflow-hidden z-10">
             <div className="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-500/10 blur-[80px] rounded-full pointer-events-none" />
-            <div className="relative z-10 flex flex-col lg:flex-row justify-between items-center gap-8">
+            <div className="relative z-10 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 sm:gap-8">
               <div className="text-left max-w-xl">
                 <span className="text-[10px] bg-blue-600 text-white dark:bg-cyan-500 dark:text-slate-950 px-3 py-1 rounded-full uppercase font-black tracking-widest">
-                  Special Launch Offers
+                  🎉 Special Launch Offers
                 </span>
-                <h4 className="text-2xl font-bold text-slate-850 dark:text-white mt-4">
-                  Exclusive Onboarding Benefits & Discounts
+                <h4 className="text-xl sm:text-2xl font-bold text-slate-850 dark:text-white mt-3 sm:mt-4">
+                  Exclusive Onboarding Benefits
                 </h4>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
-                  Take advantage of our temporary launch promotions designed to accelerate your ERP integration and minimize upfront setup friction.
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 leading-relaxed hidden sm:block">
+                  Limited-time launch promotions to help you get started with zero friction and maximum value.
                 </p>
               </div>
-              
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-2 gap-3 w-full lg:w-auto shrink-0">
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 w-full lg:w-auto lg:shrink-0">
                 {[
                   "Free ERP Demo",
-                  "Free Business Requirement Analysis",
-                  "Free Data Migration Assistance",
-                  "20% Discount for First 10 Customers",
-                  "10% Discount on Annual Subscription"
+                  "Free Business Process Analysis",
+                  "Free Staff Training",
+                  "Free Data Migration",
+                  "20% Launch Discount For First 10 Customers",
+                  "Free Setup & Configuration"
                 ].map((offer, i) => (
-                  <div key={i} className="flex items-center space-x-2 bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 px-4 py-2.5 rounded-xl">
-                    <Check className="w-3.5 h-3.5 text-blue-600 dark:text-cyan-400" />
-                    <span className="text-[11px] font-bold text-slate-700 dark:text-slate-350">{offer}</span>
+                  <div key={i} className="flex items-center space-x-2.5 bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 px-4 py-2.5 rounded-xl transition-all hover:scale-[1.01]">
+                    <span className="text-base shrink-0">🎉</span>
+                    <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300">{offer}</span>
                   </div>
                 ))}
               </div>
             </div>
           </div>
 
-          {/* Trust Indicators Section */}
-          <div className="max-w-6xl mx-auto border-t border-slate-200 dark:border-slate-800/40 pt-6 sm:pt-12">
-            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
-              {[
-                { title: "Secure Cloud Infrastructure", icon: Shield, desc: "Row-level permissions, TLS encryption, hourly backups." },
-                { title: "GST Compliant", icon: CheckCircle, desc: "Auto E-Invoice, E-Way bills, live GST matching." },
-                { title: "Dedicated Support", icon: Users, desc: "24/7 client helpline & direct implementation managers." },
-                { title: "Scalable Architecture", icon: Layers, desc: "Easily grow from 10 to 1,000+ active user sessions." }
-              ].map((ind, i) => (
-                <div key={i} className="flex flex-col items-start text-left">
-                  <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-blue-500/10 dark:bg-cyan-500/10 flex items-center justify-center text-blue-600 dark:text-cyan-400 mb-2 sm:mb-4">
-                    <ind.icon className="w-4 h-4 sm:w-5 sm:h-5" />
-                  </div>
-                  <h4 className="text-xs sm:text-sm font-bold text-slate-850 dark:text-white">{ind.title}</h4>
-                  <p className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 mt-1 leading-relaxed hidden xs:block">{ind.desc}</p>
-                </div>
-              ))}
+          {/* Company Information & CTAs Footer Block */}
+          <div className="max-w-4xl mx-auto border-t border-slate-200 dark:border-slate-800/40 pt-10 mt-10 relative z-10">
+            <div className="glass-card rounded-[2rem] p-6 sm:p-8 bg-blue-900/5 dark:bg-cyan-950/5 border border-blue-500/10 dark:border-cyan-500/10 flex flex-col md:flex-row justify-between items-center gap-6">
+              <div className="text-center md:text-left">
+                <h4 className="text-lg font-extrabold text-slate-900 dark:text-white">Apex IT World</h4>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-normal max-w-sm">
+                  Partner with us for digital transformation. Connect with our technology team for customization.
+                </p>
+              </div>
+              <div className="flex flex-wrap justify-center gap-3">
+                <a href="tel:+919106807472" className="inline-flex items-center space-x-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-blue-500 dark:hover:border-cyan-400 text-slate-700 dark:text-slate-300 text-xs font-bold px-4 py-2.5 rounded-xl transition-all shadow-sm">
+                  <Phone className="w-3.5 h-3.5 text-blue-600 dark:text-cyan-400" />
+                  <span>+91 9106807472</span>
+                </a>
+                <a href="mailto:info@apexitworld.com" className="inline-flex items-center space-x-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-blue-500 dark:hover:border-cyan-400 text-slate-700 dark:text-slate-300 text-xs font-bold px-4 py-2.5 rounded-xl transition-all shadow-sm">
+                  <Mail className="w-3.5 h-3.5 text-blue-600 dark:text-cyan-400" />
+                  <span>info@apexitworld.com</span>
+                </a>
+                <a href="https://apexitworld.com" target="_blank" rel="noopener noreferrer" className="inline-flex items-center space-x-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-blue-500 dark:hover:border-cyan-400 text-slate-700 dark:text-slate-300 text-xs font-bold px-4 py-2.5 rounded-xl transition-all shadow-sm">
+                  <Layers className="w-3.5 h-3.5 text-blue-600 dark:text-cyan-400" />
+                  <span>apexitworld.com</span>
+                </a>
+              </div>
             </div>
           </div>
-          
         </section>
 
         {/* 12. FAQs SECTION (ACCORDION STYLE) */}
