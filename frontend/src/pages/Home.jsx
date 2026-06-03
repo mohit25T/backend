@@ -255,6 +255,12 @@ export default function HomePage() {
   const [formErrors, setFormErrors] = useState({});
   const [showSuccessModal, setShowSuccessModal] = useState(false);
 
+  // Mobile progressive-disclosure toggles
+  const [showAllFeatures, setShowAllFeatures] = useState(false);
+  const [showAllIndustries, setShowAllIndustries] = useState(false);
+  const [showFullTimeline, setShowFullTimeline] = useState(false);
+  const [mobileModuleOpen, setMobileModuleOpen] = useState(null);
+
   // Preloader Timer
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -879,7 +885,7 @@ export default function HomePage() {
       <main className="relative z-10 pt-24">
         
         {/* 3. HERO SECTION */}
-        <section id="home" className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 py-12 lg:py-24 grid lg:grid-cols-2 gap-12 items-center">
+        <section id="home" className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 py-6 sm:py-10 lg:py-24 grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
@@ -891,16 +897,16 @@ export default function HomePage() {
               <span>Next-Gen Cloud Enterprise ERP</span>
             </div>
             
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-tight tracking-tight mb-6">
+            <h1 className="text-3xl xs:text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-[1.15] tracking-tight mb-3 sm:mb-6">
               Transform Your Business With <br className="hidden sm:inline" />{" "}
               <span className="text-gradient">Smart ERP Solutions</span>
             </h1>
 
-            <p className="text-lg text-slate-600 dark:text-slate-400 mb-10 max-w-xl leading-relaxed">
+            <p className="text-sm sm:text-lg text-slate-600 dark:text-slate-400 mb-6 sm:mb-10 max-w-xl leading-relaxed">
               Manage Sales, Inventory, Manufacturing, HR, Finance, CRM, and Operations from one powerful, scalable ERP platform tailored to your workflow.
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-4 mb-16">
+            <div className="flex flex-col xs:flex-row gap-3 sm:gap-4 mb-5 sm:mb-16">
               <a 
                 href="#contact"
                 className="bg-blue-600 hover:bg-blue-500 text-white font-bold px-8 py-4 rounded-xl transition-all shadow-xl shadow-blue-600/25 flex items-center justify-center gap-2 group active:scale-95 text-center"
@@ -918,12 +924,12 @@ export default function HomePage() {
             </div>
 
             {/* TRUST INDICATORS */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 border-t border-slate-200/60 dark:border-slate-800/40 pt-10">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-6 border-t border-slate-200/60 dark:border-slate-800/40 pt-4 sm:pt-10">
               {stats.map((stat, i) => (
                 <div key={i} className="text-left">
-                  <div className="text-2xl font-bold text-slate-900 dark:text-white">{stat.value}</div>
-                  <div className="text-[10px] uppercase font-extrabold tracking-widest text-blue-600 dark:text-cyan-400 mt-1">{stat.label}</div>
-                  <div className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{stat.sub}</div>
+                  <div className="text-lg sm:text-2xl font-bold text-slate-900 dark:text-white">{stat.value}</div>
+                  <div className="text-[9px] sm:text-[10px] uppercase font-extrabold tracking-widest text-blue-600 dark:text-cyan-400 mt-0.5 sm:mt-1">{stat.label}</div>
+                  <div className="hidden xs:block text-xs text-slate-400 dark:text-slate-500 mt-0.5">{stat.sub}</div>
                 </div>
               ))}
             </div>
@@ -934,7 +940,7 @@ export default function HomePage() {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 1, delay: 0.2 }}
-            className="relative min-w-0"
+            className="relative min-w-0 hidden lg:flex lg:flex-col"
           >
             {/* Soft decorative glow */}
             <div className="absolute inset-0 bg-gradient-to-tr from-blue-500/10 to-cyan-500/10 blur-[90px] rounded-full z-0" />
@@ -1135,51 +1141,111 @@ export default function HomePage() {
         </section>
 
         {/* 4. FEATURES GRID SECTION */}
-        <section id="features" className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 py-20 border-t border-slate-200/60 dark:border-slate-800/40">
-          <div className="text-center max-w-2xl mx-auto mb-16">
+        <section id="features" className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 py-10 sm:py-20 border-t border-slate-200/60 dark:border-slate-800/40">
+          <div className="text-center max-w-2xl mx-auto mb-8 sm:mb-16">
             <h2 className="text-xs uppercase font-extrabold tracking-widest text-blue-600 dark:text-cyan-400 mb-3">Enterprise Core Features</h2>
-            <h3 className="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+            <h3 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white">
               Everything Needed to Scale Your Operations
             </h3>
-            <p className="text-slate-500 dark:text-slate-400 mt-4">
+            <p className="text-slate-500 dark:text-slate-400 mt-3 text-sm sm:text-base">
               Explore the robust core features engineered to connect disparate silos and synchronize your business workflow.
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-8">
             {features.map((feat, idx) => (
               <motion.div
                 key={idx}
                 whileHover={{ y: -8 }}
                 transition={{ duration: 0.3 }}
-                className="glass-card rounded-2xl p-8 hover:shadow-xl hover:shadow-blue-500/[0.02] border border-slate-200/80 dark:border-slate-800/40 bg-white dark:bg-slate-900/30 flex flex-col justify-between"
+                className={`glass-card rounded-2xl p-5 sm:p-8 hover:shadow-xl hover:shadow-blue-500/[0.02] border border-slate-200/80 dark:border-slate-800/40 bg-white dark:bg-slate-900/30 flex flex-col justify-between${(!showAllFeatures && idx >= 3) ? ' hidden md:flex' : ''}`}
               >
                 <div>
-                  <div className="w-12 h-12 rounded-xl bg-blue-500/10 dark:bg-cyan-500/10 flex items-center justify-center text-blue-600 dark:text-cyan-400 mb-6">
-                    <feat.icon className="w-6 h-6" />
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-blue-500/10 dark:bg-cyan-500/10 flex items-center justify-center text-blue-600 dark:text-cyan-400 mb-4 sm:mb-6">
+                    <feat.icon className="w-5 h-5 sm:w-6 sm:h-6" />
                   </div>
-                  <h4 className="text-lg font-bold text-slate-850 dark:text-white mb-3">{feat.title}</h4>
-                  <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed">{feat.desc}</p>
+                  <h4 className="text-base sm:text-lg font-bold text-slate-850 dark:text-white mb-2 sm:mb-3">{feat.title}</h4>
+                  <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm leading-relaxed">{feat.desc}</p>
                 </div>
-                <div className="w-full h-1 bg-gradient-to-r from-blue-500/20 to-cyan-500/20 rounded-full mt-6" />
+                <div className="w-full h-1 bg-gradient-to-r from-blue-500/20 to-cyan-500/20 rounded-full mt-4 sm:mt-6" />
               </motion.div>
             ))}
           </div>
+
+          {/* Mobile "View All" toggle — hidden on md+ */}
+          <div className="md:hidden mt-5 text-center">
+            <button
+              onClick={() => setShowAllFeatures(!showAllFeatures)}
+              className="inline-flex items-center space-x-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-blue-500/50 text-slate-700 dark:text-slate-300 text-xs font-bold px-5 py-3 rounded-xl transition-all shadow-sm"
+            >
+              <span>{showAllFeatures ? 'Show Less' : `View All ${features.length} Features`}</span>
+              <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${showAllFeatures ? 'rotate-180' : ''}`} />
+            </button>
+          </div>        
         </section>
 
         {/* 5. ERP MODULES SHOWCASE */}
-        <section id="modules" className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 py-20 border-t border-slate-200/60 dark:border-slate-800/40">
-          <div className="text-center max-w-2xl mx-auto mb-16">
+        <section id="modules" className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 py-10 sm:py-20 border-t border-slate-200/60 dark:border-slate-800/40">
+          <div className="text-center max-w-2xl mx-auto mb-8 sm:mb-16">
             <h2 className="text-xs uppercase font-extrabold tracking-widest text-blue-600 dark:text-cyan-400 mb-3">Enterprise ERP Modules</h2>
-            <h3 className="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+            <h3 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white">
               Interactive Module Catalog
             </h3>
-            <p className="text-slate-500 dark:text-slate-400 mt-4">
+            <p className="text-slate-500 dark:text-slate-400 mt-3 text-sm sm:text-base hidden sm:block">
               Click "Learn More" on any module to review standard bullet features and functional descriptions.
+            </p>
+            <p className="text-slate-500 dark:text-slate-400 mt-3 text-sm sm:hidden">
+              Tap any module to explore its features.
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {/* Mobile accordion — only on mobile */}
+          <div className="md:hidden space-y-2">
+            {modules.map((mod) => (
+              <div key={mod.id} className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/30 overflow-hidden">
+                <button
+                  onClick={() => setMobileModuleOpen(mobileModuleOpen === mod.id ? null : mod.id)}
+                  className="w-full flex items-center justify-between p-4 text-left"
+                >
+                  <div className="flex items-center space-x-3">
+                    <div className="w-9 h-9 rounded-lg bg-blue-500/10 dark:bg-cyan-500/10 flex items-center justify-center text-blue-600 dark:text-cyan-400 shrink-0">
+                      <mod.icon className="w-4 h-4" />
+                    </div>
+                    <span className="text-sm font-bold text-slate-850 dark:text-white">{mod.title}</span>
+                  </div>
+                  <ChevronDown className={`w-4 h-4 text-slate-400 shrink-0 transition-transform duration-300 ${mobileModuleOpen === mod.id ? 'rotate-180' : ''}`} />
+                </button>
+                <AnimatePresence initial={false}>
+                  {mobileModuleOpen === mod.id && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                    >
+                      <div className="px-4 pb-4 border-t border-slate-100 dark:border-slate-800 pt-3 space-y-3">
+                        <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">{mod.desc}</p>
+                        <ul className="space-y-1.5">
+                          {mod.bullets.map((bullet, idx) => (
+                            <li key={idx} className="flex items-center space-x-2 text-xs text-slate-700 dark:text-slate-300">
+                              <Check className="w-3.5 h-3.5 text-green-500 shrink-0" />
+                              <span>{bullet}</span>
+                            </li>
+                          ))}
+                        </ul>
+                        <a href="#contact" className="block text-center py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl transition-colors shadow-lg shadow-blue-600/20">
+                          Request Demo
+                        </a>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop grid — only on md+ */}
+          <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             {modules.map((mod) => (
               <div 
                 key={mod.id}
@@ -1278,73 +1344,84 @@ export default function HomePage() {
         </section>
 
         {/* 6. INDUSTRIES WE SERVE */}
-        <section id="industries" className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 py-20 border-t border-slate-200/60 dark:border-slate-800/40">
-          <div className="text-center max-w-2xl mx-auto mb-16">
+        <section id="industries" className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 py-10 sm:py-20 border-t border-slate-200/60 dark:border-slate-800/40">
+          <div className="text-center max-w-2xl mx-auto mb-8 sm:mb-16">
             <h2 className="text-xs uppercase font-extrabold tracking-widest text-blue-600 dark:text-cyan-400 mb-3">Sectors We Service</h2>
-            <h3 className="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+            <h3 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white">
               Tailored Layouts For Your Specific Industry
             </h3>
-            <p className="text-slate-500 dark:text-slate-400 mt-4">
+            <p className="text-slate-500 dark:text-slate-400 mt-3 text-sm sm:text-base hidden sm:block">
               We deploy industry-specific modules configured directly for your business operations.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
             {industries.map((ind, idx) => (
               <div 
                 key={idx}
-                className={`glass-card rounded-2xl p-4 sm:p-6 bg-white dark:bg-slate-900/30 border ${ind.color} hover:scale-[1.03] transition-all flex flex-col justify-between`}
+                className={`glass-card rounded-2xl p-3 sm:p-4 lg:p-6 bg-white dark:bg-slate-900/30 border ${ind.color} hover:scale-[1.03] transition-all flex flex-col justify-between${(!showAllIndustries && idx >= 4) ? ' hidden sm:flex' : ''}`}
               >
                 <div>
-                  <div className="w-9 h-9 rounded-lg bg-blue-500/10 dark:bg-cyan-500/10 flex items-center justify-center text-blue-600 dark:text-cyan-400 mb-4">
-                    <ind.icon className="w-5 h-5" />
+                  <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-blue-500/10 dark:bg-cyan-500/10 flex items-center justify-center text-blue-600 dark:text-cyan-400 mb-3">
+                    <ind.icon className="w-4 h-4 sm:w-5 sm:h-5" />
                   </div>
-                  <h4 className="text-sm font-bold text-slate-850 dark:text-white mb-2">{ind.name}</h4>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                  <h4 className="text-xs sm:text-sm font-bold text-slate-850 dark:text-white mb-1">{ind.name}</h4>
+                  <p className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed hidden xs:block">
                     {ind.desc}
                   </p>
                 </div>
               </div>
             ))}
           </div>
+
+          {/* Mobile "Show More" toggle */}
+          <div className="sm:hidden mt-4 text-center">
+            <button
+              onClick={() => setShowAllIndustries(!showAllIndustries)}
+              className="inline-flex items-center space-x-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 text-xs font-bold px-5 py-2.5 rounded-xl transition-all"
+            >
+              <span>{showAllIndustries ? 'Show Less' : `Show ${industries.length - 4} More Industries`}</span>
+              <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${showAllIndustries ? 'rotate-180' : ''}`} />
+            </button>
+          </div>
         </section>
 
         {/* 7. WHY CHOOSE APEX ERP */}
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 py-20 border-t border-slate-200/60 dark:border-slate-800/40">
-          <div className="grid lg:grid-cols-3 gap-12 items-center">
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 py-10 sm:py-20 border-t border-slate-200/60 dark:border-slate-800/40">
+          <div className="grid lg:grid-cols-3 gap-6 sm:gap-12 items-center">
             <div className="lg:col-span-1 text-left">
               <h2 className="text-xs uppercase font-extrabold tracking-widest text-blue-600 dark:text-cyan-400 mb-3">Why Partner With Us</h2>
-              <h3 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-tight">
+              <h3 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-tight">
                 The Smart ERP Choice For High-Growth Enterprises
               </h3>
-              <p className="text-slate-500 dark:text-slate-400 mt-4 leading-relaxed text-sm">
+              <p className="text-slate-500 dark:text-slate-400 mt-3 leading-relaxed text-sm hidden sm:block">
                 From requirement mapping to custom modules and dedicated onboarding coordinators, we guarantee project success on time and on budget.
               </p>
               
-              <div className="mt-8 space-y-4">
-                <div className="flex items-center space-x-3 p-4 rounded-xl bg-green-500/10 border border-green-500/20 max-w-sm">
-                  <CheckCircle className="w-5 h-5 text-green-500" />
+              <div className="mt-5 sm:mt-8 flex sm:flex-col gap-3 sm:space-y-0">
+                <div className="flex items-center space-x-3 p-3 sm:p-4 rounded-xl bg-green-500/10 border border-green-500/20">
+                  <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-green-500 shrink-0" />
                   <span className="text-xs font-bold text-green-700 dark:text-green-400">98% Implementation Success Rate</span>
                 </div>
-                <div className="flex items-center space-x-3 p-4 rounded-xl bg-blue-500/10 border border-blue-500/20 max-w-sm">
-                  <Shield className="w-5 h-5 text-blue-500" />
+                <div className="flex items-center space-x-3 p-3 sm:p-4 rounded-xl bg-blue-500/10 border border-blue-500/20">
+                  <Shield className="w-4 h-4 sm:w-5 sm:h-5 text-blue-500 shrink-0" />
                   <span className="text-xs font-bold text-blue-700 dark:text-blue-400">Certified secure cloud environment</span>
                 </div>
               </div>
             </div>
 
-            <div className="lg:col-span-2 grid md:grid-cols-2 gap-6">
+            <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-6">
               {benefits.map((benefit, idx) => (
                 <div 
                   key={idx}
-                  className="p-6 rounded-2xl bg-white dark:bg-slate-900/30 border border-slate-200/60 dark:border-slate-850/40 flex items-start space-x-4 hover:shadow-lg transition-all"
+                  className="p-4 sm:p-6 rounded-2xl bg-white dark:bg-slate-900/30 border border-slate-200/60 dark:border-slate-850/40 flex items-start space-x-3 sm:space-x-4 hover:shadow-lg transition-all"
                 >
-                  <div className="w-10 h-10 rounded-lg bg-blue-500/10 dark:bg-cyan-500/10 flex items-center justify-center text-blue-600 dark:text-cyan-400 shrink-0">
-                    <benefit.icon className="w-5 h-5" />
+                  <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-blue-500/10 dark:bg-cyan-500/10 flex items-center justify-center text-blue-600 dark:text-cyan-400 shrink-0">
+                    <benefit.icon className="w-4 h-4 sm:w-5 sm:h-5" />
                   </div>
                   <div>
-                    <h4 className="text-sm font-bold text-slate-850 dark:text-white mb-2">{benefit.title}</h4>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                    <h4 className="text-xs sm:text-sm font-bold text-slate-850 dark:text-white mb-1 sm:mb-2">{benefit.title}</h4>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed hidden sm:block">
                       {benefit.desc}
                     </p>
                   </div>
@@ -1355,13 +1432,13 @@ export default function HomePage() {
         </section>
 
         {/* 8. ERP DASHBOARD SHOWCASE CAROUSEL */}
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 py-20 border-t border-slate-200/60 dark:border-slate-800/40">
-          <div className="text-center max-w-2xl mx-auto mb-12">
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 py-10 sm:py-20 border-t border-slate-200/60 dark:border-slate-800/40">
+          <div className="text-center max-w-2xl mx-auto mb-6 sm:mb-12">
             <h2 className="text-xs uppercase font-extrabold tracking-widest text-blue-600 dark:text-cyan-400 mb-3">Live Reports Showcase</h2>
-            <h3 className="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+            <h3 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white">
               Explore Our Live Dashboard Preview
             </h3>
-            <p className="text-slate-500 dark:text-slate-400 mt-4 text-sm">
+            <p className="text-slate-500 dark:text-slate-400 mt-3 text-sm hidden sm:block">
               Use the control panel below to switch dashboard previews and review actual interface charts.
             </p>
           </div>
@@ -1434,15 +1511,12 @@ export default function HomePage() {
         </section>
 
         {/* 9. TESTIMONIALS SECTION */}
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 py-20 border-t border-slate-200/60 dark:border-slate-800/40 bg-slate-100/30 dark:bg-slate-950/20">
-          <div className="text-center max-w-2xl mx-auto mb-16">
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 py-10 sm:py-20 border-t border-slate-200/60 dark:border-slate-800/40 bg-slate-100/30 dark:bg-slate-950/20">
+          <div className="text-center max-w-2xl mx-auto mb-8 sm:mb-16">
             <h2 className="text-xs uppercase font-extrabold tracking-widest text-blue-600 dark:text-cyan-400 mb-3">Customer Success</h2>
-            <h3 className="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+            <h3 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white">
               Trusted by Leading Industrialists
             </h3>
-            <p className="text-slate-500 dark:text-slate-400 mt-4 text-sm">
-              Read how Apex IT World ERP has helped companies digitize operations and achieve data accuracy.
-            </p>
           </div>
 
           <div className="relative max-w-3xl mx-auto">
@@ -1470,13 +1544,13 @@ export default function HomePage() {
         </section>
 
         {/* 10. IMPLEMENTATION PROCESS SECTION */}
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 py-20 border-t border-slate-200/60 dark:border-slate-800/40">
-          <div className="text-center max-w-2xl mx-auto mb-16">
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 py-10 sm:py-20 border-t border-slate-200/60 dark:border-slate-800/40">
+          <div className="text-center max-w-2xl mx-auto mb-8 sm:mb-16">
             <h2 className="text-xs uppercase font-extrabold tracking-widest text-blue-600 dark:text-cyan-400 mb-3">Onboarding Roadmap</h2>
-            <h3 className="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+            <h3 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white">
               Our ERP Implementation Process
             </h3>
-            <p className="text-slate-500 dark:text-slate-400 mt-4 text-sm">
+            <p className="text-slate-500 dark:text-slate-400 mt-3 text-sm hidden sm:block">
               We guide your enterprise through a structured, risk-mitigated onboarding timeline.
             </p>
           </div>
@@ -1486,7 +1560,7 @@ export default function HomePage() {
             {/* Vertical timeline divider line */}
             <div className="absolute left-4 md:left-1/2 top-0 bottom-0 w-0.5 bg-slate-200 dark:bg-slate-800 -translate-x-1/2 hidden md:block" />
 
-            <div className="space-y-12">
+            <div className="space-y-4 sm:space-y-12">
               {[
                 { step: "01", title: "Requirement Analysis", desc: "Detailed workshops with key department heads to map database fields, document templates, approval channels, and integration specs." },
                 { step: "02", title: "ERP Planning", desc: "Development of custom blueprints, database migration scopes, server allocations, and standard validation test protocols." },
@@ -1496,13 +1570,13 @@ export default function HomePage() {
                 { step: "06", title: "Training", desc: "Step-by-step documentation hand-offs, training webinars for administrators, and role-based staff onboarding tutorials." },
                 { step: "07", title: "Support", desc: "Continuous SLA system checks, performance auditing, monthly updates, and 24/7 dedicated support team channels." }
               ].map((proc, index) => (
-                <div key={index} className={`flex flex-col md:flex-row items-stretch ${index % 2 === 0 ? "" : "md:flex-row-reverse"}`}>
+                <div key={index} className={`flex flex-col md:flex-row items-stretch ${index % 2 === 0 ? "" : "md:flex-row-reverse"}${(!showFullTimeline && index >= 4) ? ' hidden sm:flex' : ''}`}>
                   
                   {/* Left spacing or Card placement */}
-                  <div className="flex-1 md:px-8 pb-4 md:pb-0">
-                    <div className="p-6 rounded-2xl bg-white dark:bg-slate-900/30 border border-slate-200 dark:border-slate-850/40 relative shadow-sm hover:border-blue-500/20 dark:hover:border-cyan-500/20 transition-colors">
-                      <div className="text-2xl font-black text-blue-600 dark:text-cyan-400 mb-2">{proc.step}</div>
-                      <h4 className="text-base font-bold text-slate-850 dark:text-white mb-2">{proc.title}</h4>
+                  <div className="flex-1 md:px-8 pb-3 md:pb-0">
+                    <div className="p-4 sm:p-6 rounded-2xl bg-white dark:bg-slate-900/30 border border-slate-200 dark:border-slate-850/40 relative shadow-sm hover:border-blue-500/20 dark:hover:border-cyan-500/20 transition-colors">
+                      <div className="text-xl sm:text-2xl font-black text-blue-600 dark:text-cyan-400 mb-1 sm:mb-2">{proc.step}</div>
+                      <h4 className="text-sm sm:text-base font-bold text-slate-850 dark:text-white mb-1 sm:mb-2">{proc.title}</h4>
                       <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
                         {proc.desc}
                       </p>
@@ -1518,16 +1592,27 @@ export default function HomePage() {
                 </div>
               ))}
             </div>
+
+            {/* Mobile timeline toggle — hidden on sm+ */}
+            <div className="sm:hidden mt-5 text-center">
+              <button
+                onClick={() => setShowFullTimeline(!showFullTimeline)}
+                className="inline-flex items-center space-x-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 text-xs font-bold px-5 py-2.5 rounded-xl transition-all"
+              >
+                <span>{showFullTimeline ? 'Show Less Steps' : 'View Full Timeline (7 Steps)'}</span>
+                <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${showFullTimeline ? 'rotate-180' : ''}`} />
+              </button>
+            </div>
           </div>
         </section>
         {/* 11. PRICING SECTION */}
-        <section id="pricing" className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 py-20 border-t border-slate-200/60 dark:border-slate-800/40">
-          <div className="text-center max-w-2xl mx-auto mb-12">
+        <section id="pricing" className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 py-10 sm:py-20 border-t border-slate-200/60 dark:border-slate-800/40">
+          <div className="text-center max-w-2xl mx-auto mb-6 sm:mb-12">
             <h2 className="text-xs uppercase font-extrabold tracking-widest text-blue-600 dark:text-cyan-400 mb-3">Pricing Plans</h2>
-            <h3 className="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+            <h3 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white">
               Transparent, Scale-as-You-Grow Pricing
             </h3>
-            <p className="text-slate-500 dark:text-slate-400 mt-4 text-sm">
+            <p className="text-slate-500 dark:text-slate-400 mt-3 text-sm hidden sm:block">
               Deploy our modular ERP configured directly for your business operations. Save 10% on monthly subscriptions with an annual commitment.
             </p>
 
@@ -1552,18 +1637,18 @@ export default function HomePage() {
             </div>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8 items-stretch max-w-6xl mx-auto mb-16">
+          <div className="grid md:grid-cols-3 gap-4 sm:gap-8 items-stretch max-w-6xl mx-auto mb-8 sm:mb-16">
             
             {/* 1. Basic ERP */}
-            <div className="glass-card rounded-[2rem] p-8 bg-white dark:bg-slate-900/30 border border-slate-200 dark:border-slate-850/40 flex flex-col justify-between transition-all hover:scale-[1.02] hover:shadow-xl">
+            <div className="glass-card rounded-[1.5rem] sm:rounded-[2rem] p-5 sm:p-8 bg-white dark:bg-slate-900/30 border border-slate-200 dark:border-slate-850/40 flex flex-col justify-between transition-all hover:scale-[1.02] hover:shadow-xl">
               <div>
                 <div className="flex justify-between items-center mb-4">
                   <span className="text-xs font-extrabold text-slate-400 uppercase tracking-widest">Basic ERP</span>
                   <span className="text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-bold px-2.5 py-1 rounded-md">Essential Modules</span>
                 </div>
                 
-                <div className="mt-4">
-                  <div className="text-3xl font-extrabold text-slate-850 dark:text-white">
+                <div className="mt-3 sm:mt-4">
+                  <div className="text-2xl sm:text-3xl font-extrabold text-slate-850 dark:text-white">
                     ₹{isAnnualBilling ? "4,499" : "4,999"}
                     <span className="text-xs text-slate-400 font-normal"> / month</span>
                   </div>
@@ -1576,7 +1661,7 @@ export default function HomePage() {
                   Best for growing businesses looking to centralize their main operations with essential ERP workflows.
                 </p>
                 
-                <div className="h-px bg-slate-200 dark:bg-slate-800 my-6" />
+                <div className="h-px bg-slate-200 dark:bg-slate-800 my-4 sm:my-6" />
                 
                 <ul className="space-y-3">
                   {[
@@ -1616,7 +1701,7 @@ export default function HomePage() {
             </div>
 
             {/* 2. Professional ERP (Most Popular) */}
-            <div className="glass-card rounded-[2rem] p-8 bg-white dark:bg-slate-900/35 border-2 border-blue-600 dark:border-cyan-500/50 flex flex-col justify-between relative shadow-xl shadow-blue-600/[0.04] transition-all hover:scale-[1.02]">
+            <div className="glass-card rounded-[1.5rem] sm:rounded-[2rem] p-5 sm:p-8 bg-white dark:bg-slate-900/35 border-2 border-blue-600 dark:border-cyan-500/50 flex flex-col justify-between relative shadow-xl shadow-blue-600/[0.04] transition-all hover:scale-[1.02]">
               <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-blue-600 dark:bg-cyan-500 text-white dark:text-slate-950 text-[10px] uppercase font-black tracking-widest px-4 py-1 rounded-full">
                 Most Popular
               </div>
@@ -1677,7 +1762,7 @@ export default function HomePage() {
             </div>
 
             {/* 3. Enterprise ERP */}
-            <div className="glass-card rounded-[2rem] p-8 bg-white dark:bg-slate-900/30 border border-slate-200 dark:border-slate-850/40 flex flex-col justify-between transition-all hover:scale-[1.02] hover:shadow-xl">
+            <div className="glass-card rounded-[1.5rem] sm:rounded-[2rem] p-5 sm:p-8 bg-white dark:bg-slate-900/30 border border-slate-200 dark:border-slate-850/40 flex flex-col justify-between transition-all hover:scale-[1.02] hover:shadow-xl">
               <div>
                 <div className="flex justify-between items-center mb-4">
                   <span className="text-xs font-extrabold text-slate-400 uppercase tracking-widest">Enterprise ERP</span>
@@ -1737,7 +1822,7 @@ export default function HomePage() {
           </div>
 
           {/* Special Launch Offers Section */}
-          <div className="glass-panel rounded-[2.5rem] p-8 md:p-12 bg-blue-600/5 dark:bg-cyan-500/5 border border-blue-500/10 dark:border-cyan-500/10 max-w-6xl mx-auto mb-16 relative overflow-hidden">
+          <div className="glass-panel rounded-[1.5rem] sm:rounded-[2.5rem] p-5 sm:p-8 md:p-12 bg-blue-600/5 dark:bg-cyan-500/5 border border-blue-500/10 dark:border-cyan-500/10 max-w-6xl mx-auto mb-8 sm:mb-16 relative overflow-hidden">
             <div className="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-500/10 blur-[80px] rounded-full pointer-events-none" />
             <div className="relative z-10 flex flex-col lg:flex-row justify-between items-center gap-8">
               <div className="text-left max-w-xl">
@@ -1770,20 +1855,20 @@ export default function HomePage() {
           </div>
 
           {/* Trust Indicators Section */}
-          <div className="max-w-6xl mx-auto border-t border-slate-200 dark:border-slate-800/40 pt-12">
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+          <div className="max-w-6xl mx-auto border-t border-slate-200 dark:border-slate-800/40 pt-6 sm:pt-12">
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
               {[
                 { title: "Secure Cloud Infrastructure", icon: Shield, desc: "Row-level permissions, TLS encryption, hourly backups." },
                 { title: "GST Compliant", icon: CheckCircle, desc: "Auto E-Invoice, E-Way bills, live GST matching." },
                 { title: "Dedicated Support", icon: Users, desc: "24/7 client helpline & direct implementation managers." },
                 { title: "Scalable Architecture", icon: Layers, desc: "Easily grow from 10 to 1,000+ active user sessions." }
               ].map((ind, i) => (
-                <div key={i} className="flex flex-col items-center md:items-start text-center md:text-left">
-                  <div className="w-10 h-10 rounded-xl bg-blue-500/10 dark:bg-cyan-500/10 flex items-center justify-center text-blue-600 dark:text-cyan-400 mb-4">
-                    <ind.icon className="w-5 h-5" />
+                <div key={i} className="flex flex-col items-start text-left">
+                  <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-blue-500/10 dark:bg-cyan-500/10 flex items-center justify-center text-blue-600 dark:text-cyan-400 mb-2 sm:mb-4">
+                    <ind.icon className="w-4 h-4 sm:w-5 sm:h-5" />
                   </div>
-                  <h4 className="text-sm font-bold text-slate-850 dark:text-white">{ind.title}</h4>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">{ind.desc}</p>
+                  <h4 className="text-xs sm:text-sm font-bold text-slate-850 dark:text-white">{ind.title}</h4>
+                  <p className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 mt-1 leading-relaxed hidden xs:block">{ind.desc}</p>
                 </div>
               ))}
             </div>
@@ -1792,15 +1877,15 @@ export default function HomePage() {
         </section>
 
         {/* 12. FAQs SECTION (ACCORDION STYLE) */}
-        <section id="faq" className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 py-20 border-t border-slate-200/60 dark:border-slate-800/40">
-          <div className="text-center max-w-2xl mx-auto mb-16">
+        <section id="faq" className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 py-10 sm:py-20 border-t border-slate-200/60 dark:border-slate-800/40">
+          <div className="text-center max-w-2xl mx-auto mb-8 sm:mb-16">
             <h2 className="text-xs uppercase font-extrabold tracking-widest text-blue-600 dark:text-cyan-400 mb-3">Have Questions?</h2>
-            <h3 className="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+            <h3 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white">
               Frequently Asked Questions
             </h3>
           </div>
 
-          <div className="max-w-3xl mx-auto space-y-4">
+          <div className="max-w-3xl mx-auto space-y-2 sm:space-y-4">
             {faqs.map((faq, index) => {
               const isOpen = openFaqIndexes.includes(index);
               return (
@@ -1810,7 +1895,7 @@ export default function HomePage() {
                 >
                   <button
                     onClick={() => toggleFaq(index)}
-                    className="w-full flex justify-between items-center p-6 text-left hover:bg-slate-100/50 dark:hover:bg-slate-900/50 transition-colors"
+                    className="w-full flex justify-between items-center p-4 sm:p-6 text-left hover:bg-slate-100/50 dark:hover:bg-slate-900/50 transition-colors"
                   >
                     <span className="font-bold text-sm text-slate-800 dark:text-slate-100 pr-4">{faq.q}</span>
                     <ChevronDown className={`w-4 h-4 text-slate-400 shrink-0 transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`} />
@@ -1824,7 +1909,7 @@ export default function HomePage() {
                         exit={{ height: 0, opacity: 0 }}
                         transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
                       >
-                        <div className="p-6 pt-0 border-t border-slate-100 dark:border-slate-800 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+                        <div className="p-4 sm:p-6 pt-0 border-t border-slate-100 dark:border-slate-800 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
                           {faq.a}
                         </div>
                       </motion.div>
@@ -1837,49 +1922,50 @@ export default function HomePage() {
         </section>
 
         {/* 13. LEAD GENERATION CONTACT FORM */}
-        <section id="contact" className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 py-20 border-t border-slate-200/60 dark:border-slate-800/40">
+        <section id="contact" className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 py-10 sm:py-20 border-t border-slate-200/60 dark:border-slate-800/40">
           <div className="glass-panel rounded-[2rem] sm:rounded-[3rem] p-6 sm:p-8 md:p-16 flex flex-col lg:flex-row gap-10 lg:gap-16 bg-white dark:bg-slate-900/40 shadow-2xl relative overflow-hidden">
             
             {/* Grid Mesh lines in background */}
             <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none" />
 
             <div className="flex-1 text-left relative z-10">
-              <h2 className="text-xs uppercase font-extrabold tracking-widest text-blue-600 dark:text-cyan-400 mb-3">Connect With Us</h2>
-              <h3 className="text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-tight">
+              <h2 className="text-xs uppercase font-extrabold tracking-widest text-blue-600 dark:text-cyan-400 mb-2 sm:mb-3">Connect With Us</h2>
+              <h3 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-tight">
                 Ready to Optimize <br className="hidden sm:inline" />{" "}Your Business?
               </h3>
-              <p className="text-slate-500 dark:text-slate-400 mt-4 leading-relaxed text-sm">
+              <p className="text-slate-500 dark:text-slate-400 mt-2 sm:mt-4 leading-relaxed text-xs sm:text-sm hidden sm:block">
                 Submit an inquiry or request a custom-tailored product demo. An implementation expert will reach out within 15 minutes.
               </p>
 
-              <div className="mt-10 space-y-6">
-                <div className="flex items-center space-x-4">
-                  <div className="w-12 h-12 rounded-xl bg-blue-500/10 dark:bg-cyan-500/10 flex items-center justify-center text-blue-650 dark:text-cyan-400">
-                    <Phone className="w-5 h-5" />
+              {/* Contact info items - horizontal on mobile, vertical on desktop */}
+              <div className="mt-5 sm:mt-10 flex flex-row sm:flex-col flex-wrap gap-3 sm:gap-6">
+                <div className="flex items-center space-x-3">
+                  <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-xl bg-blue-500/10 dark:bg-cyan-500/10 flex items-center justify-center text-blue-650 dark:text-cyan-400 shrink-0">
+                    <Phone className="w-4 h-4 sm:w-5 sm:h-5" />
                   </div>
                   <div>
-                    <span className="text-[10px] text-slate-400 dark:text-slate-500 uppercase font-extrabold tracking-widest">Call Helpline</span>
-                    <div className="text-base font-bold text-slate-800 dark:text-white">+91 9106807472</div>
+                    <span className="text-[9px] sm:text-[10px] text-slate-400 dark:text-slate-500 uppercase font-extrabold tracking-widest block">Call Helpline</span>
+                    <div className="text-sm sm:text-base font-bold text-slate-800 dark:text-white">+91 9106807472</div>
                   </div>
                 </div>
 
-                <div className="flex items-center space-x-4">
-                  <div className="w-12 h-12 rounded-xl bg-blue-500/10 dark:bg-cyan-500/10 flex items-center justify-center text-blue-650 dark:text-cyan-400">
-                    <Mail className="w-5 h-5" />
+                <div className="flex items-center space-x-3">
+                  <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-xl bg-blue-500/10 dark:bg-cyan-500/10 flex items-center justify-center text-blue-650 dark:text-cyan-400 shrink-0">
+                    <Mail className="w-4 h-4 sm:w-5 sm:h-5" />
                   </div>
                   <div>
-                    <span className="text-[10px] text-slate-400 dark:text-slate-500 uppercase font-extrabold tracking-widest">Support Email</span>
-                    <div className="text-base font-bold text-slate-800 dark:text-white">info@apexitworld.com</div>
+                    <span className="text-[9px] sm:text-[10px] text-slate-400 dark:text-slate-500 uppercase font-extrabold tracking-widest block">Support Email</span>
+                    <div className="text-sm sm:text-base font-bold text-slate-800 dark:text-white break-all">info@apexitworld.com</div>
                   </div>
                 </div>
 
-                <div className="flex items-center space-x-4">
-                  <div className="w-12 h-12 rounded-xl bg-blue-500/10 dark:bg-cyan-500/10 flex items-center justify-center text-blue-650 dark:text-cyan-400">
-                    <MapPin className="w-5 h-5" />
+                <div className="flex items-center space-x-3">
+                  <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-xl bg-blue-500/10 dark:bg-cyan-500/10 flex items-center justify-center text-blue-650 dark:text-cyan-400 shrink-0">
+                    <MapPin className="w-4 h-4 sm:w-5 sm:h-5" />
                   </div>
                   <div>
-                    <span className="text-[10px] text-slate-400 dark:text-slate-500 uppercase font-extrabold tracking-widest">Headquarters</span>
-                    <div className="text-base font-bold text-slate-800 dark:text-white">Gujarat, India</div>
+                    <span className="text-[9px] sm:text-[10px] text-slate-400 dark:text-slate-500 uppercase font-extrabold tracking-widest block">Headquarters</span>
+                    <div className="text-sm sm:text-base font-bold text-slate-800 dark:text-white">Gujarat, India</div>
                   </div>
                 </div>
               </div>
@@ -1887,7 +1973,7 @@ export default function HomePage() {
 
             {/* Lead generation fields form */}
             <div className="flex-1 relative z-10">
-              <form onSubmit={handleContactSubmit} className="space-y-5 bg-slate-50 dark:bg-slate-900/60 p-6 md:p-10 border border-slate-200 dark:border-slate-800/80 rounded-2xl">
+              <form onSubmit={handleContactSubmit} className="space-y-4 sm:space-y-5 bg-slate-50 dark:bg-slate-900/60 p-4 sm:p-6 md:p-10 border border-slate-200 dark:border-slate-800/80 rounded-2xl">
                 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1">
